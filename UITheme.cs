@@ -11,5 +11,7 @@ namespace ModsApp
         public readonly Color AccentSecondary = new Color(0.15f, 0.15f, 0.18f, 1f);
         public readonly Color TextPrimary = new Color(0.95f, 0.95f, 0.95f, 1f);
         public readonly Color TextSecondary = new Color(0.70f, 0.70f, 0.70f, 1f);
+        public readonly Color SuccessColor = new Color(0.20f, 0.80f, 0.20f, 1f);
+        public readonly Color WarningColor = new Color(0.95f, 0.75f, 0.20f, 1f);
     }
 }

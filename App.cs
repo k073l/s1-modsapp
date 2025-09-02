@@ -39,6 +39,7 @@ namespace ModsApp
             catch (Exception ex)
             {
                 _logger.Error($"UI initialization failed: {ex.Message}");
+                _logger.Error(ex.StackTrace);
             }
         }
     }

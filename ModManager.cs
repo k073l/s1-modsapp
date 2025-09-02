@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using MelonLoader;
+using Mono.Cecil;
 
 namespace ModsApp
 {
@@ -75,5 +76,78 @@ namespace ModsApp
                    (!string.IsNullOrEmpty(category.DisplayName) && 
                     category.DisplayName.IndexOf(modName, StringComparison.OrdinalIgnoreCase) >= 0);
         }
+
+        private Backend DetermineBackend(MelonMod mod)
+        {
+            var assemblyPath = mod.MelonAssembly.Assembly.Location;
+            var assemblyDef = AssemblyDefinition.ReadAssembly(assemblyPath);
+
+            var hasIL2CPP = false;
+            var hasMono = false;
+            var hasS1API = false;
+
+            foreach (var module in assemblyDef.Modules)
+            {
+                // Check defined types
+                foreach (var type in module.Types)
+                {
+                    if (!hasIL2CPP && type.FullName.StartsWith("Il2Cpp"))
+                        hasIL2CPP = true;
+
+                    if (!hasMono && type.FullName.Contains("ScheduleOne"))
+                        hasMono = true;
+                }
+
+                // Check referenced types for S1API
+                foreach (var typeRef in module.GetTypeReferences())
+                {
+                    if (!hasS1API && typeRef.Namespace.StartsWith("S1API"))
+                        hasS1API = true;
+
+                    if (!hasIL2CPP && typeRef.Namespace.StartsWith("Il2Cpp"))
+                        hasIL2CPP = true;
+
+                    if (!hasMono && typeRef.Namespace.Contains("ScheduleOne"))
+                        hasMono = true;
+                }
+
+                if (hasIL2CPP || hasMono)
+                    break;
+            }
+
+            if (hasIL2CPP)
+                return Backend.IL2CPP;
+            if (hasMono)
+                return Backend.Mono;
+            return hasS1API ? Backend.S1API : Backend.Unknown;
+        }
+
+        public bool isCompatible(MelonMod mod, ref string backend)
+        {
+            var modBackend = DetermineBackend(mod);
+            backend = modBackend.ToString();
+
+            if (modBackend == Backend.Unknown)
+                return false;
+
+            var isGameIL2CPP = MelonUtils.IsGameIl2Cpp();
+
+            if (modBackend == Backend.IL2CPP && isGameIL2CPP)
+                return true;
+            if (modBackend == Backend.Mono && !isGameIL2CPP)
+                return true;
+            if (modBackend == Backend.S1API)
+                return true;
+
+            return false;
+        }
+    }
+
+    internal enum Backend
+    {
+        Unknown,
+        IL2CPP,
+        Mono,
+        S1API
     }
 }

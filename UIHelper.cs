@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Text.RegularExpressions;
 using MelonLoader;
+using S1API.Internal.Abstraction;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -61,7 +62,8 @@ namespace ModsApp
             colors.fadeDuration = 0.15f;
             button.colors = colors;
 
-            button.onClick.AddListener(() => onClick?.Invoke());
+            EventHelper.AddListener(onClick, button.onClick);
+            // button.onClick.AddListener(() => onClick?.Invoke());
         }
 
         public static void ConfigureButtonLayout(RectTransform rt, float height)

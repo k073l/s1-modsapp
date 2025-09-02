@@ -18,6 +18,7 @@ namespace ModsApp
         
         private RectTransform _listContent;
         private readonly Dictionary<string, GameObject> _modButtons = new();
+        private Dictionary<string, Text> _modLabels = new Dictionary<string, Text>();
         private string _selectedModName;
 
         public ModListPanel(Transform parent, ModManager modManager, UITheme theme, MelonLogger.Instance logger)
@@ -81,6 +82,7 @@ namespace ModsApp
             UIHelper.ConfigureButtonText(versionText.rectTransform, new Vector2(0.7f, 0f), new Vector2(1f, 1f), 4f, -12f, 4f, -4f);
 
             _modButtons[mod.Info.Name] = buttonGo;
+            _modLabels[mod.Info.Name] = label;
         }
 
         private void SelectMod(MelonMod mod)
@@ -94,22 +96,16 @@ namespace ModsApp
         {
             foreach (var kvp in _modButtons)
             {
-                var isSelected = kvp.Key == _selectedModName;
-                var img = kvp.Value.GetComponent<Image>();
-                
-                if (img != null)
-                {
-                    img.color = isSelected ? _theme.AccentPrimary : _theme.AccentSecondary;
-                }
+                bool isSelected = kvp.Key == _selectedModName;
 
-                var texts = kvp.Value.GetComponentsInChildren<Text>();
-                foreach (var text in texts)
+                var img = kvp.Value.GetComponent<Image>();
+                if (img != null)
+                    img.color = isSelected ? _theme.AccentPrimary : _theme.AccentSecondary;
+
+                if (_modLabels.TryGetValue(kvp.Key, out var label))
                 {
-                    if (text.name.EndsWith("_Label"))
-                    {
-                        text.fontStyle = isSelected ? FontStyle.Bold : FontStyle.Normal;
-                        text.color = isSelected ? Color.white : _theme.TextPrimary;
-                    }
+                    label.fontStyle = isSelected ? FontStyle.Bold : FontStyle.Normal;
+                    label.color = isSelected ? Color.white : _theme.TextPrimary;
                 }
             }
         }
