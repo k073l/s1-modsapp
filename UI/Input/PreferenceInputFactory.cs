@@ -104,6 +104,7 @@ public class PreferenceInputFactory
             new FloatInputHandler(theme, logger),
             new StringInputHandler(theme, logger),
             // new KeyCodeInputHandler(theme, logger),
+            new ColorInputHandler(theme, logger),
             new FallbackInputHandler(theme, logger) // Always last as it handles any type
         };
     }
