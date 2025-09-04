@@ -22,7 +22,7 @@ public class ColorInputHandler : IPreferenceInputHandler
     public void CreateInput(MelonPreferences_Entry entry, GameObject parent, string entryKey,
         object currentValue, Action<string, object> onValueChanged)
     {
-        Color colorValue = currentValue is Color c ? c : Color.white;
+        var colorValue = currentValue is Color c ? c : Color.white;
 
         var colorButtonGO =
             new GameObject($"{entryKey}_ColorButton", typeof(RectTransform), typeof(Button), typeof(Image));
@@ -61,8 +61,7 @@ public class ColorInputHandler : IPreferenceInputHandler
         panelGO.transform.SetParent(canvasGO.transform, false);
         var panelRT = panelGO.AddComponent<RectTransform>();
         panelRT.sizeDelta = new Vector2(350, 450);
-        panelRT.anchorMin = new Vector2(0.5f, 0.5f);
-        panelRT.anchorMax = new Vector2(0.5f, 0.5f);
+        panelRT.anchorMin = panelRT.anchorMax = new Vector2(0.5f, 0.5f);
         panelRT.anchoredPosition = Vector2.zero;
 
         var panelImage = panelGO.AddComponent<Image>();
@@ -76,77 +75,137 @@ public class ColorInputHandler : IPreferenceInputHandler
         var previewImage = previewGO.AddComponent<Image>();
         previewImage.color = initialColor;
 
-        var wheelGO = new GameObject("ColorWheel");
-        wheelGO.transform.SetParent(panelGO.transform, false);
-        var wheelRT = wheelGO.AddComponent<RectTransform>();
-        wheelRT.sizeDelta = new Vector2(200, 200);
-        wheelRT.anchoredPosition = new Vector2(0, 50);
-
-        var rawImage = wheelGO.AddComponent<RawImage>();
-        rawImage.texture = GenerateColorWheelTexture(200);
-
-        var wheelEvent = wheelGO.AddComponent<WheelPicker>();
-        wheelEvent.OnColorChanged = color =>
+        CreateColorWheel(panelGO.transform, 200, color =>
         {
             initialColor.r = color.r;
             initialColor.g = color.g;
             initialColor.b = color.b;
             previewImage.color = initialColor;
-        };
+        });
 
-        CreateSlider(panelGO.transform, "A", initialColor.a, new Vector2(0, -80), value =>
+        CreateSlider(panelGO.transform, "A", initialColor.a, new Vector2(0, -130), value =>
         {
             initialColor.a = value;
             previewImage.color = initialColor;
         });
 
-        var cancelGO = new GameObject("CancelButton");
-        cancelGO.transform.SetParent(panelGO.transform, false);
-        cancelGO.AddComponent<RectTransform>().sizeDelta = new Vector2(80, 30);
-        cancelGO.GetComponent<RectTransform>().anchoredPosition = new Vector2(-100, -160);
-        SetupButton(cancelGO, "Cancel", Color.red, () => GameObject.Destroy(canvasGO));
+        CreateButton(panelGO.transform, "Cancel", Color.red, new Vector2(-100, -180),
+            () => GameObject.Destroy(canvasGO));
+        CreateButton(panelGO.transform, "Apply", Color.green, new Vector2(100, -180),
+            () =>
+            {
+                onColorSelected(initialColor);
+                GameObject.Destroy(canvasGO);
+            });
+    }
 
-        var applyGO = new GameObject("ApplyButton");
-        applyGO.transform.SetParent(panelGO.transform, false);
-        applyGO.AddComponent<RectTransform>().sizeDelta = new Vector2(80, 30);
-        applyGO.GetComponent<RectTransform>().anchoredPosition = new Vector2(100, -160);
-        SetupButton(applyGO, "Apply", Color.green, () =>
+    private void CreateColorWheel(Transform parent, float size, Action<Color> onColorChanged)
+    {
+        var wheelGO = new GameObject("ColorWheel", typeof(RectTransform));
+        wheelGO.transform.SetParent(parent, false);
+        var wheelRT = wheelGO.GetComponent<RectTransform>();
+        wheelRT.sizeDelta = new Vector2(size, size);
+
+        var wheelImage = wheelGO.AddComponent<RawImage>();
+        wheelImage.texture = GenerateColorWheelTexture((int)size);
+
+        // Knob
+        var knobGO = new GameObject("Knob", typeof(RectTransform), typeof(Image));
+        knobGO.transform.SetParent(wheelGO.transform, false);
+        var knobImage = knobGO.GetComponent<Image>();
+        knobImage.sprite = GenerateCircleSprite(16, Color.white);
+        knobImage.type = Image.Type.Simple;
+        knobGO.GetComponent<RectTransform>().sizeDelta = new Vector2(16, 16);
+        knobGO.GetComponent<RectTransform>().anchoredPosition = Vector2.zero;
+
+        var knobFillGO = new GameObject("Fill", typeof(RectTransform), typeof(Image));
+        knobFillGO.transform.SetParent(knobGO.transform, false);
+        var knobFill = knobFillGO.GetComponent<Image>();
+        knobFill.sprite = GenerateCircleSprite(10, Color.white);
+        knobFill.type = Image.Type.Simple;
+        knobFillGO.GetComponent<RectTransform>().anchoredPosition = Vector2.zero;
+        knobFillGO.GetComponent<RectTransform>().sizeDelta = new Vector2(10, 10);
+
+        // EventTrigger for click/drag
+        var trigger = wheelGO.AddComponent<EventTrigger>();
+
+        void HandleEvent(PointerEventData eventData)
         {
-            onColorSelected(initialColor);
-            GameObject.Destroy(canvasGO);
-        });
+            Vector2 local;
+            if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(wheelRT, eventData.position, null,
+                    out local)) return;
+
+            var radius = size / 2f;
+            var norm = local / radius;
+            var dist = norm.magnitude;
+            if (dist > 1f) norm = norm.normalized;
+
+            var hue = Mathf.Atan2(norm.y, norm.x) / (2f * Mathf.PI);
+            if (hue < 0) hue += 1f;
+            var sat = Mathf.Min(dist, 1f);
+
+            Color color = Color.HSVToRGB(hue, sat, 1f);
+            onColorChanged?.Invoke(color);
+
+            knobGO.GetComponent<RectTransform>().anchoredPosition = norm * radius;
+            knobFill.color = color;
+        }
+
+        var entryDown = new EventTrigger.Entry { eventID = EventTriggerType.PointerDown };
+        entryDown.callback.AddListener((data) => HandleEvent((PointerEventData)data));
+        trigger.triggers.Add(entryDown);
+
+        var entryDrag = new EventTrigger.Entry { eventID = EventTriggerType.Drag };
+        entryDrag.callback.AddListener((data) => HandleEvent((PointerEventData)data));
+        trigger.triggers.Add(entryDrag);
     }
 
     private Texture2D GenerateColorWheelTexture(int size)
     {
-        Texture2D tex = new Texture2D(size, size);
+        var tex = new Texture2D(size, size);
         tex.wrapMode = TextureWrapMode.Clamp;
 
-        float radius = size / 2f;
-        Vector2 center = new Vector2(radius, radius);
+        var radius = size / 2f;
+        var center = new Vector2(radius, radius);
 
-        for (int y = 0; y < size; y++)
+        for (var y = 0; y < size; y++)
+        for (var x = 0; x < size; x++)
         {
-            for (int x = 0; x < size; x++)
+            var pos = new Vector2(x, y) - center;
+            var r = pos.magnitude / radius;
+            if (r > 1)
             {
-                Vector2 pos = new Vector2(x, y) - center;
-                float r = pos.magnitude / radius;
-                if (r > 1)
-                {
-                    tex.SetPixel(x, y, Color.clear);
-                    continue;
-                }
-
-                float hue = Mathf.Atan2(pos.y, pos.x) / (2f * Mathf.PI);
-                if (hue < 0) hue += 1f;
-                float sat = r;
-                Color color = Color.HSVToRGB(hue, sat, 1f);
-                tex.SetPixel(x, y, color);
+                tex.SetPixel(x, y, Color.clear);
+                continue;
             }
+
+            var hue = Mathf.Atan2(pos.y, pos.x) / (2f * Mathf.PI);
+            if (hue < 0) hue += 1f;
+            var sat = r;
+            var color = Color.HSVToRGB(hue, sat, 1f);
+            tex.SetPixel(x, y, color);
         }
 
         tex.Apply();
         return tex;
+    }
+
+    private Sprite GenerateCircleSprite(int size, Color color)
+    {
+        var tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
+        tex.filterMode = FilterMode.Bilinear;
+        var radius = size / 2f;
+        var center = new Vector2(radius, radius);
+        for (var y = 0; y < size; y++)
+        for (var x = 0; x < size; x++)
+        {
+            var pos = new Vector2(x, y);
+            var dist = Vector2.Distance(pos, center);
+            tex.SetPixel(x, y, dist <= radius ? color : Color.clear);
+        }
+
+        tex.Apply();
+        return Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f));
     }
 
     private void CreateSlider(Transform parent, string label, float initialValue, Vector2 anchoredPosition,
@@ -217,14 +276,18 @@ public class ColorInputHandler : IPreferenceInputHandler
         text.fontSize = 14;
     }
 
-    private void SetupButton(GameObject buttonGO, string label, Color color, Action onClick)
+    private void CreateButton(Transform parent, string label, Color color, Vector2 anchoredPosition, Action onClick)
     {
-        var image = buttonGO.GetComponent<Image>();
-        if (!image) image = buttonGO.AddComponent<Image>();
+        var buttonGO = new GameObject($"{label}Button");
+        buttonGO.transform.SetParent(parent, false);
+        var rt = buttonGO.AddComponent<RectTransform>();
+        rt.sizeDelta = new Vector2(80, 30);
+        rt.anchoredPosition = anchoredPosition;
+
+        var image = buttonGO.AddComponent<Image>();
         image.color = color;
 
-        var btn = buttonGO.GetComponent<Button>();
-        if (!btn) btn = buttonGO.AddComponent<Button>();
+        var btn = buttonGO.AddComponent<Button>();
         btn.onClick.AddListener(() => onClick());
 
         var textGO = new GameObject("Text");
@@ -241,89 +304,5 @@ public class ColorInputHandler : IPreferenceInputHandler
         text.color = Color.black;
         text.alignment = TextAnchor.MiddleCenter;
         text.fontSize = 14;
-    }
-
-    [RegisterTypeInIl2CppWithInterfaces(typeof(IPointerClickHandler),
-        typeof(IDragHandler))] // we HOPE that melon will handle this without the constructor
-    private class WheelPicker : MonoBehaviour, IPointerDownHandler, IDragHandler
-    {
-        public Action<Color> OnColorChanged;
-        private RectTransform rect;
-
-        private GameObject knobOuter;
-        private Image knobInnerImage;
-
-        void Awake()
-        {
-            rect = GetComponent<RectTransform>();
-
-            // Outer knob
-            knobOuter = new GameObject("KnobOuter", typeof(RectTransform), typeof(Image));
-            knobOuter.transform.SetParent(transform, false);
-            var outerImg = knobOuter.GetComponent<Image>();
-            outerImg.sprite = GenerateCircleSprite(16, Color.white);
-            outerImg.type = Image.Type.Simple;
-            var outerRT = knobOuter.GetComponent<RectTransform>();
-            outerRT.sizeDelta = new Vector2(16, 16);
-            outerRT.anchorMin = outerRT.anchorMax = new Vector2(0.5f, 0.5f);
-
-            // Inner knob
-            var knobInner = new GameObject("KnobInner", typeof(RectTransform), typeof(Image));
-            knobInner.transform.SetParent(knobOuter.transform, false);
-            knobInnerImage = knobInner.GetComponent<Image>();
-            knobInnerImage.sprite = GenerateCircleSprite(10, Color.white); // will update color dynamically
-            knobInnerImage.type = Image.Type.Simple;
-            var innerRT = knobInner.GetComponent<RectTransform>();
-            innerRT.sizeDelta = new Vector2(10, 10);
-            innerRT.anchorMin = innerRT.anchorMax = new Vector2(0.5f, 0.5f);
-            innerRT.anchoredPosition = Vector2.zero;
-        }
-
-        private Sprite GenerateCircleSprite(int size, Color color)
-        {
-            Texture2D tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
-            tex.filterMode = FilterMode.Bilinear;
-            float radius = size / 2f;
-            Vector2 center = new Vector2(radius, radius);
-
-            for (int y = 0; y < size; y++)
-            {
-                for (int x = 0; x < size; x++)
-                {
-                    Vector2 pos = new Vector2(x, y);
-                    float dist = Vector2.Distance(pos, center);
-                    tex.SetPixel(x, y, dist <= radius ? color : Color.clear);
-                }
-            }
-
-            tex.Apply();
-            return Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f));
-        }
-
-        public void OnPointerDown(PointerEventData eventData) => PickColor(eventData);
-        public void OnDrag(PointerEventData eventData) => PickColor(eventData);
-
-        private void PickColor(PointerEventData eventData)
-        {
-            Vector2 local;
-            if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(rect, eventData.position, null, out local))
-                return;
-
-            float radius = rect.sizeDelta.x / 2f;
-            Vector2 norm = local / radius;
-            float dist = norm.magnitude;
-            if (dist > 1) norm = norm.normalized; // clamp to edge
-
-            float hue = Mathf.Atan2(norm.y, norm.x) / (2f * Mathf.PI);
-            if (hue < 0) hue += 1f;
-            float sat = Mathf.Min(dist, 1f);
-
-            Color color = Color.HSVToRGB(hue, sat, 1f);
-            OnColorChanged?.Invoke(color);
-
-            knobOuter.GetComponent<RectTransform>().anchoredPosition = norm * radius;
-
-            knobInnerImage.color = color;
-        }
     }
 }
