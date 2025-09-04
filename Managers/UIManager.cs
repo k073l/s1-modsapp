@@ -36,7 +36,7 @@ public class UIManager
     private void CreateMainLayout()
     {
         var mainBg = UIFactory.Panel("MainBG", _container.transform, _theme.BgPrimary, fullAnchor: true);
-        var topBar = UIFactory.TopBar("ModsTopBar", mainBg.transform, "Mods", 0.82f, 75, 75, 0, 35);
+        var topBar = UIFactory.TopBar("ModsTopBar", mainBg.transform, "Mods", 0.95f, 75, 75, 85, 35);
 
         // Apply theme to top bar
         var topBarImg = topBar.GetComponent<UnityEngine.UI.Image>();
