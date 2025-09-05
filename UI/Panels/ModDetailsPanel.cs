@@ -107,18 +107,18 @@ public class ModDetailsPanel
     private GameObject CreateInfoCard(string name)
     {
         var card = UIFactory.Panel(name, _detailsContent, _theme.BgSecondary);
-        
+
         var vlg = card.GetOrAddComponent<VerticalLayoutGroup>();
         vlg.spacing = 8;
         vlg.padding = new RectOffset(12, 12, 8, 8);
         vlg.childControlWidth = true;
         vlg.childForceExpandHeight = false;
         vlg.childAlignment = TextAnchor.UpperLeft;
-        
+
         var csf = card.GetOrAddComponent<ContentSizeFitter>();
         csf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
         csf.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
-        
+
         var layoutElement = card.GetOrAddComponent<LayoutElement>();
         layoutElement.preferredHeight = -1;
         layoutElement.minHeight = 0;
@@ -152,7 +152,7 @@ public class ModDetailsPanel
     private void CreateModHeader(MelonMod mod, GameObject card)
     {
         var headerContainer = UIFactory.Panel("HeaderContainer", card.transform, Color.clear);
-        
+
         var headerLayout = headerContainer.GetOrAddComponent<LayoutElement>();
         headerLayout.preferredHeight = 28;
         headerLayout.flexibleHeight = 0;
@@ -164,11 +164,11 @@ public class ModDetailsPanel
         hLayout.childForceExpandHeight = false;
         hLayout.childControlWidth = true;
         hLayout.childControlHeight = true;
-        
+
         var title = UIFactory.Text("ModTitle", mod.Info.Name, headerContainer.transform, 20, TextAnchor.MiddleLeft,
             FontStyle.Bold);
         title.color = _theme.TextPrimary;
-        
+
         string backendName = "";
         bool compatible = _modManager.isCompatible(mod, ref backendName);
 
@@ -182,7 +182,7 @@ public class ModDetailsPanel
             12, // font size
             Color.white
         );
-        
+
         badgeBtn.transition = Selectable.Transition.None;
         badgeBtn.interactable = true;
         badgeBtn.enabled = false;
@@ -208,7 +208,8 @@ public class ModDetailsPanel
 
         if (categories.Count == 0)
         {
-            var noPrefs = UIFactory.Text("NoPrefs", "No preferences available for this mod :( (that we know of)", card.transform, 12,
+            var noPrefs = UIFactory.Text("NoPrefs", "No preferences available for this mod :( (that we know of)",
+                card.transform, 12,
                 TextAnchor.UpperLeft, FontStyle.Italic);
             noPrefs.color = _theme.TextSecondary;
             return;
@@ -225,18 +226,18 @@ public class ModDetailsPanel
         var categoryPanel = UIFactory.Panel($"{UIHelper.SanitizeName(category.Identifier)}_Category",
             parent.transform,
             new Color(_theme.BgCard.r - 0.02f, _theme.BgCard.g - 0.02f, _theme.BgCard.b - 0.02f, 1f));
-        
+
         var vlg = categoryPanel.GetOrAddComponent<VerticalLayoutGroup>();
         vlg.spacing = 4;
         vlg.padding = new RectOffset(8, 8, 6, 6);
         vlg.childControlWidth = true;
         vlg.childForceExpandHeight = false;
         vlg.childAlignment = TextAnchor.UpperLeft;
-        
+
         var csf = categoryPanel.GetOrAddComponent<ContentSizeFitter>();
         csf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
         csf.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
-        
+
         var layoutElement = categoryPanel.GetOrAddComponent<LayoutElement>();
         layoutElement.preferredHeight = -1;
         layoutElement.flexibleHeight = 0;
@@ -265,42 +266,83 @@ public class ModDetailsPanel
             $"{UIHelper.SanitizeName(categoryId)}_{UIHelper.SanitizeName(entryName)}_Container",
             parent.transform, Color.clear);
 
-        var entryLayout = entryContainer.GetOrAddComponent<LayoutElement>();
-        entryLayout.preferredHeight = 30;
-        entryLayout.flexibleHeight = 0;
-        entryLayout.flexibleWidth = 1;
+        // Layout for main row + description + comment
+        var vLayout = entryContainer.AddComponent<VerticalLayoutGroup>();
+        vLayout.spacing = 4;
+        vLayout.childAlignment = TextAnchor.UpperLeft;
+        vLayout.childForceExpandHeight = false;
+        vLayout.childForceExpandWidth = true;
+        vLayout.childControlHeight = true;
 
-        var hLayout = entryContainer.AddComponent<HorizontalLayoutGroup>();
+        vLayout.padding = new RectOffset(0, 0, 4, 0); // some top padding for spacing between entries
+
+        var containerLayout = entryContainer.GetOrAddComponent<LayoutElement>();
+        containerLayout.flexibleWidth = 1;
+        containerLayout.flexibleHeight = 0;
+
+        var mainRow = UIFactory.Panel(
+            $"{UIHelper.SanitizeName(categoryId)}_{UIHelper.SanitizeName(entryName)}_MainRow",
+            entryContainer.transform, Color.clear);
+
+        var hLayout = mainRow.AddComponent<HorizontalLayoutGroup>();
         hLayout.spacing = 8;
         hLayout.childAlignment = TextAnchor.MiddleLeft;
         hLayout.childForceExpandWidth = false;
         hLayout.childForceExpandHeight = false;
         hLayout.childControlHeight = true;
 
-        // Label
         var label = UIFactory.Text(
             $"{UIHelper.SanitizeName(categoryId)}_{UIHelper.SanitizeName(entryName)}_Label",
-            entryName, entryContainer.transform, 14, TextAnchor.MiddleLeft);
+            entryName, mainRow.transform, 14, TextAnchor.MiddleLeft);
         label.color = _theme.TextPrimary;
-        var typeHint = UIFactory.Text(
-            $"{UIHelper.SanitizeName(categoryId)}_{UIHelper.SanitizeName(entryName)}_Label",
-            entry.BoxedValue.GetType().ToString(), entryContainer.transform, 12, TextAnchor.MiddleLeft);
-        typeHint.color = _theme.TextSecondary;
-
         var labelLayout = label.gameObject.GetOrAddComponent<LayoutElement>();
-        labelLayout.minWidth = 60;
+        labelLayout.minWidth = 80;
         labelLayout.flexibleWidth = 0;
+
+        var typeHint = UIFactory.Text(
+            $"{UIHelper.SanitizeName(categoryId)}_{UIHelper.SanitizeName(entryName)}_TypeHint",
+            entry.BoxedValue.GetType().Name, mainRow.transform, 12, TextAnchor.MiddleLeft);
+        typeHint.color = _theme.TextSecondary;
         var typeHintLayout = typeHint.gameObject.GetOrAddComponent<LayoutElement>();
-        typeHintLayout.minWidth = 30;
+        typeHintLayout.minWidth = 50;
         typeHintLayout.flexibleWidth = 0;
 
-        // Create input using factory
         var currentValue = _modifiedPreferences.ContainsKey(entryKey)
             ? _modifiedPreferences[entryKey]
             : entry.BoxedValue;
+        _inputFactory.CreatePreferenceInput(entry, mainRow, entryKey, currentValue, OnPreferenceValueChanged);
 
-        _inputFactory.CreatePreferenceInput(entry, entryContainer, entryKey, currentValue, OnPreferenceValueChanged);
+        if (!string.IsNullOrEmpty(entry.Description))
+        {
+            var descriptionText = UIFactory.Text(
+                $"{UIHelper.SanitizeName(categoryId)}_{UIHelper.SanitizeName(entryName)}_Description",
+                entry.Description, entryContainer.transform, 12, TextAnchor.UpperLeft);
+            descriptionText.color = _theme.TextSecondary * 0.9f; // slightly dimmed
+
+            var descLayout = descriptionText.gameObject.GetOrAddComponent<LayoutElement>();
+            descLayout.flexibleWidth = 1;
+
+            var descFitter = descriptionText.gameObject.AddComponent<ContentSizeFitter>();
+            descFitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+            descFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+        }
+
+        if (!string.IsNullOrEmpty(entry.Comment))
+        {
+            var commentText = UIFactory.Text(
+                $"{UIHelper.SanitizeName(categoryId)}_{UIHelper.SanitizeName(entryName)}_Comment",
+                entry.Comment, entryContainer.transform, 11, TextAnchor.UpperLeft);
+            commentText.color = _theme.TextSecondary * 0.8f;
+
+            var commentLayout = commentText.gameObject.GetOrAddComponent<LayoutElement>();
+            commentLayout.flexibleWidth = 1;
+
+            var commentFitter = commentText.gameObject.AddComponent<ContentSizeFitter>();
+            commentFitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+            commentFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+        }
     }
+
 
     private void OnPreferenceValueChanged(string entryKey, object newValue)
     {
