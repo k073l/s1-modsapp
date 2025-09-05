@@ -33,6 +33,11 @@ public class FallbackInputHandler : IPreferenceInputHandler
         var stringValue = currentValue?.ToString() ?? "";
         var input = InputFieldFactory.CreateInputField(parent, $"{entryKey}_Input", stringValue,
             InputField.ContentType.Standard, 100);
+
+        var label = UIFactory.Text($"{entryKey}_Label", "(Fallback, might not work properly)", parent.transform, 10);
+        label.color = _theme.TextSecondary;
+        label.fontStyle = FontStyle.Italic;
+        
         input.onValueChanged.AddListener(value =>
         {
             if (value == stringValue) return;
