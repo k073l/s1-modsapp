@@ -24,8 +24,9 @@ public class PreferenceInputFactory
         _handlers = new List<IPreferenceInputHandler>
         {
             new BooleanInputHandler(theme, logger),
-            new IntegerInputHandler(theme, logger),
-            new FloatInputHandler(theme, logger),
+            // new IntegerInputHandler(theme, logger),
+            // new FloatInputHandler(theme, logger),
+            new NumericInputHandler(theme, logger),
             new StringInputHandler(theme, logger),
             new KeyCodeInputHandler(theme, logger),
             new ColorInputHandler(theme, logger),
