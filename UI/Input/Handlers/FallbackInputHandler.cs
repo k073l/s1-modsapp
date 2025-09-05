@@ -1,4 +1,5 @@
 ﻿using MelonLoader;
+using ModsApp.UI.Input.FieldFactories;
 using S1API.UI;
 using UnityEngine;
 using UnityEngine.UI;
@@ -28,6 +29,7 @@ public class FallbackInputHandler : IPreferenceInputHandler
         // valueText.fontStyle = FontStyle.Italic;
         
         // We edit as a string instead and try to convert it back
+        // TODO: Try again with Tomlet
         var stringValue = currentValue?.ToString() ?? "";
         var input = InputFieldFactory.CreateInputField(parent, $"{entryKey}_Input", stringValue,
             InputField.ContentType.Standard, 100);
