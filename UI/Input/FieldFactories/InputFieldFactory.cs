@@ -1,6 +1,7 @@
 ﻿using MelonLoader;
 using ModsApp.Helpers;
 using S1API.Input;
+using S1API.Internal.Abstraction;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -83,38 +84,36 @@ public static class InputFieldFactory
         layout.minWidth = minWidth;
         layout.preferredWidth = Mathf.Max(minWidth, (initialValue?.Length ?? 1) * 12);
 
-        inputField.onValueChanged.AddListener(_ => Controls.IsTyping = true);
-        inputField.onEndEdit.AddListener(_ => Controls.IsTyping = false);
-        
+        EventHelper.AddListener<string>(_ => Controls.IsTyping = true, inputField.onValueChanged);
+        EventHelper.AddListener<string>(_ => Controls.IsTyping = false, inputField.onEndEdit);
+
         if (validator != null)
         {
             var normalColor = Color.black;
             var invalidColor = Color.red;
-
             string lastValid = initialValue ?? "";
 
-            inputField.onValueChanged.AddListener(value =>
+            EventHelper.AddListener<string>(value =>
             {
                 if (validator(value))
                 {
                     text.color = normalColor;
-                    lastValid = value; // update last valid
+                    lastValid = value;
                 }
                 else
                 {
                     text.color = invalidColor;
                 }
-            });
+            }, inputField.onValueChanged);
 
-            inputField.onEndEdit.AddListener(value =>
+            EventHelper.AddListener<string>(value =>
             {
                 if (!validator(value))
                 {
-                    // revert to last known good value
                     inputField.text = lastValid;
                     text.color = normalColor;
                 }
-            });
+            }, inputField.onEndEdit);
         }
 
         return inputField;

@@ -1,5 +1,6 @@
 ﻿using MelonLoader;
 using ModsApp.UI.Input.FieldFactories;
+using S1API.Internal.Abstraction;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -25,11 +26,11 @@ public class StringInputHandler : IPreferenceInputHandler
         var input = InputFieldFactory.CreateInputField(parent, $"{entryKey}_Input", stringValue,
             InputField.ContentType.Standard, 100);
 
-        input.onValueChanged.AddListener(value =>
+        EventHelper.AddListener((value) =>
         {
             if (value == stringValue) return;
             onValueChanged(entryKey, value);
             _logger.Msg($"Modified preference {entryKey}: {value}");
-        });
+        }, input.onValueChanged);
     }
 }

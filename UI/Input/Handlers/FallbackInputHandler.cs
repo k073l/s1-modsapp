@@ -1,5 +1,6 @@
 ﻿using MelonLoader;
 using ModsApp.UI.Input.FieldFactories;
+using S1API.Internal.Abstraction;
 using S1API.UI;
 using UnityEngine;
 using UnityEngine.UI;
@@ -38,11 +39,11 @@ public class FallbackInputHandler : IPreferenceInputHandler
         label.color = _theme.TextSecondary;
         label.fontStyle = FontStyle.Italic;
         
-        input.onValueChanged.AddListener(value =>
+        EventHelper.AddListener((value) =>
         {
             if (value == stringValue) return;
             onValueChanged(entryKey, value);
             _logger.Msg($"Modified preference {entryKey}: {value}");
-        });
+        }, input.onValueChanged);
     }
 }

@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using MelonLoader;
 using S1API.Input;
+using S1API.Internal.Abstraction;
 
 namespace ModsApp.UI.Input.FieldFactories;
 
@@ -137,7 +138,7 @@ public class DropdownInputComponent<T>
 
     private void WireUpEvents()
     {
-        DropdownButton.onClick.AddListener(() =>
+        EventHelper.AddListener(() =>
         {
             _logger?.Msg($"Dropdown button clicked. IsOpen={Dropdown.IsOpen}");
 
@@ -152,8 +153,8 @@ public class DropdownInputComponent<T>
                 Dropdown.PopulateItems(items, _displaySelector);
                 Dropdown.Show(Container.GetComponent<RectTransform>());
             }
-        });
-
+        }, DropdownButton.onClick);
+        
         Dropdown.OnItemSelected += (selectedValue) =>
         {
             var displayText = _displaySelector(selectedValue);
@@ -163,7 +164,7 @@ public class DropdownInputComponent<T>
             _logger?.Msg($"Selected: {selectedValue}");
         };
 
-        InputField.onEndEdit.AddListener((value) =>
+        EventHelper.AddListener((value) =>
         {
             if (Dropdown.IsOpen)
                 Dropdown.Close();
@@ -185,7 +186,7 @@ public class DropdownInputComponent<T>
             {
                 InputField.text = _lastValidValue;
             }
-        });
+        }, InputField.onEndEdit);
     }
 
     public void SetValue(T value)
@@ -332,11 +333,12 @@ public class DropdownComponent<T>
 
         // Capture value for closure
         var capturedValue = value;
-        itemButton.onClick.AddListener(() =>
+        EventHelper.AddListener(() =>
         {
             OnItemSelected?.Invoke(capturedValue);
             Close();
-        });
+        }, itemButton.onClick);
+
     }
 
     private void UpdatePanelSize(int itemCount)
@@ -379,9 +381,8 @@ public class DropdownComponent<T>
         Panel.transform.SetAsLastSibling();
 
         // Position dropdown below the anchor
-        Vector3[] corners = new Vector3[4];
-        anchorTransform.GetWorldCorners(corners);
-        Vector3 bottomLeft = corners[0];
+        var rect = anchorTransform.rect;
+        Vector3 bottomLeft = anchorTransform.TransformPoint(new Vector3(rect.xMin, rect.yMin, 0f));
 
         RectTransform canvasRT = canvas.GetComponent<RectTransform>();
         Vector2 localPos;

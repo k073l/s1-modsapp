@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using System;
 using System.Globalization;
+using S1API.Internal.Abstraction;
 
 namespace ModsApp.UI.Input.Handlers;
 
@@ -60,7 +61,7 @@ public class NumericInputHandler : IPreferenceInputHandler
             validator
         );
 
-        input.onEndEdit.AddListener(value =>
+        EventHelper.AddListener<string>(value =>
         {
             try
             {
@@ -76,6 +77,6 @@ public class NumericInputHandler : IPreferenceInputHandler
                 // Reset to previous valid value
                 input.text = stringValue;
             }
-        });
+        }, input.onEndEdit);
     }
 }

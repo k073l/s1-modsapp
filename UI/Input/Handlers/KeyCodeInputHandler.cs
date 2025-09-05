@@ -3,6 +3,7 @@ using System;
 using System.Collections;
 using System.Linq;
 using S1API.Input;
+using S1API.Internal.Abstraction;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -96,16 +97,16 @@ public class KeyCodeRebindInput
 
         // Create rebind button
         _rebindButton = CreateButton("RebindButton", "Rebind", Color.gray, 80f);
-        _rebindButton.onClick.AddListener(BeginRebind);
+        EventHelper.AddListener(() => BeginRebind(), _rebindButton.onClick);
 
         // Create confirm button
         _confirmButton = CreateButton("ConfirmButton", "Confirm", new Color(0.1f, 0.4f, 0.1f), 80f);
-        _confirmButton.onClick.AddListener(ConfirmRebind);
+        EventHelper.AddListener(() => EndRebind(), _confirmButton.onClick);
         _confirmButton.gameObject.SetActive(false);
 
         // Create cancel button  
         _cancelButton = CreateButton("CancelButton", "Cancel", new Color(0.4f, 0.1f, 0.1f), 80f);
-        _cancelButton.onClick.AddListener(CancelRebind);
+        EventHelper.AddListener(CancelRebind, _cancelButton.onClick);
         _cancelButton.gameObject.SetActive(false);
     }
 

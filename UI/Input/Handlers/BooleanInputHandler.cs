@@ -1,7 +1,11 @@
-﻿using MelonLoader;
+﻿using HarmonyLib;
+using MelonLoader;
 using ModsApp;
 using ModsApp.Helpers;
+using S1API.Internal.Abstraction;
+using S1API.Internal.Utils;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.UI;
 
 namespace ModsApp.UI.Input.Handlers;
@@ -48,10 +52,10 @@ public class BooleanInputHandler : IPreferenceInputHandler
         crt.anchorMax = new Vector2(0.8f, 0.8f);
         crt.offsetMin = crt.offsetMax = Vector2.zero;
 
-        toggle.graphic = checkmarkImg;
+        ToggleUtils.SetGraphic(toggle, checkmarkImg);
         toggle.isOn = boolValue;
-
-        toggle.onValueChanged.AddListener(value =>
+        
+        ToggleUtils.AddListener(toggle, value =>
         {
             if (value == boolValue) return;
             onValueChanged(entryKey, value);
