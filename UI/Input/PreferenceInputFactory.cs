@@ -29,6 +29,7 @@ public class PreferenceInputFactory
             new StringInputHandler(theme, logger),
             new KeyCodeInputHandler(theme, logger),
             new ColorInputHandler(theme, logger),
+            new EnumInputHandler(theme, logger),
             new FallbackInputHandler(theme, logger) // Always last as it handles any type
         };
     }
