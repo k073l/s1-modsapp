@@ -22,20 +22,34 @@ public class FloatInputHandler : IPreferenceInputHandler
         object currentValue, Action<string, object> onValueChanged)
     {
         var floatValue = (float)currentValue;
-        var input = InputFieldFactory.CreateInputField(parent, $"{entryKey}_Input", floatValue.ToString("0.##"),
-            InputField.ContentType.DecimalNumber, 60);
+        
+        Func<string, bool> validator = value =>
+        {
+            if (!float.TryParse(value, out var parsed))
+                return false;
 
-        input.onValueChanged.AddListener(value =>
+            return entry.Validator?.IsValid(parsed) ?? true;
+        };
+
+        var input = InputFieldFactory.CreateInputField(
+            parent,
+            $"{entryKey}_Input",
+            floatValue.ToString("0.##"),
+            InputField.ContentType.DecimalNumber,
+            60,
+            validator // pass validator down
+        );
+
+        // Fire onValueChanged only when value is valid and different
+        input.onEndEdit.AddListener(value =>
         {
             if (float.TryParse(value, out var parsedValue))
             {
-                if (Mathf.Approximately(parsedValue, floatValue)) return;
-                onValueChanged(entryKey, parsedValue);
-                _logger.Msg($"Modified preference {entryKey}: {parsedValue}");
-            }
-            else
-            {
-                input.text = floatValue.ToString("0.##");
+                if (!Mathf.Approximately(parsedValue, floatValue))
+                {
+                    onValueChanged(entryKey, parsedValue);
+                    _logger.Msg($"Modified preference {entryKey}: {parsedValue}");
+                }
             }
         });
     }

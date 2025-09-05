@@ -83,11 +83,27 @@ public class DropdownInputComponent<T>
     private void CreateInputField(string name, string initialValue, int width)
     {
         InputField = InputFieldFactory.CreateInputField(
-            Container, $"{name}_Input",
+            Container,
+            $"{name}_Input",
             initialValue,
             InputField.ContentType.Standard,
-            width);
+            width,
+            validator: ValidateInput
+        );
     }
+
+    private bool ValidateInput(string value)
+    {
+        if (OnValidateInput != null)
+        {
+            var validated = OnValidateInput(value);
+            return validated != null;
+        }
+
+        // fallback: any non-empty input is allowed
+        return !string.IsNullOrWhiteSpace(value);
+    }
+
 
     private void CreateDropdownButton(string name)
     {

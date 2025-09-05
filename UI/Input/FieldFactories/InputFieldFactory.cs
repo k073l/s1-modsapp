@@ -8,8 +8,14 @@ namespace ModsApp.UI.Input.FieldFactories;
 
 public static class InputFieldFactory
 {
-    public static InputField CreateInputField(GameObject parent, string name, string initialValue,
-        InputField.ContentType contentType, int minWidth = 80)
+    public static InputField CreateInputField(
+        GameObject parent,
+        string name,
+        string initialValue,
+        InputField.ContentType contentType,
+        int minWidth = 80,
+        Func<string, bool> validator = null // optional validator
+    )
     {
         MelonLogger.Msg($"[UI] Creating InputField: {name}, initial='{initialValue}', type={contentType}");
 
@@ -79,6 +85,37 @@ public static class InputFieldFactory
 
         inputField.onValueChanged.AddListener(_ => Controls.IsTyping = true);
         inputField.onEndEdit.AddListener(_ => Controls.IsTyping = false);
+        
+        if (validator != null)
+        {
+            var normalColor = Color.black;
+            var invalidColor = Color.red;
+
+            string lastValid = initialValue ?? "";
+
+            inputField.onValueChanged.AddListener(value =>
+            {
+                if (validator(value))
+                {
+                    text.color = normalColor;
+                    lastValid = value; // update last valid
+                }
+                else
+                {
+                    text.color = invalidColor;
+                }
+            });
+
+            inputField.onEndEdit.AddListener(value =>
+            {
+                if (!validator(value))
+                {
+                    // revert to last known good value
+                    inputField.text = lastValid;
+                    text.color = normalColor;
+                }
+            });
+        }
 
         return inputField;
     }

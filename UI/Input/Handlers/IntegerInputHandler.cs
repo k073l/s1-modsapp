@@ -18,24 +18,43 @@ public class IntegerInputHandler : IPreferenceInputHandler
 
     public bool CanHandle(Type valueType) => valueType == typeof(int);
 
-    public void CreateInput(MelonPreferences_Entry entry, GameObject parent, string entryKey,
-        object currentValue, Action<string, object> onValueChanged)
+    public void CreateInput(
+        MelonPreferences_Entry entry,
+        GameObject parent,
+        string entryKey,
+        object currentValue,
+        Action<string, object> onValueChanged)
     {
         var intValue = (int)currentValue;
-        var input = InputFieldFactory.CreateInputField(parent, $"{entryKey}_Input", intValue.ToString(),
-            InputField.ContentType.IntegerNumber, 50);
 
-        input.onValueChanged.AddListener(value =>
+        // Wrap validator
+        Func<string, bool> validator = value =>
+        {
+            if (!int.TryParse(value, out var parsed))
+                return false;
+
+            return entry.Validator?.IsValid(parsed) ?? true;
+        };
+
+        var input = InputFieldFactory.CreateInputField(
+            parent,
+            $"{entryKey}_Input",
+            intValue.ToString(),
+            InputField.ContentType.IntegerNumber,
+            50,
+            validator // pass validator
+        );
+
+        // Fire only when value is valid and different
+        input.onEndEdit.AddListener(value =>
         {
             if (int.TryParse(value, out var parsedValue))
             {
-                if (parsedValue == intValue) return;
-                onValueChanged(entryKey, parsedValue);
-                _logger.Msg($"Modified preference {entryKey}: {parsedValue}");
-            }
-            else
-            {
-                input.text = intValue.ToString();
+                if (parsedValue != intValue)
+                {
+                    onValueChanged(entryKey, parsedValue);
+                    _logger.Msg($"Modified preference {entryKey}: {parsedValue}");
+                }
             }
         });
     }
