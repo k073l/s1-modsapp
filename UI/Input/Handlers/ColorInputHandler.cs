@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Reflection;
 using MelonLoader;
+using S1API.Internal.Abstraction;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
@@ -24,14 +26,14 @@ public class ColorInputHandler : IPreferenceInputHandler
     {
         var colorValue = currentValue is Color c ? c : Color.white;
 
-        var colorButtonGO =
-            new GameObject($"{entryKey}_ColorButton", typeof(RectTransform), typeof(Button), typeof(Image));
+        var colorButtonGO = new GameObject($"{entryKey}_ColorButton");
         colorButtonGO.transform.SetParent(parent.transform, false);
-        var buttonImage = colorButtonGO.GetComponent<Image>();
+
+        var buttonImage = colorButtonGO.AddComponent<Image>();
         buttonImage.color = colorValue;
 
-        var button = colorButtonGO.GetComponent<Button>();
-        button.onClick.AddListener(() =>
+        var button = colorButtonGO.AddComponent<Button>();
+        EventHelper.AddListener(() =>
         {
             ShowColorPickerWheel(colorValue, newColor =>
             {
@@ -42,11 +44,13 @@ public class ColorInputHandler : IPreferenceInputHandler
                 onValueChanged(entryKey, colorValue);
                 _logger.Msg($"Modified preference {entryKey}: {ColorUtility.ToHtmlStringRGBA(colorValue)}");
             });
-        });
+        }, button.onClick);
 
         var layout = colorButtonGO.AddComponent<LayoutElement>();
         layout.minWidth = 50;
         layout.minHeight = 20;
+
+        colorButtonGO.AddComponent<RectTransform>();
     }
 
     private void ShowColorPickerWheel(Color initialColor, Action<Color> onColorSelected)
@@ -101,48 +105,55 @@ public class ColorInputHandler : IPreferenceInputHandler
 
     private void CreateColorWheel(Transform parent, float size, Action<Color> onColorChanged)
     {
-        var wheelGO = new GameObject("ColorWheel", typeof(RectTransform));
+        var wheelGO = new GameObject("ColorWheel");
         wheelGO.transform.SetParent(parent, false);
-        var wheelRT = wheelGO.GetComponent<RectTransform>();
+        var wheelRT = wheelGO.AddComponent<RectTransform>();
         wheelRT.sizeDelta = new Vector2(size, size);
 
         var wheelImage = wheelGO.AddComponent<RawImage>();
         wheelImage.texture = GenerateColorWheelTexture((int)size);
 
-        // Knob
-        var knobGO = new GameObject("Knob", typeof(RectTransform), typeof(Image));
+        var knobGO = new GameObject("Knob");
         knobGO.transform.SetParent(wheelGO.transform, false);
-        var knobImage = knobGO.GetComponent<Image>();
+        var knobImage = knobGO.AddComponent<Image>();
         knobImage.sprite = GenerateCircleSprite(16, Color.white);
         knobImage.type = Image.Type.Simple;
         knobGO.GetComponent<RectTransform>().sizeDelta = new Vector2(16, 16);
-        knobGO.GetComponent<RectTransform>().anchoredPosition = Vector2.zero;
 
-        var knobFillGO = new GameObject("Fill", typeof(RectTransform), typeof(Image));
+        var knobFillGO = new GameObject("Fill");
         knobFillGO.transform.SetParent(knobGO.transform, false);
-        var knobFill = knobFillGO.GetComponent<Image>();
+        var knobFill = knobFillGO.AddComponent<Image>();
         knobFill.sprite = GenerateCircleSprite(10, Color.white);
         knobFill.type = Image.Type.Simple;
         knobFillGO.GetComponent<RectTransform>().anchoredPosition = Vector2.zero;
         knobFillGO.GetComponent<RectTransform>().sizeDelta = new Vector2(10, 10);
 
-        // EventTrigger for click/drag
         var trigger = wheelGO.AddComponent<EventTrigger>();
 
-        void HandleEvent(PointerEventData eventData)
+        void HandleEvent(BaseEventData baseData)
         {
-            Vector2 local;
-            if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(wheelRT, eventData.position, null,
-                    out local)) return;
+            Vector2 screenPos;
+
+            if (baseData is PointerEventData eventData)
+            {
+                screenPos = eventData.position;
+            }
+            else
+            {
+                _logger.Msg("[ColorPicker] Received non-pointer event, using Input.mousePosition fallback");
+                screenPos = UnityEngine.Input.mousePosition;
+            }
+
+            if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(wheelRT, screenPos, null, out var local))
+                return;
 
             var radius = size / 2f;
             var norm = local / radius;
-            var dist = norm.magnitude;
-            if (dist > 1f) norm = norm.normalized;
+            if (norm.magnitude > 1f) norm = norm.normalized;
 
             var hue = Mathf.Atan2(norm.y, norm.x) / (2f * Mathf.PI);
             if (hue < 0) hue += 1f;
-            var sat = Mathf.Min(dist, 1f);
+            var sat = Mathf.Min(norm.magnitude, 1f);
 
             Color color = Color.HSVToRGB(hue, sat, 1f);
             onColorChanged?.Invoke(color);
@@ -151,13 +162,9 @@ public class ColorInputHandler : IPreferenceInputHandler
             knobFill.color = color;
         }
 
-        var entryDown = new EventTrigger.Entry { eventID = EventTriggerType.PointerDown };
-        entryDown.callback.AddListener((data) => HandleEvent((PointerEventData)data));
-        trigger.triggers.Add(entryDown);
 
-        var entryDrag = new EventTrigger.Entry { eventID = EventTriggerType.Drag };
-        entryDrag.callback.AddListener((data) => HandleEvent((PointerEventData)data));
-        trigger.triggers.Add(entryDrag);
+        EventHelper.AddEventTrigger(trigger, EventTriggerType.PointerDown, HandleEvent);
+        EventHelper.AddEventTrigger(trigger, EventTriggerType.Drag, HandleEvent);
     }
 
     private Texture2D GenerateColorWheelTexture(int size)
@@ -182,8 +189,7 @@ public class ColorInputHandler : IPreferenceInputHandler
             var hue = Mathf.Atan2(pos.y, pos.x) / (2f * Mathf.PI);
             if (hue < 0) hue += 1f;
             var sat = r;
-            var color = Color.HSVToRGB(hue, sat, 1f);
-            tex.SetPixel(x, y, color);
+            tex.SetPixel(x, y, Color.HSVToRGB(hue, sat, 1f));
         }
 
         tex.Apply();
@@ -196,11 +202,11 @@ public class ColorInputHandler : IPreferenceInputHandler
         tex.filterMode = FilterMode.Bilinear;
         var radius = size / 2f;
         var center = new Vector2(radius, radius);
+
         for (var y = 0; y < size; y++)
         for (var x = 0; x < size; x++)
         {
-            var pos = new Vector2(x, y);
-            var dist = Vector2.Distance(pos, center);
+            var dist = Vector2.Distance(new Vector2(x, y), center);
             tex.SetPixel(x, y, dist <= radius ? color : Color.clear);
         }
 
@@ -211,9 +217,9 @@ public class ColorInputHandler : IPreferenceInputHandler
     private void CreateSlider(Transform parent, string label, float initialValue, Vector2 anchoredPosition,
         Action<float> onChanged)
     {
-        var sliderGO = new GameObject($"{label}Slider", typeof(RectTransform));
+        var sliderGO = new GameObject($"{label}Slider");
         sliderGO.transform.SetParent(parent, false);
-        var sliderRT = sliderGO.GetComponent<RectTransform>();
+        var sliderRT = sliderGO.AddComponent<RectTransform>();
         sliderRT.sizeDelta = new Vector2(200, 20);
         sliderRT.anchoredPosition = anchoredPosition;
 
@@ -221,11 +227,11 @@ public class ColorInputHandler : IPreferenceInputHandler
         slider.minValue = 0f;
         slider.maxValue = 1f;
         slider.value = initialValue;
-        slider.onValueChanged.AddListener(v => onChanged(v));
+        EventHelper.AddListener<float>((v) => onChanged(v), slider.onValueChanged);
 
-        var bgGO = new GameObject("Background", typeof(Image));
+        var bgGO = new GameObject("Background");
         bgGO.transform.SetParent(sliderGO.transform, false);
-        var bg = bgGO.GetComponent<Image>();
+        var bg = bgGO.AddComponent<Image>();
         bg.color = new Color(0.3f, 0.3f, 0.3f, 1f);
         var bgRT = bgGO.GetComponent<RectTransform>();
         bgRT.anchorMin = Vector2.zero;
@@ -234,17 +240,17 @@ public class ColorInputHandler : IPreferenceInputHandler
         bgRT.offsetMax = Vector2.zero;
         slider.targetGraphic = bg;
 
-        var fillAreaGO = new GameObject("Fill Area", typeof(RectTransform));
+        var fillAreaGO = new GameObject("Fill Area");
         fillAreaGO.transform.SetParent(sliderGO.transform, false);
-        var fillAreaRT = fillAreaGO.GetComponent<RectTransform>();
-        fillAreaRT.anchorMin = new Vector2(0, 0);
-        fillAreaRT.anchorMax = new Vector2(1, 1);
+        var fillAreaRT = fillAreaGO.AddComponent<RectTransform>();
+        fillAreaRT.anchorMin = Vector2.zero;
+        fillAreaRT.anchorMax = Vector2.one;
         fillAreaRT.offsetMin = new Vector2(5, 0);
         fillAreaRT.offsetMax = new Vector2(-5, 0);
 
-        var fillGO = new GameObject("Fill", typeof(Image));
+        var fillGO = new GameObject("Fill");
         fillGO.transform.SetParent(fillAreaGO.transform, false);
-        var fill = fillGO.GetComponent<Image>();
+        var fill = fillGO.AddComponent<Image>();
         fill.color = Color.green;
         slider.fillRect = fill.GetComponent<RectTransform>();
         var fillRT = fillGO.GetComponent<RectTransform>();
@@ -253,14 +259,13 @@ public class ColorInputHandler : IPreferenceInputHandler
         fillRT.offsetMin = Vector2.zero;
         fillRT.offsetMax = Vector2.zero;
 
-        var handleGO = new GameObject("Handle", typeof(Image));
+        var handleGO = new GameObject("Handle");
         handleGO.transform.SetParent(sliderGO.transform, false);
-        var handle = handleGO.GetComponent<Image>();
+        var handle = handleGO.AddComponent<Image>();
         handle.color = Color.white;
         slider.handleRect = handle.GetComponent<RectTransform>();
         slider.direction = Slider.Direction.LeftToRight;
-        var handleRT = handleGO.GetComponent<RectTransform>();
-        handleRT.sizeDelta = new Vector2(20, 20);
+        handleGO.GetComponent<RectTransform>().sizeDelta = new Vector2(20, 20);
 
         var textGO = new GameObject($"{label}Label");
         textGO.transform.SetParent(sliderGO.transform, false);
@@ -288,7 +293,7 @@ public class ColorInputHandler : IPreferenceInputHandler
         image.color = color;
 
         var btn = buttonGO.AddComponent<Button>();
-        btn.onClick.AddListener(() => onClick());
+        EventHelper.AddListener(() => onClick(), btn.onClick);
 
         var textGO = new GameObject("Text");
         textGO.transform.SetParent(buttonGO.transform, false);
