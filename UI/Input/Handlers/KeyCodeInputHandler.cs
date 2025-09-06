@@ -101,7 +101,7 @@ public class KeyCodeRebindInput
 
         // Create confirm button
         _confirmButton = CreateButton("ConfirmButton", "Confirm", new Color(0.1f, 0.4f, 0.1f), 80f);
-        EventHelper.AddListener(() => EndRebind(), _confirmButton.onClick);
+        EventHelper.AddListener(() => ConfirmRebind(), _confirmButton.onClick);
         _confirmButton.gameObject.SetActive(false);
 
         // Create cancel button  

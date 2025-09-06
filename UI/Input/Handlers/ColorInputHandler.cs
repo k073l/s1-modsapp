@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Reflection;
 using MelonLoader;
+using S1API.Input;
 using S1API.Internal.Abstraction;
 using UnityEngine;
 using UnityEngine.UI;
@@ -79,6 +80,7 @@ public class ColorInputHandler : IPreferenceInputHandler
         var previewImage = previewGO.AddComponent<Image>();
         previewImage.color = initialColor;
 
+        Controls.IsTyping = true;
         CreateColorWheel(panelGO.transform, 200, color =>
         {
             initialColor.r = color.r;
@@ -94,12 +96,17 @@ public class ColorInputHandler : IPreferenceInputHandler
         });
 
         CreateButton(panelGO.transform, "Cancel", Color.red, new Vector2(-100, -180),
-            () => GameObject.Destroy(canvasGO));
+            () =>
+            {
+                GameObject.Destroy(canvasGO);
+                Controls.IsTyping = false;
+            });
         CreateButton(panelGO.transform, "Apply", Color.green, new Vector2(100, -180),
             () =>
             {
                 onColorSelected(initialColor);
                 GameObject.Destroy(canvasGO);
+                Controls.IsTyping = false;
             });
     }
 
@@ -130,19 +137,9 @@ public class ColorInputHandler : IPreferenceInputHandler
 
         var trigger = wheelGO.AddComponent<EventTrigger>();
 
-        void HandleEvent(BaseEventData baseData)
+        void HandleEvent(PointerEventData eventData)
         {
-            Vector2 screenPos;
-
-            if (baseData is PointerEventData eventData)
-            {
-                screenPos = eventData.position;
-            }
-            else
-            {
-                _logger.Msg("[ColorPicker] Received non-pointer event, using Input.mousePosition fallback");
-                screenPos = UnityEngine.Input.mousePosition;
-            }
+            Vector2 screenPos = eventData.position;
 
             if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(wheelRT, screenPos, null, out var local))
                 return;
@@ -161,10 +158,22 @@ public class ColorInputHandler : IPreferenceInputHandler
             knobGO.GetComponent<RectTransform>().anchoredPosition = norm * radius;
             knobFill.color = color;
         }
+        
+        // Inline lambda that enforces PointerEventData before calling HandleEvent
+        EventHelper.AddEventTrigger(trigger, EventTriggerType.PointerDown, (BaseEventData e) => {
+            if (e is PointerEventData pe)
+                HandleEvent(pe);
+            else
+                HandleEvent(new PointerEventData(EventSystem.current) { position = UnityEngine.Input.mousePosition });
+        });
 
+        EventHelper.AddEventTrigger(trigger, EventTriggerType.Drag, (BaseEventData e) => {
+            if (e is PointerEventData pe)
+                HandleEvent(pe);
+            else
+                HandleEvent(new PointerEventData(EventSystem.current) { position = UnityEngine.Input.mousePosition });
+        });
 
-        EventHelper.AddEventTrigger(trigger, EventTriggerType.PointerDown, HandleEvent);
-        EventHelper.AddEventTrigger(trigger, EventTriggerType.Drag, HandleEvent);
     }
 
     private Texture2D GenerateColorWheelTexture(int size)
