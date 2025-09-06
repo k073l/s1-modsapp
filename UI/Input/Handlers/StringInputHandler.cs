@@ -26,7 +26,7 @@ public class StringInputHandler : IPreferenceInputHandler
         var input = InputFieldFactory.CreateInputField(parent, $"{entryKey}_Input", stringValue,
             InputField.ContentType.Standard, 100);
 
-        EventHelper.AddListener((value) =>
+        EventHelper.AddListener<string>((value) =>
         {
             if (value == stringValue) return;
             onValueChanged(entryKey, value);

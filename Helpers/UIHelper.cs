@@ -70,7 +70,6 @@ public static class UIHelper
         button.colors = colors;
 
         EventHelper.AddListener(onClick, button.onClick);
-        // button.onClick.AddListener(() => onClick?.Invoke());
     }
 
     public static void ConfigureButtonLayout(RectTransform rt, float height)

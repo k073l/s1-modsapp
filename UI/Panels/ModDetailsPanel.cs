@@ -9,6 +9,7 @@ using ModsApp.Helpers;
 using ModsApp.Managers;
 using ModsApp.UI.Input;
 using S1API.Input;
+using S1API.Internal.Abstraction;
 
 namespace ModsApp.UI.Panels;
 
@@ -371,14 +372,14 @@ public class ModDetailsPanel
             _theme.AccentPrimary, 120, 30, 14, Color.white);
 
         _applyButton = applyButton;
-        applyButton.onClick.AddListener(() => ApplyPreferenceChanges(mod));
+        EventHelper.AddListener(() => ApplyPreferenceChanges(mod), applyButton.onClick);
 
         var (resetObj, resetButton, _) = UIFactory.RoundedButtonWithLabel(
             "ResetButton", "Reset", buttonContainer.transform,
             _theme.WarningColor, 80, 30, 14, Color.white);
 
         _resetButton = resetButton;
-        resetButton.onClick.AddListener(() => ResetPreferenceChanges(mod));
+        EventHelper.AddListener(() => ResetPreferenceChanges(mod), resetButton.onClick);
 
         UpdateButtonStates();
     }

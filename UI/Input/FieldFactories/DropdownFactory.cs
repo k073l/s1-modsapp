@@ -164,7 +164,7 @@ public class DropdownInputComponent<T>
             _logger?.Msg($"Selected: {selectedValue}");
         };
 
-        EventHelper.AddListener((value) =>
+        EventHelper.AddListener<string>((value) =>
         {
             if (Dropdown.IsOpen)
                 Dropdown.Close();
