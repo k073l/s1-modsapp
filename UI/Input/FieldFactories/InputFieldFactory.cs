@@ -3,12 +3,27 @@ using ModsApp.Helpers;
 using S1API.Input;
 using S1API.Internal.Abstraction;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.UI;
 
 namespace ModsApp.UI.Input.FieldFactories;
 
 public static class InputFieldFactory
 {
+    // private static readonly Action<string> TypingStart = _ =>
+    // {
+    //     MelonLogger.Msg("[UI] InputField value changed");
+    //     Controls.IsTyping = true;
+    //     MelonLogger.Msg("IsTyping = true");
+    // };
+    //
+    // private static readonly Action<string> TypingEnd = _ =>
+    // {
+    //     MelonLogger.Msg("[UI] InputField editing ended");
+    //     Controls.IsTyping = false;
+    //     MelonLogger.Msg("IsTyping = false");
+    // };
+    
     public static InputField CreateInputField(
         GameObject parent,
         string name,
@@ -84,9 +99,22 @@ public static class InputFieldFactory
         layout.minWidth = minWidth;
         layout.preferredWidth = Mathf.Max(minWidth, (initialValue?.Length ?? 1) * 12);
 
-        EventHelper.AddListener<string>(_ => Controls.IsTyping = true, inputField.onValueChanged);
-        EventHelper.AddListener<string>(_ => Controls.IsTyping = false, inputField.onEndEdit);
-
+        // This is the Gnome holding up the fabric of reality
+        // Really. This forces a closure in the listeners below, making them work correctly.
+        var empty = "";
+        
+        EventHelper.AddListener<string>( _ =>
+        {
+            empty = empty;
+            Controls.IsTyping = true;
+        }, inputField.onValueChanged);
+        
+        EventHelper.AddListener<string>( _ =>
+        {
+            empty = empty;
+            Controls.IsTyping = false;
+        }, inputField.onEndEdit);
+        
         if (validator != null)
         {
             var normalColor = Color.black;
