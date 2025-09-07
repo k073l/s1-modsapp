@@ -23,9 +23,14 @@ public class ModDetailsPanel
 
     private RectTransform _detailsContent;
     private Dictionary<string, object> _modifiedPreferences = new Dictionary<string, object>();
+    private HashSet<string> _modifiedMods = new HashSet<string>();
+    private Text _modifiedLabel;
 
     private Button _applyButton;
     private Button _resetButton;
+
+    private JsonConfigManager _jsonConfigManager;
+    private JsonConfigUI _jsonConfigUI;
 
     public ModDetailsPanel(Transform parent, ModManager modManager, UITheme theme, MelonLogger.Instance logger)
     {
@@ -34,6 +39,9 @@ public class ModDetailsPanel
         _theme = theme;
         _logger = logger;
         _inputFactory = new PreferenceInputFactory(theme, logger);
+
+        _jsonConfigManager = new JsonConfigManager(logger);
+        _jsonConfigUI = new JsonConfigUI(theme, logger, _jsonConfigManager);
     }
 
     public void Initialize()
@@ -88,18 +96,32 @@ public class ModDetailsPanel
         UIFactory.ClearChildren(_detailsContent);
         _modifiedPreferences.Clear();
 
+        _jsonConfigUI.ResetState();
+
         var headerCard = CreateInfoCard($"{UIHelper.SanitizeName(mod.Info.Name)}_HeaderCard");
         CreateModHeader(mod, headerCard);
 
-        var prefsCard = CreateInfoCard($"{UIHelper.SanitizeName(mod.Info.Name)}_PrefsCard");
-        CreatePreferencesSection(mod, prefsCard);
-
-        // Add apply/reset buttons if there are preferences
         var categories = _modManager.GetPreferencesForMod(mod).ToList();
+
         if (categories.Count > 0)
         {
+            // Has MelonPreferences - use existing system
+            var prefsCard = CreateInfoCard($"{UIHelper.SanitizeName(mod.Info.Name)}_PrefsCard");
+            CreatePreferencesSection(mod, prefsCard);
+
             var actionsCard = CreateInfoCard($"{UIHelper.SanitizeName(mod.Info.Name)}_ActionsCard");
             CreateActionButtons(mod, actionsCard);
+        }
+        else
+        {
+            // No MelonPreferences - show JSON fallback
+            var jsonCard = CreateInfoCard($"{UIHelper.SanitizeName(mod.Info.Name)}_JsonCard");
+            _jsonConfigUI.CreateJsonConfigSection(mod, jsonCard, () => UIHelper.RefreshLayout(_detailsContent), () =>
+            {
+                _modifiedMods.Add(mod.Info.Name);
+                _modifiedLabel.text = "Changes applied, restart may be required";
+                _modifiedLabel.gameObject.SetActive(true);
+            });
         }
 
         UIHelper.RefreshLayout(_detailsContent);
@@ -190,7 +212,24 @@ public class ModDetailsPanel
 
         badgeText.fontStyle = FontStyle.Bold;
         badgeText.alignment = TextAnchor.MiddleCenter;
-
+        
+        var spacer = new GameObject("Spacer");
+        spacer.transform.SetParent(headerContainer.transform, false);
+        var spacerLayout = spacer.AddComponent<LayoutElement>();
+        spacerLayout.flexibleWidth = 1;
+        spacerLayout.flexibleHeight = 0;
+        spacerLayout.minWidth = 10;
+        
+        _modifiedLabel = UIFactory.Text("ModifiedLabel", "", headerContainer.transform, 12, TextAnchor.MiddleRight,
+            FontStyle.Italic);
+        _modifiedLabel.color = _theme.WarningColor;
+        if (_modifiedMods.Contains(mod.Info.Name))
+        {
+            _modifiedLabel.text = "Changes applied, restart may be required";
+            _modifiedLabel.gameObject.SetActive(true);
+        }
+        else
+            _modifiedLabel.gameObject.SetActive(false);
 
         var author = UIFactory.Text("ModAuthor", $"by: {mod.Info.Author}", card.transform, 14);
         author.color = _theme.TextSecondary;
@@ -302,7 +341,8 @@ public class ModDetailsPanel
 
         var typeHint = UIFactory.Text(
             $"{UIHelper.SanitizeName(categoryId)}_{UIHelper.SanitizeName(entryName)}_TypeHint",
-            entry.BoxedValue.GetType().Name, mainRow.transform, 12, TextAnchor.MiddleLeft);
+            TypeNameHelper.GetFriendlyTypeName(entry.BoxedValue.GetType()), mainRow.transform, 12,
+            TextAnchor.MiddleLeft);
         typeHint.color = _theme.TextSecondary;
         var typeHintLayout = typeHint.gameObject.GetOrAddComponent<LayoutElement>();
         typeHintLayout.minWidth = 50;
@@ -343,7 +383,6 @@ public class ModDetailsPanel
             commentFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
         }
     }
-
 
     private void OnPreferenceValueChanged(string entryKey, object newValue)
     {
@@ -408,9 +447,9 @@ public class ModDetailsPanel
                         if (kvp.Value.GetType() == type)
                             entry.BoxedValue = kvp.Value;
                         else if (type.IsEnum)
-                            entry.BoxedValue = Enum.Parse(type, kvp.Value.ToString());
+                            entry.BoxedValue = System.Enum.Parse(type, kvp.Value.ToString());
                         else
-                            entry.BoxedValue = Convert.ChangeType(kvp.Value, type);
+                            entry.BoxedValue = System.Convert.ChangeType(kvp.Value, type);
                         _logger.Msg($"Applied preference change: {kvp.Key} = {kvp.Value}");
                     }
                     catch (System.Exception ex)
@@ -429,6 +468,10 @@ public class ModDetailsPanel
         ShowModDetails(mod);
 
         _logger.Msg("Preferences applied and saved successfully");
+        
+        _modifiedMods.Add(mod.Info.Name);
+        _modifiedLabel.text = "Changes applied, restart may be required";
+        _modifiedLabel.gameObject.SetActive(true);
     }
 
     private void ResetPreferenceChanges(MelonMod mod)

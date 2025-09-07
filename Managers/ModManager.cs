@@ -12,6 +12,14 @@ public class ModManager
     private readonly Dictionary<string, MelonMod> _mods = new();
     private readonly MelonLogger.Instance _logger;
 
+    private static FieldInfo _cachedFileField;
+    private static PropertyInfo _cachedFileProperty;
+    private static FieldInfo _cachedFilePathField;
+    private static PropertyInfo _cachedFilePathProperty;
+    private static FieldInfo _cachedDirectFilePathField;
+    private static PropertyInfo _cachedDirectFilePathProperty;
+    private static bool _reflectionCacheInitialized;
+
     public ModManager(MelonLogger.Instance logger)
     {
         _logger = logger;
@@ -66,15 +74,112 @@ public class ModManager
         if (type?.IsGenericType != true || type.GetGenericTypeDefinition() != typeof(KeyValuePair<,>)) return null;
         var valueProp = type.GetProperty("Value");
         return valueProp?.GetValue(catObj) as MelonPreferences_Category;
-
     }
 
     private bool IsCategoryForMod(MelonPreferences_Category category, string modName)
     {
-        return (!string.IsNullOrEmpty(category.Identifier) &&
-                category.Identifier.IndexOf(modName, StringComparison.OrdinalIgnoreCase) >= 0) ||
-               (!string.IsNullOrEmpty(category.DisplayName) &&
-                category.DisplayName.IndexOf(modName, StringComparison.OrdinalIgnoreCase) >= 0);
+        // first check: Category Identifier
+        if (!string.IsNullOrEmpty(category.Identifier) &&
+            category.Identifier.IndexOf(modName, StringComparison.OrdinalIgnoreCase) >= 0)
+        {
+            return true;
+        }
+
+        // second check: Category Display Name
+        if (!string.IsNullOrEmpty(category.DisplayName) &&
+            category.DisplayName.IndexOf(modName, StringComparison.OrdinalIgnoreCase) >= 0)
+        {
+            return true;
+        }
+
+        if (!_reflectionCacheInitialized)
+        {
+            try
+            {
+                // try both field and property on MelonPreferences_Category
+                _cachedFileField = typeof(MelonPreferences_Category).GetField("File",
+                    BindingFlags.NonPublic | BindingFlags.Instance);
+                _cachedFileProperty = typeof(MelonPreferences_Category).GetProperty("File",
+                    BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
+                _cachedDirectFilePathField = typeof(MelonPreferences_Category).GetField("FilePath",
+                    BindingFlags.NonPublic | BindingFlags.Instance);
+                _cachedDirectFilePathProperty = typeof(MelonPreferences_Category).GetProperty("FilePath",
+                    BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
+            }
+            catch
+            {
+                /* Ignore reflection failures during initialization */
+            }
+
+            _reflectionCacheInitialized = true;
+        }
+
+        // third check: File path as last resort
+        try
+        {
+            string filePath = null;
+
+            object fileObj = _cachedFileField?.GetValue(category);
+            if (fileObj == null)
+            {
+                fileObj = _cachedFileProperty?.GetValue(category);
+            }
+
+            if (fileObj != null)
+            {
+                if (_cachedFilePathField == null && _cachedFilePathProperty == null)
+                {
+                    _cachedFilePathField = fileObj.GetType().GetField("FilePath",
+                        BindingFlags.NonPublic | BindingFlags.Instance);
+                    _cachedFilePathProperty = fileObj.GetType().GetProperty("FilePath",
+                        BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
+                }
+
+                filePath = _cachedFilePathField?.GetValue(fileObj) as string;
+                if (string.IsNullOrEmpty(filePath))
+                {
+                    filePath = _cachedFilePathProperty?.GetValue(fileObj) as string;
+                }
+            }
+
+            if (string.IsNullOrEmpty(filePath))
+            {
+                filePath = _cachedDirectFilePathField?.GetValue(category) as string;
+                if (string.IsNullOrEmpty(filePath))
+                {
+                    filePath = _cachedDirectFilePathProperty?.GetValue(category) as string;
+                }
+            }
+
+            if (!string.IsNullOrEmpty(filePath))
+            {
+                var fileName = Path.GetFileNameWithoutExtension(filePath);
+
+                if (fileName.IndexOf(modName, StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    return true;
+                }
+
+                var currentDir = Path.GetDirectoryName(filePath);
+                while (!string.IsNullOrEmpty(currentDir))
+                {
+                    var directoryName = Path.GetFileName(currentDir);
+                    if (!string.IsNullOrEmpty(directoryName) &&
+                        directoryName.IndexOf(modName, StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        return true;
+                    }
+
+                    currentDir = Path.GetDirectoryName(currentDir);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger?.Msg($"Could not check file path for category matching {modName}: {ex.Message}");
+        }
+
+        return false;
     }
 
     private Backend DetermineBackend(MelonMod mod)
