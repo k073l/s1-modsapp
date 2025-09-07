@@ -2,6 +2,7 @@ using System.Collections;
 using System.Reflection;
 using MelonLoader;
 using ModsApp.Helpers;
+using S1API.Input;
 using S1API.Internal.Utils;
 using UnityEngine;
 using S1API.PhoneApp;
@@ -47,5 +48,13 @@ public class ModsApp : MelonMod
         var data = new byte[stream.Length];
         stream.Read(data, 0, data.Length);
         return ImageUtils.LoadImageRaw(data);
+    }
+
+    public override void OnUpdate()
+    {
+        // Failsafe to exit typing mode when Escape is pressed
+        if (App.Instance.IsOpen())
+            if (UnityEngine.Input.GetKeyDown(KeyCode.Escape))
+                Controls.IsTyping = false;
     }
 }
