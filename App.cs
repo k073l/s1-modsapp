@@ -14,8 +14,8 @@ public class App : PhoneApp
 
     protected override string AppName => "Mods";
     protected override string AppTitle => "Mods";
-    protected override string IconLabel => "ModsApp";
-    protected override string IconFileName => Path.Combine(MelonEnvironment.UserDataDirectory, "ModsApp", "heart.png");
+    protected override string IconLabel => "Mods";
+    protected override string IconFileName => Path.Combine(MelonEnvironment.UserDataDirectory, "ModsApp", "appicon.png");
 
     private static MelonLogger.Instance _logger = Melon<ModsApp>.Logger;
     private UIManager _uiManager;
@@ -26,7 +26,7 @@ public class App : PhoneApp
         if (ModsApp.AppIconSprite == null)
         {
             // il2cpp :)
-            ModsApp.AppIconSprite = ModsApp.LoadEmbeddedPNG("ModsApp.assets.heart.png");
+            ModsApp.AppIconSprite = ModsApp.LoadEmbeddedPNG("ModsApp.assets.appicon.png");
         }
         
         if (!SetIconSprite(ModsApp.AppIconSprite))

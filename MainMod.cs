@@ -35,7 +35,7 @@ public class ModsApp : MelonMod
     {
         Logger = LoggerInstance;
         Logger.Msg("ModsApp initialized");
-        AppIconSprite = LoadEmbeddedPNG("ModsApp.assets.heart.png");
+        AppIconSprite = LoadEmbeddedPNG("ModsApp.assets.appicon.png");
     }
     
     public static Sprite LoadEmbeddedPNG(string resourceName)
@@ -53,7 +53,7 @@ public class ModsApp : MelonMod
     public override void OnUpdate()
     {
         // Failsafe to exit typing mode when Escape is pressed
-        if (App.Instance.IsOpen())
+        if (App.Instance != null && App.Instance.IsOpen())
             if (UnityEngine.Input.GetKeyDown(KeyCode.Escape))
                 Controls.IsTyping = false;
     }
