@@ -2,6 +2,7 @@ using System.Collections;
 using System.Reflection;
 using MelonLoader;
 using ModsApp.Helpers;
+using S1API.Internal.Utils;
 using UnityEngine;
 using S1API.PhoneApp;
 
@@ -27,21 +28,24 @@ public static class BuildInfo
 public class ModsApp : MelonMod
 {
     private static MelonLogger.Instance Logger;
+    public static Sprite AppIconSprite;
 
     public override void OnInitializeMelon()
     {
         Logger = LoggerInstance;
         Logger.Msg("ModsApp initialized");
-        Logger.Debug("This will only show in debug mode");
-    }
-
-    public override void OnSceneWasLoaded(int buildIndex, string sceneName)
-    {
-        Logger.Debug($"Scene loaded: {sceneName}");
-        if (sceneName == "Main")
-        {
-
-        }
+        AppIconSprite = LoadEmbeddedPNG("ModsApp.assets.heart.png");
     }
     
+    public static Sprite LoadEmbeddedPNG(string resourceName)
+    {
+        Assembly asm = Assembly.GetExecutingAssembly();
+
+        using Stream stream = asm.GetManifestResourceStream(resourceName);
+        if (stream == null) return null;
+
+        var data = new byte[stream.Length];
+        stream.Read(data, 0, data.Length);
+        return ImageUtils.LoadImageRaw(data);
+    }
 }
