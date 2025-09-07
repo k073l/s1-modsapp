@@ -15,10 +15,17 @@ public class NumericInputHandler : IPreferenceInputHandler
 
     private static readonly HashSet<Type> SupportedTypes = new()
     {
+        typeof(byte),
+        typeof(sbyte),
+        typeof(short),
+        typeof(ushort),
         typeof(int),
+        typeof(uint),
+        typeof(long),
+        typeof(ulong),
         typeof(float),
         typeof(double),
-        typeof(decimal)
+        typeof(decimal),
     };
 
     public NumericInputHandler(UITheme theme, MelonLogger.Instance logger)
@@ -48,8 +55,8 @@ public class NumericInputHandler : IPreferenceInputHandler
             }
         };
 
-        var contentType = (type == typeof(int)) 
-            ? InputField.ContentType.IntegerNumber 
+        var contentType = (type == typeof(int))
+            ? InputField.ContentType.IntegerNumber
             : InputField.ContentType.DecimalNumber;
 
         var input = InputFieldFactory.CreateInputField(
