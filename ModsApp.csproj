@@ -14,18 +14,17 @@
 
         <RootNamespace>ModsApp</RootNamespace>
 
-        <Configurations>Debug Mono;Release Mono;Debug IL2CPP;Release IL2CPP</Configurations>
+        <Configurations>Debug Mono;Release Mono;Debug IL2CPP</Configurations>
     </PropertyGroup>
 
-    <!-- Paths to other mods that script should add (no guard for mono/il2cpp incompat) -->
-    <ItemGroup><!--<ModList Include="$(CommonDir)\Mods\DisclaimerSkipMono.dll" />-->
-        <!--<ModList Include="$(CommonDir)\Mods\DisclaimerSkipIL2CPP.dll" />-->
-    
-<!--      <PackageReference Include="S1API.Forked" Version="1.7.0" />-->
-    
-      <PackageReference Include="Mono.Cecil" Version="0.11.6" />
+    <ItemGroup>
+        <PackageReference Include="LavaGang.MelonLoader" Version="0.7.0" />
+        <PackageReference Include="Lib.Harmony" Version="2.4.1" />
+        <PackageReference Include="Mono.Cecil" Version="0.11.6" />
+        <PackageReference Include="Samboy063.Tomlet" Version="6.1.0" />
+        <EmbeddedResource Include="assets\appicon.png" />
     </ItemGroup>
-
+    
     <PropertyGroup Condition="'$(Configuration)' == 'Debug Mono'">
         <DefineConstants>$(DefineConstants);MONO</DefineConstants>
     </PropertyGroup>
@@ -34,15 +33,8 @@
         <DefineConstants>$(DefineConstants);MONO;RELEASE</DefineConstants>
     </PropertyGroup>
 
-    <PropertyGroup Condition="'$(Configuration)' == 'Debug IL2CPP'">
-        <DefineConstants>$(DefineConstants)</DefineConstants>
-    </PropertyGroup>
-
-    <PropertyGroup Condition="'$(Configuration)' == 'Release IL2CPP'">
-        <DefineConstants>$(DefineConstants);RELEASE</DefineConstants>
-    </PropertyGroup>
-
-
+    <!-- Here we always use Mono, since it's S1API (IL2CPP config is for copying result only) -->
+    
     <Import Project="build/conditions.props"/>
 
     <ItemGroup Label="Publicizer" Condition="'$(IsMono)' == 'true'">
@@ -54,7 +46,6 @@
 
     <!-- MelonLoader References -->
     <Import Project="build\references\MelonMono.targets"/>
-    <Import Project="build\references\MelonIL2CPP.targets"/>
 
     <!-- Events -->
     <Import Project="build\events\preBuild.targets"/>

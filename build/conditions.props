@@ -6,18 +6,13 @@
     </PropertyGroup>
 
     <PropertyGroup>
-        <UnityExplorer Condition="'$(IsMono)' == 'true'">$(CommonDir)\UnityExplorer\UnityExplorer.ML.Mono.dll</UnityExplorer>
-        <UnityExplorer Condition="'$(IsMono)' != 'true'">$(CommonDir)\UnityExplorer\UnityExplorer.ML.IL2CPP.CoreCLR.dll</UnityExplorer>
-        <MultiplayerMod Condition="'$(IsMono)' == 'true'">$(CommonDir)\LocalMultiplayer\LocalMultiplayer-Mono.dll</MultiplayerMod>
-        <MultiplayerMod Condition="'$(IsMono)' != 'true'">$(CommonDir)\LocalMultiplayer\LocalMultiplayer-IL2CPP.dll</MultiplayerMod>
+        <UnityExplorer>$(CommonDir)\UnityExplorer\UnityExplorer.ML.Mono.dll</UnityExplorer>
+        <MultiplayerMod>$(CommonDir)\LocalMultiplayer\LocalMultiplayer-Mono.dll</MultiplayerMod>
         <MultiplayerModStarter>$(CommonDir)\LocalMultiplayer\start.bat</MultiplayerModStarter>
+        
+        <TargetFramework>netstandard2.1</TargetFramework>
 
-        <!-- Set framework and assembly name based on Mono or IL2CPP -->
-        <TargetFramework Condition="'$(IsMono)' == 'true'">netstandard2.1</TargetFramework>
-        <TargetFramework Condition="'$(IsMono)' != 'true'">net6</TargetFramework>
-
-        <AssemblyName Condition="'$(IsMono)' == 'true'">$(RootNamespace)-Mono</AssemblyName>
-        <AssemblyName Condition="'$(IsMono)' != 'true'">$(RootNamespace)-IL2CPP</AssemblyName>
+        <AssemblyName>$(RootNamespace)</AssemblyName>
 
         <S1Dir Condition="'$(IsMono)' == 'true'">$(S1MonoDir)</S1Dir>
         <S1Dir Condition="'$(IsMono)' != 'true'">$(S1CPPDir)</S1Dir>
