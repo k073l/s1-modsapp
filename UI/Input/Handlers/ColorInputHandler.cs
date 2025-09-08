@@ -13,6 +13,7 @@ public class ColorInputHandler : IPreferenceInputHandler
 {
     private readonly UITheme _theme;
     private readonly MelonLogger.Instance _logger;
+    public static GameObject ColorPickerCanvas;
 
     public ColorInputHandler(UITheme theme, MelonLogger.Instance logger)
     {
@@ -56,14 +57,14 @@ public class ColorInputHandler : IPreferenceInputHandler
 
     private void ShowColorPickerWheel(Color initialColor, Action<Color> onColorSelected)
     {
-        var canvasGO = new GameObject("ColorPickerCanvas");
-        var canvas = canvasGO.AddComponent<Canvas>();
+        ColorPickerCanvas = new GameObject("ColorPickerCanvas");
+        var canvas = ColorPickerCanvas.AddComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-        canvasGO.AddComponent<CanvasScaler>();
-        canvasGO.AddComponent<GraphicRaycaster>();
+        ColorPickerCanvas.AddComponent<CanvasScaler>();
+        ColorPickerCanvas.AddComponent<GraphicRaycaster>();
 
         var panelGO = new GameObject("ColorPickerPanel");
-        panelGO.transform.SetParent(canvasGO.transform, false);
+        panelGO.transform.SetParent(ColorPickerCanvas.transform, false);
         var panelRT = panelGO.AddComponent<RectTransform>();
         panelRT.sizeDelta = new Vector2(350, 450);
         panelRT.anchorMin = panelRT.anchorMax = new Vector2(0.5f, 0.5f);
@@ -98,14 +99,14 @@ public class ColorInputHandler : IPreferenceInputHandler
         CreateButton(panelGO.transform, "Cancel", Color.red, new Vector2(-100, -180),
             () =>
             {
-                GameObject.Destroy(canvasGO);
+                GameObject.Destroy(ColorPickerCanvas);
                 Controls.IsTyping = false;
             });
         CreateButton(panelGO.transform, "Apply", Color.green, new Vector2(100, -180),
             () =>
             {
                 onColorSelected(initialColor);
-                GameObject.Destroy(canvasGO);
+                GameObject.Destroy(ColorPickerCanvas);
                 Controls.IsTyping = false;
             });
     }

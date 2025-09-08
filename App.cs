@@ -3,6 +3,8 @@ using System.IO;
 using MelonLoader;
 using MelonLoader.Utils;
 using ModsApp.Managers;
+using ModsApp.UI.Input.Handlers;
+using S1API.Input;
 using S1API.PhoneApp;
 using UnityEngine;
 
@@ -51,5 +53,13 @@ public class App : PhoneApp
             _logger.Error($"UI initialization failed: {ex.Message}");
             _logger.Error(ex.StackTrace);
         }
+    }
+
+    protected override void OnPhoneClosed()
+    {
+        Controls.IsTyping = false;
+        if (ColorInputHandler.ColorPickerCanvas != null)
+            GameObject.Destroy(ColorInputHandler.ColorPickerCanvas);
+        base.OnPhoneClosed();
     }
 }

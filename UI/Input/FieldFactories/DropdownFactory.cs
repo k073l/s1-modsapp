@@ -140,7 +140,6 @@ public class DropdownInputComponent<T>
     {
         EventHelper.AddListener(() =>
         {
-            _logger?.Msg($"Dropdown button clicked. IsOpen={Dropdown.IsOpen}");
 
             if (Dropdown.IsOpen)
             {
@@ -161,7 +160,6 @@ public class DropdownInputComponent<T>
             InputField.text = displayText;
             _lastValidValue = displayText;
             OnValueChanged?.Invoke(selectedValue);
-            _logger?.Msg($"Selected: {selectedValue}");
         };
 
         EventHelper.AddListener<string>((value) =>
@@ -277,8 +275,6 @@ public class DropdownComponent<T>
         for (int i = _content.childCount - 1; i >= 0; i--)
             UnityEngine.Object.DestroyImmediate(_content.GetChild(i).gameObject);
 
-        _logger?.Msg($"[Dropdown] Populating items");
-
         var itemList = new List<TItem>(items);
 
         foreach (var item in itemList)
@@ -291,8 +287,6 @@ public class DropdownComponent<T>
 
         UpdatePanelSize(itemList.Count);
         LayoutRebuilder.ForceRebuildLayoutImmediate(_content.GetComponent<RectTransform>());
-
-        _logger?.Msg($"[Dropdown] Content has {_content.childCount} children after population");
     }
 
     public void PopulateItems(IEnumerable<T> items, Func<T, string> displaySelector)
@@ -358,7 +352,6 @@ public class DropdownComponent<T>
         }
 
         _panelRT.sizeDelta = new Vector2(_panelRT.sizeDelta.x, preferredHeight);
-        _logger?.Msg($"[Dropdown] Set height to {preferredHeight} for {itemCount} items");
     }
 
     public void Show(RectTransform anchorTransform, Vector2 offset = default)
@@ -373,7 +366,7 @@ public class DropdownComponent<T>
         Canvas canvas = anchorTransform.GetComponentInParent<Canvas>();
         if (!canvas)
         {
-            _logger?.Msg("[Dropdown] ERROR: no Canvas found");
+            _logger?.Error("[Dropdown] ERROR: no Canvas found");
             return;
         }
 
@@ -397,7 +390,6 @@ public class DropdownComponent<T>
         _panelRT.localPosition = localPos + offset + new Vector2(0, -5);
 
         OnDropdownOpened?.Invoke();
-        _logger?.Msg($"[Dropdown] Opened at position: {_panelRT.localPosition}");
     }
 
     public void Close()
@@ -408,7 +400,6 @@ public class DropdownComponent<T>
         IsOpen = false;
         OnDropdownClosed?.Invoke();
         Controls.IsTyping = false; // Ensure typing state is reset
-        _logger?.Msg("[Dropdown] Closed");
     }
 
     public void Toggle(RectTransform anchorTransform, Vector2 offset = default)

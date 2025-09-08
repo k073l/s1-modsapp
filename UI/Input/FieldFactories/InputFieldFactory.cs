@@ -10,20 +10,6 @@ namespace ModsApp.UI.Input.FieldFactories;
 
 public static class InputFieldFactory
 {
-    // private static readonly Action<string> TypingStart = _ =>
-    // {
-    //     MelonLogger.Msg("[UI] InputField value changed");
-    //     Controls.IsTyping = true;
-    //     MelonLogger.Msg("IsTyping = true");
-    // };
-    //
-    // private static readonly Action<string> TypingEnd = _ =>
-    // {
-    //     MelonLogger.Msg("[UI] InputField editing ended");
-    //     Controls.IsTyping = false;
-    //     MelonLogger.Msg("IsTyping = false");
-    // };
-    
     public static InputField CreateInputField(
         GameObject parent,
         string name,
@@ -33,8 +19,6 @@ public static class InputFieldFactory
         Func<string, bool> validator = null // optional validator
     )
     {
-        MelonLogger.Msg($"[UI] Creating InputField: {name}, initial='{initialValue}', type={contentType}");
-
         var inputObj = new GameObject(name);
         inputObj.transform.SetParent(parent.transform, false);
         
@@ -70,7 +54,6 @@ public static class InputFieldFactory
 
         inputField.textComponent = text;
         inputField.text = initialValue ?? "";
-        MelonLogger.Msg($"[UI] Assigned textComponent with font={font?.name}");
         
         var placeholderGO = new GameObject("Placeholder");
         placeholderGO.transform.SetParent(inputObj.transform, false);
@@ -89,7 +72,6 @@ public static class InputFieldFactory
         phRT.offsetMax = new Vector2(-6, -2);
 
         inputField.placeholder = placeholder;
-        MelonLogger.Msg($"[UI] Assigned placeholder with font={font?.name}");
         
         inputField.caretBlinkRate = 0.6f;
         inputField.customCaretColor = true;

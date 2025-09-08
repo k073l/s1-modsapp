@@ -18,11 +18,11 @@ public static class UIHelper
     {
         if (rt == null)
         {
-            MelonLogger.Msg($"{id}: NULL");
+            MelonDebug.Msg($"{id}: NULL");
             return;
         }
 
-        MelonLogger.Msg(
+        MelonDebug.Msg(
             $"{id}: anchorMin={rt.anchorMin}, anchorMax={rt.anchorMax}, offsetMin={rt.offsetMin}, offsetMax={rt.offsetMax}, pivot={rt.pivot}, sizeDelta={rt.sizeDelta}, localPos={rt.localPosition}, siblingIndex={rt.GetSiblingIndex()}");
     }
 

@@ -2,6 +2,7 @@ using System.Collections;
 using System.Reflection;
 using MelonLoader;
 using ModsApp.Helpers;
+using ModsApp.UI.Input.Handlers;
 using S1API.Input;
 using S1API.Internal.Utils;
 using UnityEngine;
@@ -56,5 +57,10 @@ public class ModsApp : MelonMod
         if (App.Instance != null && App.Instance.IsOpen())
             if (UnityEngine.Input.GetKeyDown(KeyCode.Escape))
                 Controls.IsTyping = false;
+        if (ColorInputHandler.ColorPickerCanvas != null && UnityEngine.Input.GetKeyDown(KeyCode.Escape))
+        {
+            Controls.IsTyping = false;
+            GameObject.Destroy(ColorInputHandler.ColorPickerCanvas);
+        }
     }
 }
