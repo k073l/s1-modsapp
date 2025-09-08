@@ -2,9 +2,10 @@
     "name": "ModsApp",
     "version_number": "1.0.0",
     "website_url": "",
-    "description": "does stuff i guess",
+    "description": "Manage your mods settings - from your phone!",
     "dependencies": [
         "LavaGang-MelonLoader-0.7.0",
-        "the_croods-SwapperPlugin-1.2.1"
+        "the_croods-SwapperPlugin-1.2.2",
+        "KaBooMa-S1API-1.6.2"
     ]
 }
