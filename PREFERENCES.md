@@ -144,13 +144,17 @@ MelonPreferences supports any type serializable by **Tomlet**, including:
 
 ### Supporting Hot-Reloading of Preferences
 
-MelonPreferences automatically reloads when preferences are saved using `MelonPreferences.Save()` — including saves from ModsApp.
+`MelonPreferences` is a static class, meaning it's globally accessible. You can modify preference values directly, and calling `MelonPreferences.Save()` will persist those changes to the configuration file.
+
+The **ModsApp** handles both of these: when the user changes a setting, it updates the value immediately and writes it to file when the user clicks **Apply**.
 
 However, **your mod is responsible for reacting to changes**.
 
-If you check those values constantly (e.g., in `OnUpdate()`, `OnGUI()`), you don't need to do anything special.
+If you check preference values continuously (e.g., in `OnUpdate()` or `OnGUI()`), you don’t need to do anything special — you’ll always get the latest value.
 
-If you only read values once (e.g., in `OnInitializeMelon()`), you may miss changes. You can handle updates using:
+But if you only read values once (e.g., in `OnInitializeMelon()`), you may miss updates. In that case, you can handle value changes using:
+
+---
 
 #### `OnEntryValueChanged`
 
@@ -160,11 +164,13 @@ colorEntry.OnEntryValueChanged.Subscribe((oldValue, newValue) =>
 );
 ```
 
+This event is triggered immediately when the value changes — even before `Save()` is called.
+
 ---
 
-#### Handling All Entry Changes
+#### Handling Multiple Entry Changes
 
-You can track multiple entries using a helper:
+You can track multiple entries using a helper class:
 
 ```csharp
 public class PrefTracker
@@ -178,7 +184,8 @@ public class PrefTracker
         foreach (var entry in entries)
         {
             _entries.Add(entry);
-            entry.OnEntryValueChangedUntyped.Subscribe((oldVal, newVal) => OnAnyChanged?.Invoke(entry, oldVal, newVal));
+            entry.OnEntryValueChangedUntyped.Subscribe((oldVal, newVal) =>
+                OnAnyChanged?.Invoke(entry, oldVal, newVal));
         }
     }
 }
@@ -192,7 +199,24 @@ tracker.OnAnyChanged += (entry, oldVal, newVal) =>
     Logger.Msg($"[{entry.Category.DisplayName}] {entry.DisplayName} changed from {oldVal} to {newVal}");
 ```
 
-> Not every mod needs hot-reload. If restarting the game is required (e.g., for patched `Awake` methods), that's acceptable. If you do support hot-reload, mention it in your mod's description — it's a nice quality-of-life feature, but not mandatory.
+---
+
+#### Detecting When Preferences Are Saved
+
+If you only care about changes that are actually saved (i.e., written to file), you can override `OnPreferencesSaved()` in your mod:
+
+```csharp
+public override void OnPreferencesSaved()
+{
+    Logger.Msg("Preferences saved!");
+}
+```
+
+---
+
+> Not every mod needs hot-reload support. If your mod requires a restart (e.g., for patched `Awake` methods), that’s perfectly fine.
+>
+> But if you do support hot-reload, consider mentioning it in your mod’s description — it’s a nice quality-of-life feature for users.
 
 ---
 
