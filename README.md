@@ -62,3 +62,4 @@ Changes are applied to the file on save (if valid JSON).
 ## Credits
 - Bars for forking S1API, continuing its development and providing support. Also for helping with making this mod compatible with IL2CPP.
 - All the open source projects that made this possible (MelonLoader, S1API and many more).
+- Original wrench icon from [FontAwesome](https://fontawesome.com/icons/wrench?s=solid)
