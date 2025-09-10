@@ -22,8 +22,8 @@ namespace ModsApp;
 public static class BuildInfo
 {
     public const string Name = "ModsApp";
-    public const string Description = "does stuff i guess";
-    public const string Author = "me";
+    public const string Description = "In-game app to manage mods' preferences";
+    public const string Author = "k073l";
     public const string Version = "1.0.0";
 }
 

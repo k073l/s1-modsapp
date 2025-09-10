@@ -56,7 +56,7 @@ namespace ModsApp.UI.Input.Handlers
                 onValueChanged(entryKey, selectedValue);
             };
 
-            _logger.Msg($"[{entryKey}] Enum input created with {enumValues.Length} options");
+            MelonDebug.Msg($"[{entryKey}] Enum input created with {enumValues.Length} options");
         }
 
         private bool TryParseEnum(Type enumType, string value, out object result)

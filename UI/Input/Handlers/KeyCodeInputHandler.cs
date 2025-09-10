@@ -36,7 +36,7 @@ public class KeyCodeInputHandler : IPreferenceInputHandler
         var rebindInput = new KeyCodeRebindInput(parent, entryKey, keyCodeValue, _theme, _logger, _rebindManager);
         rebindInput.OnValueChanged += (newKeyCode) => { onValueChanged(entryKey, newKeyCode); };
 
-        _logger.Msg($"[{entryKey}] KeyCode rebind input created");
+        MelonDebug.Msg($"[{entryKey}] KeyCode rebind input created");
     }
 }
 
@@ -175,7 +175,7 @@ public class KeyCodeRebindInput
         // Start listening for key input
         _rebindManager.StartRebind(OnKeyPressed);
         
-        _logger.Msg("Started key rebind");
+        MelonDebug.Msg("Started key rebind");
     }
 
     private void OnKeyPressed(KeyCode keyCode)
@@ -186,7 +186,7 @@ public class KeyCodeRebindInput
         _labelText.text = $"<i>{keyCode}</i>";
         _confirmButton.interactable = true;
         
-        _logger.Msg($"Key pressed: {keyCode}");
+        MelonDebug.Msg($"Key pressed: {keyCode}");
     }
 
     private void ConfirmRebind()
@@ -199,7 +199,7 @@ public class KeyCodeRebindInput
         EndRebind();
         RefreshDisplay();
         
-        _logger.Msg($"Key rebind confirmed: {_currentValue}");
+        MelonDebug.Msg($"Key rebind confirmed: {_currentValue}");
     }
 
     private void CancelRebind()
@@ -209,7 +209,7 @@ public class KeyCodeRebindInput
         EndRebind();
         RefreshDisplay();
         
-        _logger.Msg("Key rebind cancelled");
+        MelonDebug.Msg("Key rebind cancelled");
     }
 
     private void EndRebind()
