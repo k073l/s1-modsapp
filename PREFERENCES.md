@@ -53,7 +53,7 @@ public class MyMod : MelonMod
     private MelonPreferences_Entry<int> myIntEntry;
     private MelonPreferences_Entry<string> myStringEntry;
 
-    public override void OnApplicationStart()
+    public override void OnInitializeMelon()
     {
         // Create a category
         myCategory = MelonPreferences.CreateCategory("MyModCategory", "My Mod Preferences");
