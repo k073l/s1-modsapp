@@ -1,4 +1,4 @@
-﻿# Mods App
+# Mods App
 
 Convenient preferences management for Schedule I mods.
 
