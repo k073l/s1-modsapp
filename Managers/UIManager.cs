@@ -15,7 +15,7 @@ public class UIManager
 
     private ModListPanel _modListPanel;
     private ModDetailsPanel _modDetailsPanel;
-    private UITheme _theme;
+    public static UITheme _theme;
 
     public UIManager(GameObject container, ModManager modManager, MelonLogger.Instance logger)
     {
@@ -23,6 +23,7 @@ public class UIManager
         _modManager = modManager;
         _logger = logger;
         _theme = new UITheme();
+        WirePreferences();
     }
 
     public void Initialize()
@@ -59,5 +60,10 @@ public class UIManager
 
         // Connect panels
         _modListPanel.OnModSelected += _modDetailsPanel.ShowModDetails;
+    }
+
+    private void WirePreferences()
+    {
+        ModsApp.TextSizeProfileEntry.OnEntryValueChanged.Subscribe((_, newVal) => _theme.SetTextScale(newVal));
     }
 }

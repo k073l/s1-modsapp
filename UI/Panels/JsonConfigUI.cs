@@ -55,7 +55,7 @@ public class JsonConfigUI
     public void CreateJsonConfigSection(MelonMod mod, GameObject card, System.Action onLayoutRefresh,
         System.Action onConfigSaved)
     {
-        var header = UIFactory.Text("JsonConfigHeader", "No MelonPreferences", card.transform, 16,
+        var header = UIFactory.Text("JsonConfigHeader", "No MelonPreferences", card.transform, _theme.SizeMedium,
             TextAnchor.UpperLeft, FontStyle.Bold);
         header.color = _theme.TextPrimary;
 
@@ -63,7 +63,7 @@ public class JsonConfigUI
             "No MelonPreferences were found; though they might exist. " +
             "If the mod uses JSON files, you can specify the path manually. " +
             "Long files may not display correctly.",
-            card.transform, 12);
+            card.transform, _theme.SizeSmall);
         description.color = _theme.TextSecondary;
 
         CreateJsonFileInputSection(mod, card, onLayoutRefresh);
@@ -80,7 +80,7 @@ public class JsonConfigUI
         vlg.childForceExpandHeight = false;
 
         var pathLabel = UIFactory.Text("PathLabel", "JSON file path (relative to UserData/):",
-            fileInputContainer.transform, 12);
+            fileInputContainer.transform, _theme.SizeSmall);
         pathLabel.color = _theme.TextSecondary;
 
         var inputRow = UIFactory.Panel("InputRow", fileInputContainer.transform, Color.clear);
@@ -126,7 +126,7 @@ public class JsonConfigUI
             inputRow, "JsonFileInput", savedFilename, InputField.ContentType.Standard, 200);
 
         var (loadBtnObj, loadBtn, _) = UIFactory.RoundedButtonWithLabel(
-            "LoadJsonButton", "Load", inputRow.transform, _theme.AccentPrimary, 60, 25, 12, Color.white);
+            "LoadJsonButton", "Load", inputRow.transform, _theme.AccentPrimary, 60, 25, _theme.SizeSmall, Color.white);
 
         EventHelper.AddListener(() =>
         {
@@ -155,7 +155,7 @@ public class JsonConfigUI
 
         var userDataPath = MelonEnvironment.UserDataDirectory;
         var pathInfo = UIFactory.Text("UserDataPath", $"UserData path: {userDataPath}",
-            fileInputContainer.transform, 10);
+            fileInputContainer.transform, _theme.SizeTiny);
         pathInfo.color = _theme.TextSecondary * 0.7f;
     }
 
@@ -169,7 +169,7 @@ public class JsonConfigUI
         vlg.childForceExpandHeight = false;
 
         var editorLabel = UIFactory.Text("JsonEditorLabel", "JSON Content:",
-            editorContainer.transform, 12, TextAnchor.UpperLeft, FontStyle.Bold);
+            editorContainer.transform, _theme.SizeSmall, TextAnchor.UpperLeft, FontStyle.Bold);
         editorLabel.color = _theme.TextPrimary;
 
         _jsonEditor = InputFieldFactory.CreateInputField(
@@ -186,7 +186,7 @@ public class JsonConfigUI
         layoutElement.preferredHeight = 200;
 
         var textComponent = _jsonEditor.textComponent;
-        textComponent.fontSize = 12;
+        textComponent.fontSize = _theme.SizeSmall;
         // textComponent.font = GetBestMonospaceFont();
         // textComponent.color = Color.black;
         // textComponent.material = textComponent.font.material;
@@ -234,21 +234,21 @@ public class JsonConfigUI
 
         var (saveObj, saveButton, _) = UIFactory.RoundedButtonWithLabel(
             "SaveJsonButton", "Save JSON", buttonContainer.transform,
-            _theme.AccentPrimary, 100, 30, 14, Color.white);
+            _theme.AccentPrimary, 100, 30, _theme.SizeStandard, Color.white);
 
         _saveButton = saveButton;
         EventHelper.AddListener(() => SaveJsonFile(), saveButton.onClick);
 
         var (revertObj, revertButton, _) = UIFactory.RoundedButtonWithLabel(
             "RevertJsonButton", "Revert", buttonContainer.transform,
-            _theme.WarningColor, 80, 30, 14, Color.white);
+            _theme.WarningColor, 80, 30, _theme.SizeStandard, Color.white);
 
         _revertButton = revertButton;
         EventHelper.AddListener(() => RevertJsonChanges(), revertButton.onClick);
 
         var (formatObj, formatButton, _) = UIFactory.RoundedButtonWithLabel(
             "FormatJsonButton", "Format", buttonContainer.transform,
-            _theme.TextSecondary, 80, 30, 14, Color.white);
+            _theme.TextSecondary, 80, 30, _theme.SizeStandard, Color.white);
 
         _formatButton = formatButton;
         EventHelper.AddListener(() => FormatJsonContent(), formatButton.onClick);

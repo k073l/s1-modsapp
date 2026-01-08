@@ -288,7 +288,7 @@ public class ColorInputHandler : IPreferenceInputHandler
         text.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
         text.color = Color.white;
         text.alignment = TextAnchor.MiddleLeft;
-        text.fontSize = 14;
+        text.fontSize = _theme.SizeStandard;
     }
 
     private void CreateButton(Transform parent, string label, Color color, Vector2 anchoredPosition, Action onClick)
@@ -318,6 +318,6 @@ public class ColorInputHandler : IPreferenceInputHandler
         text.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
         text.color = Color.black;
         text.alignment = TextAnchor.MiddleCenter;
-        text.fontSize = 14;
+        text.fontSize = _theme.SizeStandard;
     }
 }

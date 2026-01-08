@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using ModsApp.UI;
+using UnityEngine;
 
 namespace ModsApp
 {
@@ -13,5 +14,37 @@ namespace ModsApp
         public readonly Color TextSecondary = new Color(0.70f, 0.70f, 0.70f, 1f);
         public readonly Color SuccessColor = new Color(0.20f, 0.80f, 0.20f, 1f);
         public readonly Color WarningColor = new Color(0.95f, 0.75f, 0.20f, 1f);
+        
+        private const int _sizeTiny = 10;
+        private const int _sizeSmall = 12;
+        private const int _sizeStandard = 14;
+        private const int _sizeMedium = 16;
+        private const int _sizeLarge = 20;
+
+        private float _textScale = 1.0f;
+
+        public int SizeTiny => Mathf.RoundToInt(_sizeTiny * _textScale);
+        public int SizeSmall => Mathf.RoundToInt(_sizeSmall * _textScale);
+        public int SizeStandard => Mathf.RoundToInt(_sizeStandard * _textScale);
+        public int SizeMedium => Mathf.RoundToInt(_sizeMedium * _textScale);
+        public int SizeLarge => Mathf.RoundToInt(_sizeLarge * _textScale);
+
+        public void SetTextScale(TextSizeProfile profile)
+        {
+            _textScale = profile switch
+            {
+                TextSizeProfile.ExtraSmall => 0.75f,
+                TextSizeProfile.Small => 0.85f,
+                TextSizeProfile.Normal => 1.0f,
+                TextSizeProfile.Large => 1.25f,
+                TextSizeProfile.ExtraLarge => 1.5f,
+                _ => 1.0f
+            };
+        }
+
+        public UITheme()
+        {
+            SetTextScale(ModsApp.TextSizeProfileEntry.Value);
+        }
     }
 }

@@ -76,14 +76,14 @@ public class ModListPanel
 
         // Main label
         var label = UIFactory.Text($"{UIHelper.SanitizeName(mod.Info.Name)}_Label", mod.Info.Name, buttonGo.transform,
-            14, TextAnchor.MiddleLeft);
+            _theme.SizeStandard, TextAnchor.MiddleLeft);
         label.color = _theme.TextPrimary;
         UIHelper.ConfigureButtonText(label.rectTransform, new Vector2(0f, 0f), new Vector2(0.7f, 1f), 16f, -8f, 4f,
             -4f);
 
         // Version label
         var versionText = UIFactory.Text($"{UIHelper.SanitizeName(mod.Info.Name)}_Version", $"v{mod.Info.Version}",
-            buttonGo.transform, 10, TextAnchor.MiddleRight);
+            buttonGo.transform, _theme.SizeTiny, TextAnchor.MiddleRight);
         versionText.color = _theme.TextSecondary;
         UIHelper.ConfigureButtonText(versionText.rectTransform, new Vector2(0.7f, 0f), new Vector2(1f, 1f), 4f, -12f,
             4f, -4f);

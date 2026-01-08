@@ -65,7 +65,7 @@ public class VectorHandler : IPreferenceInputHandler
             string fieldValue = field.GetValue(currentValue)?.ToString() ?? "0";
             originalValues.Add(fieldValue);
 
-            var label = UIFactory.Text($"Label_{fieldName}", fieldName, container.transform, fontSize: 14,
+            var label = UIFactory.Text($"Label_{fieldName}", fieldName, container.transform, fontSize: _theme.SizeStandard,
                 anchor: TextAnchor.MiddleRight);
 
             var input = InputFieldFactory.CreateInputField(container, $"Input_{fieldName}", fieldValue,

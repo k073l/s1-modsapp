@@ -3,6 +3,7 @@ using UnityEngine.UI;
 using System;
 using System.Collections.Generic;
 using MelonLoader;
+using ModsApp.Managers;
 using S1API.Input;
 using S1API.Internal.Abstraction;
 
@@ -126,7 +127,7 @@ public class DropdownInputComponent<T>
         var arrowText = arrowObj.AddComponent<Text>();
         arrowText.text = "▼";
         arrowText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-        arrowText.fontSize = 12;
+        arrowText.fontSize = UIManager._theme.SizeSmall;
         arrowText.color = Color.black;
         arrowText.alignment = TextAnchor.MiddleCenter;
     }
@@ -321,7 +322,7 @@ public class DropdownComponent<T>
         var textComp = textGO.AddComponent<Text>();
         textComp.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
         textComp.text = displayText;
-        textComp.fontSize = 14;
+        textComp.fontSize = UIManager._theme.SizeStandard;
         textComp.color = Color.black;
         textComp.alignment = TextAnchor.MiddleLeft;
 

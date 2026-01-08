@@ -153,22 +153,22 @@ public class ModDetailsPanel
 
     private void CreateWelcomeContent(GameObject card)
     {
-        var title = UIFactory.Text("WelcomeTitle", "Mods Manager", card.transform, 20, TextAnchor.UpperLeft,
+        var title = UIFactory.Text("WelcomeTitle", "Mods Manager", card.transform, _theme.SizeLarge, TextAnchor.UpperLeft,
             FontStyle.Bold);
         title.color = _theme.TextPrimary;
 
         var desc = UIFactory.Text("WelcomeDesc", "Select a mod from the list to view its details and preferences.",
-            card.transform, 14);
+            card.transform, _theme.SizeStandard);
         desc.color = _theme.TextSecondary;
     }
 
     private void CreateStatsContent(GameObject card)
     {
-        var title = UIFactory.Text("StatsTitle", "Statistics", card.transform, 16, TextAnchor.UpperLeft,
+        var title = UIFactory.Text("StatsTitle", "Statistics", card.transform, _theme.SizeMedium, TextAnchor.UpperLeft,
             FontStyle.Bold);
         title.color = _theme.TextPrimary;
 
-        var count = UIFactory.Text("ModCount", $"Total Mods: {_modManager.ModCount}", card.transform, 14);
+        var count = UIFactory.Text("ModCount", $"Total Mods: {_modManager.ModCount}", card.transform, _theme.SizeStandard);
         count.color = _theme.TextSecondary;
     }
 
@@ -188,7 +188,7 @@ public class ModDetailsPanel
         hLayout.childControlWidth = true;
         hLayout.childControlHeight = true;
 
-        var title = UIFactory.Text("ModTitle", mod.Info.Name, headerContainer.transform, 20, TextAnchor.MiddleLeft,
+        var title = UIFactory.Text("ModTitle", mod.Info.Name, headerContainer.transform, _theme.SizeLarge, TextAnchor.MiddleLeft,
             FontStyle.Bold);
         title.color = _theme.TextPrimary;
 
@@ -202,7 +202,7 @@ public class ModDetailsPanel
             compatible ? _theme.SuccessColor : _theme.WarningColor,
             70, // width
             22, // height
-            12, // font size
+            _theme.SizeSmall, // font size
             Color.white
         );
 
@@ -220,7 +220,7 @@ public class ModDetailsPanel
         spacerLayout.flexibleHeight = 0;
         spacerLayout.minWidth = 10;
         
-        _modifiedLabel = UIFactory.Text("ModifiedLabel", "", headerContainer.transform, 12, TextAnchor.MiddleRight,
+        _modifiedLabel = UIFactory.Text("ModifiedLabel", "", headerContainer.transform, _theme.SizeSmall, TextAnchor.MiddleRight,
             FontStyle.Italic);
         _modifiedLabel.color = _theme.WarningColor;
         if (_modifiedMods.Contains(mod.Info.Name))
@@ -231,16 +231,16 @@ public class ModDetailsPanel
         else
             _modifiedLabel.gameObject.SetActive(false);
 
-        var author = UIFactory.Text("ModAuthor", $"by: {mod.Info.Author}", card.transform, 14);
+        var author = UIFactory.Text("ModAuthor", $"by: {mod.Info.Author}", card.transform, _theme.SizeStandard);
         author.color = _theme.TextSecondary;
 
-        var version = UIFactory.Text("ModVersion", $"v. {mod.Info.Version}", card.transform, 14);
+        var version = UIFactory.Text("ModVersion", $"v. {mod.Info.Version}", card.transform, _theme.SizeStandard);
         version.color = _theme.TextSecondary;
     }
 
     private void CreatePreferencesSection(MelonMod mod, GameObject card)
     {
-        var header = UIFactory.Text("PrefsHeader", "Preferences", card.transform, 16, TextAnchor.UpperLeft,
+        var header = UIFactory.Text("PrefsHeader", "Preferences", card.transform, _theme.SizeMedium, TextAnchor.UpperLeft,
             FontStyle.Bold);
         header.color = _theme.TextPrimary;
 
@@ -249,7 +249,7 @@ public class ModDetailsPanel
         if (categories.Count == 0)
         {
             var noPrefs = UIFactory.Text("NoPrefs", "No preferences available for this mod :( (that we know of)",
-                card.transform, 12,
+                card.transform, _theme.SizeSmall,
                 TextAnchor.UpperLeft, FontStyle.Italic);
             noPrefs.color = _theme.TextSecondary;
             return;
@@ -287,7 +287,7 @@ public class ModDetailsPanel
             ? category.Identifier
             : category.DisplayName;
         var title = UIFactory.Text($"{UIHelper.SanitizeName(category.Identifier)}_Title", $"{categoryTitle}",
-            categoryPanel.transform, 14, TextAnchor.UpperLeft, FontStyle.Bold);
+            categoryPanel.transform, _theme.SizeStandard, TextAnchor.UpperLeft, FontStyle.Bold);
         title.color = new Color(_theme.AccentPrimary.r, _theme.AccentPrimary.g, _theme.AccentPrimary.b, 0.9f);
 
         if (!(category.Entries?.Count > 0)) return;
@@ -333,7 +333,7 @@ public class ModDetailsPanel
 
         var label = UIFactory.Text(
             $"{UIHelper.SanitizeName(categoryId)}_{UIHelper.SanitizeName(entryName)}_Label",
-            entryName, mainRow.transform, 14, TextAnchor.MiddleLeft);
+            entryName, mainRow.transform, _theme.SizeStandard, TextAnchor.MiddleLeft);
         label.color = _theme.TextPrimary;
         var labelLayout = label.gameObject.GetOrAddComponent<LayoutElement>();
         labelLayout.minWidth = 80;
@@ -341,7 +341,7 @@ public class ModDetailsPanel
 
         var typeHint = UIFactory.Text(
             $"{UIHelper.SanitizeName(categoryId)}_{UIHelper.SanitizeName(entryName)}_TypeHint",
-            TypeNameHelper.GetFriendlyTypeName(entry.BoxedValue.GetType()), mainRow.transform, 12,
+            TypeNameHelper.GetFriendlyTypeName(entry.BoxedValue.GetType()), mainRow.transform, _theme.SizeSmall,
             TextAnchor.MiddleLeft);
         typeHint.color = _theme.TextSecondary;
         var typeHintLayout = typeHint.gameObject.GetOrAddComponent<LayoutElement>();
@@ -357,7 +357,7 @@ public class ModDetailsPanel
         {
             var descriptionText = UIFactory.Text(
                 $"{UIHelper.SanitizeName(categoryId)}_{UIHelper.SanitizeName(entryName)}_Description",
-                entry.Description, entryContainer.transform, 12, TextAnchor.UpperLeft);
+                entry.Description, entryContainer.transform, _theme.SizeSmall, TextAnchor.UpperLeft);
             descriptionText.color = _theme.TextSecondary * 0.9f; // slightly dimmed
 
             var descLayout = descriptionText.gameObject.GetOrAddComponent<LayoutElement>();
@@ -372,7 +372,7 @@ public class ModDetailsPanel
         {
             var commentText = UIFactory.Text(
                 $"{UIHelper.SanitizeName(categoryId)}_{UIHelper.SanitizeName(entryName)}_Comment",
-                entry.Comment, entryContainer.transform, 11, TextAnchor.UpperLeft);
+                entry.Comment, entryContainer.transform, _theme.SizeTiny, TextAnchor.UpperLeft);
             commentText.color = _theme.TextSecondary * 0.8f;
 
             var commentLayout = commentText.gameObject.GetOrAddComponent<LayoutElement>();
@@ -408,14 +408,14 @@ public class ModDetailsPanel
 
         var (applyObj, applyButton, _) = UIFactory.RoundedButtonWithLabel(
             "ApplyButton", "Apply Changes", buttonContainer.transform,
-            _theme.AccentPrimary, 120, 30, 14, Color.white);
+            _theme.AccentPrimary, 120, 30, _theme.SizeStandard, Color.white);
 
         _applyButton = applyButton;
         EventHelper.AddListener(() => ApplyPreferenceChanges(mod), applyButton.onClick);
 
         var (resetObj, resetButton, _) = UIFactory.RoundedButtonWithLabel(
             "ResetButton", "Reset", buttonContainer.transform,
-            _theme.WarningColor, 80, 30, 14, Color.white);
+            _theme.WarningColor, 80, 30, _theme.SizeStandard, Color.white);
 
         _resetButton = resetButton;
         EventHelper.AddListener(() => ResetPreferenceChanges(mod), resetButton.onClick);

@@ -3,7 +3,7 @@ using MelonLoader;
 using ModsApp;
 using ModsApp.Helpers;
 using S1API.Internal.Abstraction;
-using S1API.Internal.Utils;
+using S1API.Utils;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;

@@ -1,5 +1,6 @@
 ﻿using MelonLoader;
 using ModsApp.Helpers;
+using ModsApp.Managers;
 using S1API.Input;
 using S1API.Internal.Abstraction;
 using UnityEngine;
@@ -39,7 +40,7 @@ public static class InputFieldFactory
         var text = textGO.AddComponent<Text>();
         text.font = font;
         text.text = initialValue ?? "";
-        text.fontSize = 14;
+        text.fontSize = UIManager._theme.SizeStandard;
         text.alignment = TextAnchor.MiddleLeft;
         text.fontStyle = FontStyle.Normal;
         text.color = Color.black;
@@ -60,7 +61,7 @@ public static class InputFieldFactory
         placeholderGO.AddComponent<RectTransform>();
         var placeholder = placeholderGO.AddComponent<Text>();
         placeholder.font = font;
-        placeholder.fontSize = 14;
+        placeholder.fontSize = UIManager._theme.SizeStandard;
         placeholder.alignment = TextAnchor.MiddleLeft;
         placeholder.color = new Color(0.5f, 0.5f, 0.5f, 0.75f);
         placeholder.text = "Enter value...";

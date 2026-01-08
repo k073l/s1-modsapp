@@ -85,7 +85,7 @@ public class KeyCodeRebindInput
         labelObject.transform.SetParent(_container.transform, false);
         _labelText = labelObject.AddComponent<Text>();
         _labelText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-        _labelText.fontSize = 12;
+        _labelText.fontSize = _theme.SizeSmall;
         _labelText.color = theme.TextPrimary;
         _labelText.text = _currentValue.ToString();
         _labelText.alignment = TextAnchor.MiddleLeft;
@@ -140,7 +140,7 @@ public class KeyCodeRebindInput
         
         var buttonText = textObject.AddComponent<Text>();
         buttonText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-        buttonText.fontSize = 11;
+        buttonText.fontSize = _theme.SizeTiny;
         buttonText.color = _theme.TextPrimary;
         buttonText.text = text;
         buttonText.alignment = TextAnchor.MiddleCenter;

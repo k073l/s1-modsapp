@@ -2,11 +2,12 @@ using System.Collections;
 using System.Reflection;
 using MelonLoader;
 using ModsApp.Helpers;
+using ModsApp.UI;
 using ModsApp.UI.Input.Handlers;
 using S1API.Input;
-using S1API.Internal.Utils;
 using UnityEngine;
 using S1API.PhoneApp;
+using S1API.Utils;
 
 [assembly: MelonInfo(
     typeof(ModsApp.ModsApp),
@@ -24,19 +25,26 @@ public static class BuildInfo
     public const string Name = "ModsApp";
     public const string Description = "In-game app to manage mods' preferences";
     public const string Author = "k073l";
-    public const string Version = "1.0.0";
+    public const string Version = "1.1.0";
 }
 
 public class ModsApp : MelonMod
 {
     private static MelonLogger.Instance Logger;
     public static Sprite AppIconSprite;
+    
+    public static MelonPreferences_Category AccessibilityCategory;
+    public static MelonPreferences_Entry<TextSizeProfile> TextSizeProfileEntry;
 
     public override void OnInitializeMelon()
     {
         Logger = LoggerInstance;
         Logger.Msg("ModsApp initialized");
         AppIconSprite = LoadEmbeddedPNG("ModsApp.assets.appicon.png");
+        
+        AccessibilityCategory = MelonPreferences.CreateCategory("ModsApp_Accessibility", "Accessibility");
+        TextSizeProfileEntry = AccessibilityCategory.CreateEntry("ModsAppTextSize", TextSizeProfile.Normal,
+            "Text Size Setting", description: "Text size preset");
     }
     
     public static Sprite LoadEmbeddedPNG(string resourceName)

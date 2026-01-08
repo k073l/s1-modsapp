@@ -33,7 +33,7 @@ public class FallbackInputHandler : IPreferenceInputHandler
             initialValue, InputField.ContentType.Standard, 100);
 
         var label = UIFactory.Text($"{entryKey}_Label", "(Fallback, might not work properly)", parent.transform,
-            10);
+            _theme.SizeTiny);
         label.color = _theme.TextSecondary;
         label.fontStyle = FontStyle.Italic;
 
