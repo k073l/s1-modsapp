@@ -152,6 +152,18 @@ public class ModDetailsPanel
             headerCard.transform, _theme.SizeStandard);
         subtitle.color = _theme.TextSecondary;
 
+        _modifiedLabel = UIFactory.Text("ModifiedLabel", "", headerCard.transform, _theme.SizeSmall,
+            TextAnchor.MiddleRight,
+            FontStyle.Italic);
+        _modifiedLabel.color = _theme.WarningColor;
+        if (_modifiedMods.Contains(UnassignedModName))
+        {
+            _modifiedLabel.text = "Changes applied, restart may be required";
+            _modifiedLabel.gameObject.SetActive(true);
+        }
+        else
+            _modifiedLabel.gameObject.SetActive(false);
+
         var categories = _modManager.GetUnassignedPreferences().ToList();
 
         if (categories.Count > 0)
