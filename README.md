@@ -7,6 +7,7 @@ Convenient preferences management for Schedule I mods.
 ## Features
 - New "Mods" app in the phone for easy access
 - See all loaded mods, including their name, version, author and compatibility status (S1API/Mono/IL2CPP)
+- Search through the mod list
 - Comprehensive preference management:
     - Support for multiple data types (boolean, integer, enum, vector3, string, float, keycode, color)
     - Organized categories for better preference organization
