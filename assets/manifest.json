@@ -5,7 +5,6 @@
     "description": "Manage your mods settings - from your phone!",
     "dependencies": [
         "LavaGang-MelonLoader-0.7.0",
-        "the_croods-SwapperPlugin-1.2.2",
-        "ifBars-S1API_Forked-1.7.9"
+        "ifBars-S1API_Forked-2.8.8"
     ]
 }
