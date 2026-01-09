@@ -498,39 +498,6 @@ public class ModDetailsPanel
         UpdateButtonStates();
     }
 
-    // private void CreateActionButtons(MelonMod mod, GameObject card)
-    // {
-    //     var buttonContainer = UIFactory.Panel("ButtonContainer", card.transform, Color.clear);
-    //
-    //     var buttonLayout = buttonContainer.GetOrAddComponent<LayoutElement>();
-    //     buttonLayout.preferredHeight = 35;
-    //     buttonLayout.flexibleHeight = 0;
-    //
-    //     var hLayout = buttonContainer.AddComponent<HorizontalLayoutGroup>();
-    //     hLayout.spacing = 8;
-    //     hLayout.childAlignment = TextAnchor.MiddleCenter;
-    //     hLayout.childForceExpandWidth = false;
-    //     hLayout.childForceExpandHeight = false;
-    //     hLayout.childControlWidth = true;
-    //     hLayout.childControlHeight = true;
-    //
-    //     var (applyObj, applyButton, _) = UIFactory.RoundedButtonWithLabel(
-    //         "ApplyButton", "Apply Changes", buttonContainer.transform,
-    //         _theme.AccentPrimary, 120, 30, _theme.SizeStandard, Color.white);
-    //
-    //     _applyButton = applyButton;
-    //     EventHelper.AddListener(() => ApplyPreferenceChanges(mod), applyButton.onClick);
-    //
-    //     var (resetObj, resetButton, _) = UIFactory.RoundedButtonWithLabel(
-    //         "ResetButton", "Reset", buttonContainer.transform,
-    //         _theme.WarningColor, 80, 30, _theme.SizeStandard, Color.white);
-    //
-    //     _resetButton = resetButton;
-    //     EventHelper.AddListener(() => ResetPreferenceChanges(mod), resetButton.onClick);
-    //
-    //     UpdateButtonStates();
-    // }
-
     private void ApplyPreferenceChanges(string modName)
     {
         var isUnassigned = modName == UnassignedModName;

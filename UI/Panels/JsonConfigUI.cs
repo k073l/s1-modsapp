@@ -400,17 +400,6 @@ public class JsonConfigUI
             if (font != null) return font;
         }
 
-        // string[] systemFonts = Font.GetOSInstalledFontNames();
-        // foreach (string systemFont in systemFonts)
-        // {
-        //     if (systemFont.Contains("Consolas") || systemFont.Contains("Courier") ||
-        //         systemFont.Contains("Mono") || systemFont.Contains("Code"))
-        //     {
-        //         return Font.CreateDynamicFontFromOSFont(systemFont, 12);
-        //     }
-        // }
-        // Nope, breaks on IL2CPP
-
         var fallbackFont = Resources.GetBuiltinResource<Font>("Arial.ttf");
         if (fallbackFont == null)
             MelonLogger.Msg("[UI][WARN] Arial font missing!");
