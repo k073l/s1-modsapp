@@ -32,6 +32,8 @@ public class ModDetailsPanel
     private JsonConfigManager _jsonConfigManager;
     private JsonConfigUI _jsonConfigUI;
 
+    public const string UnassignedModName = "Unassigned";
+
     public ModDetailsPanel(Transform parent, ModManager modManager, UITheme theme, MelonLogger.Instance logger)
     {
         _parent = parent;
@@ -93,6 +95,12 @@ public class ModDetailsPanel
     {
         if (_detailsContent == null) return;
 
+        if (mod == null)
+        {
+            ShowUnassignedDetails();
+            return;
+        }
+
         UIFactory.ClearChildren(_detailsContent);
         _modifiedPreferences.Clear();
 
@@ -127,6 +135,44 @@ public class ModDetailsPanel
         UIHelper.RefreshLayout(_detailsContent);
     }
 
+    private void ShowUnassignedDetails()
+    {
+        UIFactory.ClearChildren(_detailsContent);
+        _modifiedPreferences.Clear();
+
+        _jsonConfigUI.ResetState();
+
+        var headerCard = CreateInfoCard("UnassignedHeaderCard");
+
+        var title = UIFactory.Text("UnassignedTitle", "Unassigned Preferences", headerCard.transform,
+            _theme.SizeLarge, TextAnchor.MiddleLeft, FontStyle.Bold);
+        title.color = _theme.TextPrimary;
+
+        var subtitle = UIFactory.Text("UnassignedSubtitle", "Preferences that don't belong to any mod",
+            headerCard.transform, _theme.SizeStandard);
+        subtitle.color = _theme.TextSecondary;
+
+        var categories = _modManager.GetUnassignedPreferences().ToList();
+
+        if (categories.Count > 0)
+        {
+            var prefsCard = CreateInfoCard("UnassignedPrefsCard");
+            RenderPreferences(categories, prefsCard, UnassignedModName);
+
+            var actionsCard = CreateInfoCard("UnassignedActionsCard");
+            CreateActionButtons(UnassignedModName, actionsCard.transform);
+        }
+        else
+        {
+            var noPrefsCard = CreateInfoCard("NoUnassignedPrefsCard");
+            var noPrefs = UIFactory.Text("NoUnassignedPrefs", "No unassigned preferences found",
+                noPrefsCard.transform, _theme.SizeSmall, TextAnchor.UpperLeft, FontStyle.Italic);
+            noPrefs.color = _theme.TextSecondary;
+        }
+
+        UIHelper.RefreshLayout(_detailsContent);
+    }
+
     private GameObject CreateInfoCard(string name)
     {
         var card = UIFactory.Panel(name, _detailsContent, _theme.BgSecondary);
@@ -153,7 +199,8 @@ public class ModDetailsPanel
 
     private void CreateWelcomeContent(GameObject card)
     {
-        var title = UIFactory.Text("WelcomeTitle", "Mods Manager", card.transform, _theme.SizeLarge, TextAnchor.UpperLeft,
+        var title = UIFactory.Text("WelcomeTitle", "Mods Manager", card.transform, _theme.SizeLarge,
+            TextAnchor.UpperLeft,
             FontStyle.Bold);
         title.color = _theme.TextPrimary;
 
@@ -168,7 +215,8 @@ public class ModDetailsPanel
             FontStyle.Bold);
         title.color = _theme.TextPrimary;
 
-        var count = UIFactory.Text("ModCount", $"Total Mods: {_modManager.ModCount}", card.transform, _theme.SizeStandard);
+        var count = UIFactory.Text("ModCount", $"Total Mods: {_modManager.ModCount}", card.transform,
+            _theme.SizeStandard);
         count.color = _theme.TextSecondary;
     }
 
@@ -188,7 +236,8 @@ public class ModDetailsPanel
         hLayout.childControlWidth = true;
         hLayout.childControlHeight = true;
 
-        var title = UIFactory.Text("ModTitle", mod.Info.Name, headerContainer.transform, _theme.SizeLarge, TextAnchor.MiddleLeft,
+        var title = UIFactory.Text("ModTitle", mod.Info.Name, headerContainer.transform, _theme.SizeLarge,
+            TextAnchor.MiddleLeft,
             FontStyle.Bold);
         title.color = _theme.TextPrimary;
 
@@ -212,15 +261,16 @@ public class ModDetailsPanel
 
         badgeText.fontStyle = FontStyle.Bold;
         badgeText.alignment = TextAnchor.MiddleCenter;
-        
+
         var spacer = new GameObject("Spacer");
         spacer.transform.SetParent(headerContainer.transform, false);
         var spacerLayout = spacer.AddComponent<LayoutElement>();
         spacerLayout.flexibleWidth = 1;
         spacerLayout.flexibleHeight = 0;
         spacerLayout.minWidth = 10;
-        
-        _modifiedLabel = UIFactory.Text("ModifiedLabel", "", headerContainer.transform, _theme.SizeSmall, TextAnchor.MiddleRight,
+
+        _modifiedLabel = UIFactory.Text("ModifiedLabel", "", headerContainer.transform, _theme.SizeSmall,
+            TextAnchor.MiddleRight,
             FontStyle.Italic);
         _modifiedLabel.color = _theme.WarningColor;
         if (_modifiedMods.Contains(mod.Info.Name))
@@ -238,9 +288,31 @@ public class ModDetailsPanel
         version.color = _theme.TextSecondary;
     }
 
+    private void RenderPreferences(List<MelonPreferences_Category> categories, GameObject card, string modName)
+    {
+        var header = UIFactory.Text("PrefsHeader", "Preferences", card.transform, _theme.SizeMedium,
+            TextAnchor.UpperLeft,
+            FontStyle.Bold);
+        header.color = _theme.TextPrimary;
+
+        if (categories.Count == 0)
+        {
+            var noPrefs = UIFactory.Text("NoPrefs", "No preferences available",
+                card.transform, _theme.SizeSmall, TextAnchor.UpperLeft, FontStyle.Italic);
+            noPrefs.color = _theme.TextSecondary;
+            return;
+        }
+
+        foreach (var category in categories)
+        {
+            CreateCategorySection(category, card);
+        }
+    }
+
     private void CreatePreferencesSection(MelonMod mod, GameObject card)
     {
-        var header = UIFactory.Text("PrefsHeader", "Preferences", card.transform, _theme.SizeMedium, TextAnchor.UpperLeft,
+        var header = UIFactory.Text("PrefsHeader", "Preferences", card.transform, _theme.SizeMedium,
+            TextAnchor.UpperLeft,
             FontStyle.Bold);
         header.color = _theme.TextPrimary;
 
@@ -390,9 +462,12 @@ public class ModDetailsPanel
         UpdateButtonStates();
     }
 
-    private void CreateActionButtons(MelonMod mod, GameObject card)
+    private void CreateActionButtons(MelonMod mod, GameObject card) =>
+        CreateActionButtons(mod.Info.Name, card.transform);
+
+    private void CreateActionButtons(string modName, Transform parent)
     {
-        var buttonContainer = UIFactory.Panel("ButtonContainer", card.transform, Color.clear);
+        var buttonContainer = UIFactory.Panel("ButtonContainer", parent, Color.clear);
 
         var buttonLayout = buttonContainer.GetOrAddComponent<LayoutElement>();
         buttonLayout.preferredHeight = 35;
@@ -411,20 +486,55 @@ public class ModDetailsPanel
             _theme.AccentPrimary, 120, 30, _theme.SizeStandard, Color.white);
 
         _applyButton = applyButton;
-        EventHelper.AddListener(() => ApplyPreferenceChanges(mod), applyButton.onClick);
+        EventHelper.AddListener(() => ApplyPreferenceChanges(modName), applyButton.onClick);
 
         var (resetObj, resetButton, _) = UIFactory.RoundedButtonWithLabel(
             "ResetButton", "Reset", buttonContainer.transform,
             _theme.WarningColor, 80, 30, _theme.SizeStandard, Color.white);
 
         _resetButton = resetButton;
-        EventHelper.AddListener(() => ResetPreferenceChanges(mod), resetButton.onClick);
+        EventHelper.AddListener(() => ResetPreferenceChanges(modName), resetButton.onClick);
 
         UpdateButtonStates();
     }
 
-    private void ApplyPreferenceChanges(MelonMod mod)
+    // private void CreateActionButtons(MelonMod mod, GameObject card)
+    // {
+    //     var buttonContainer = UIFactory.Panel("ButtonContainer", card.transform, Color.clear);
+    //
+    //     var buttonLayout = buttonContainer.GetOrAddComponent<LayoutElement>();
+    //     buttonLayout.preferredHeight = 35;
+    //     buttonLayout.flexibleHeight = 0;
+    //
+    //     var hLayout = buttonContainer.AddComponent<HorizontalLayoutGroup>();
+    //     hLayout.spacing = 8;
+    //     hLayout.childAlignment = TextAnchor.MiddleCenter;
+    //     hLayout.childForceExpandWidth = false;
+    //     hLayout.childForceExpandHeight = false;
+    //     hLayout.childControlWidth = true;
+    //     hLayout.childControlHeight = true;
+    //
+    //     var (applyObj, applyButton, _) = UIFactory.RoundedButtonWithLabel(
+    //         "ApplyButton", "Apply Changes", buttonContainer.transform,
+    //         _theme.AccentPrimary, 120, 30, _theme.SizeStandard, Color.white);
+    //
+    //     _applyButton = applyButton;
+    //     EventHelper.AddListener(() => ApplyPreferenceChanges(mod), applyButton.onClick);
+    //
+    //     var (resetObj, resetButton, _) = UIFactory.RoundedButtonWithLabel(
+    //         "ResetButton", "Reset", buttonContainer.transform,
+    //         _theme.WarningColor, 80, 30, _theme.SizeStandard, Color.white);
+    //
+    //     _resetButton = resetButton;
+    //     EventHelper.AddListener(() => ResetPreferenceChanges(mod), resetButton.onClick);
+    //
+    //     UpdateButtonStates();
+    // }
+
+    private void ApplyPreferenceChanges(string modName)
     {
+        var isUnassigned = modName == UnassignedModName;
+        var mod = isUnassigned ? null : _modManager.GetMod(modName);
         foreach (var kvp in _modifiedPreferences)
         {
             var parts = kvp.Key.Split('.');
@@ -434,9 +544,21 @@ public class ModDetailsPanel
                 var entryId = parts[1];
 
                 // Find the preference entry and update it
-                var categories = _modManager.GetPreferencesForMod(mod).ToList();
-                var category = categories.FirstOrDefault(c => c.Identifier == categoryId);
-                var entry = category?.Entries?.FirstOrDefault(e => e.Identifier == entryId);
+                MelonPreferences_Category category = null;
+                MelonPreferences_Entry entry = null;
+
+                if (isUnassigned)
+                {
+                    var unassignedCategories = _modManager.GetUnassignedPreferences().ToList();
+                    category = unassignedCategories.FirstOrDefault(c => c.Identifier == categoryId);
+                }
+                else
+                {
+                    var categories = _modManager.GetPreferencesForMod(mod).ToList();
+                    category = categories.FirstOrDefault(c => c.Identifier == categoryId);
+                }
+
+                entry = category?.Entries?.FirstOrDefault(e => e.Identifier == entryId);
 
                 if (entry != null)
                 {
@@ -465,19 +587,28 @@ public class ModDetailsPanel
         _modifiedPreferences.Clear();
 
         // Refresh the display
-        ShowModDetails(mod);
+        if (isUnassigned)
+            ShowUnassignedDetails();
+        else
+            ShowModDetails(mod);
 
         _logger.Msg("Preferences applied and saved successfully");
-        
-        _modifiedMods.Add(mod.Info.Name);
+
+        _modifiedMods.Add(modName);
         _modifiedLabel.text = "Changes applied, restart may be required";
         _modifiedLabel.gameObject.SetActive(true);
     }
 
-    private void ResetPreferenceChanges(MelonMod mod)
+    private void ResetPreferenceChanges(string modName)
     {
+        bool isUnassigned = modName == UnassignedModName;
         _modifiedPreferences.Clear();
-        ShowModDetails(mod);
+
+        if (isUnassigned)
+            ShowUnassignedDetails();
+        else
+            ShowModDetails(_modManager.GetMod(modName));
+
         _logger.Msg("Preference changes reset");
     }
 

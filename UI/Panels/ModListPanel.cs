@@ -23,6 +23,9 @@ public class ModListPanel
     private Dictionary<string, Text> _modLabels = new Dictionary<string, Text>();
     private string _selectedModName;
 
+    private bool _isUnassignedSelected;
+    public const string UnassignedButtonName = "Unassigned";
+
     public ModListPanel(Transform parent, ModManager modManager, UITheme theme, MelonLogger.Instance logger)
     {
         _parent = parent;
@@ -57,47 +60,86 @@ public class ModListPanel
         UIFactory.ClearChildren(_listContent);
         _modButtons.Clear();
 
+        if (_modManager.HasUnassignedPreferences())
+        {
+            CreateModButton(UnassignedButtonName, "Unassigned", "0.0", isUnassigned: true);
+        }
+
         foreach (var mod in _modManager.GetAllMods())
         {
-            CreateModButton(mod);
+            CreateModButton(mod.Info.Name, mod.Info.Name, $"v{mod.Info.Version}", isUnassigned: false);
         }
 
         UIHelper.RefreshLayout(_listContent);
     }
 
-    private void CreateModButton(MelonMod mod)
+    private void CreateModButton(string internalName, string displayName, string version, bool isUnassigned)
     {
-        var buttonGo = UIFactory.Panel($"{UIHelper.SanitizeName(mod.Info.Name)}_Button", _listContent,
+        var buttonGo = UIFactory.Panel($"{UIHelper.SanitizeName(internalName)}_Button", _listContent,
             _theme.AccentSecondary);
 
         var button = buttonGo.GetOrAddComponent<Button>();
-        UIHelper.SetupButton(button, _theme, () => SelectMod(mod));
+        UIHelper.SetupButton(button, _theme, () => SelectMod(internalName, isUnassigned));
         UIHelper.ConfigureButtonLayout(buttonGo.GetComponent<RectTransform>(), 48f);
 
         // Main label
-        var label = UIFactory.Text($"{UIHelper.SanitizeName(mod.Info.Name)}_Label", mod.Info.Name, buttonGo.transform,
+        var label = UIFactory.Text($"{UIHelper.SanitizeName(internalName)}_Label", displayName, buttonGo.transform,
             _theme.SizeStandard, TextAnchor.MiddleLeft);
         label.color = _theme.TextPrimary;
         UIHelper.ConfigureButtonText(label.rectTransform, new Vector2(0f, 0f), new Vector2(0.7f, 1f), 16f, -8f, 4f,
             -4f);
 
         // Version label
-        var versionText = UIFactory.Text($"{UIHelper.SanitizeName(mod.Info.Name)}_Version", $"v{mod.Info.Version}",
+        var versionText = UIFactory.Text($"{UIHelper.SanitizeName(internalName)}_Version", version,
             buttonGo.transform, _theme.SizeTiny, TextAnchor.MiddleRight);
         versionText.color = _theme.TextSecondary;
         UIHelper.ConfigureButtonText(versionText.rectTransform, new Vector2(0.7f, 0f), new Vector2(1f, 1f), 4f, -12f,
             4f, -4f);
 
-        _modButtons[mod.Info.Name] = buttonGo;
-        _modLabels[mod.Info.Name] = label;
+        _modButtons[internalName] = buttonGo;
+        _modLabels[internalName] = label;
     }
 
-    private void SelectMod(MelonMod mod)
+    // private void CreateModButton(MelonMod mod)
+    // {
+    //     var buttonGo = UIFactory.Panel($"{UIHelper.SanitizeName(mod.Info.Name)}_Button", _listContent,
+    //         _theme.AccentSecondary);
+    //
+    //     var button = buttonGo.GetOrAddComponent<Button>();
+    //     UIHelper.SetupButton(button, _theme, () => SelectMod(mod));
+    //     UIHelper.ConfigureButtonLayout(buttonGo.GetComponent<RectTransform>(), 48f);
+    //
+    //     // Main label
+    //     var label = UIFactory.Text($"{UIHelper.SanitizeName(mod.Info.Name)}_Label", mod.Info.Name, buttonGo.transform,
+    //         _theme.SizeStandard, TextAnchor.MiddleLeft);
+    //     label.color = _theme.TextPrimary;
+    //     UIHelper.ConfigureButtonText(label.rectTransform, new Vector2(0f, 0f), new Vector2(0.7f, 1f), 16f, -8f, 4f,
+    //         -4f);
+    //
+    //     // Version label
+    //     var versionText = UIFactory.Text($"{UIHelper.SanitizeName(mod.Info.Name)}_Version", $"v{mod.Info.Version}",
+    //         buttonGo.transform, _theme.SizeTiny, TextAnchor.MiddleRight);
+    //     versionText.color = _theme.TextSecondary;
+    //     UIHelper.ConfigureButtonText(versionText.rectTransform, new Vector2(0.7f, 0f), new Vector2(1f, 1f), 4f, -12f,
+    //         4f, -4f);
+    //
+    //     _modButtons[mod.Info.Name] = buttonGo;
+    //     _modLabels[mod.Info.Name] = label;
+    // }
+
+    private void SelectMod(string modName, bool isUnassigned)
     {
-        _selectedModName = mod.Info.Name;
+        _selectedModName = modName;
+        _isUnassignedSelected = isUnassigned;
         UpdateButtonHighlights();
-        OnModSelected?.Invoke(mod);
+        OnModSelected?.Invoke(isUnassigned ? null : _modManager.GetMod(modName));
     }
+    // private void SelectMod(MelonMod mod)
+    // {
+    //     _selectedModName = mod.Info.Name;
+    //     UpdateButtonHighlights();
+    //     OnModSelected?.Invoke(mod);
+    // }
 
     private void UpdateButtonHighlights()
     {

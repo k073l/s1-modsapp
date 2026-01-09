@@ -65,6 +65,45 @@ public class ModManager
         return categories;
     }
 
+    public bool HasUnassignedPreferences()
+    {
+        var allModNames = _mods.Keys.ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var catObj in MelonPreferences.Categories)
+        {
+            var category = ExtractCategoryFromObject(catObj);
+            if (category == null) continue;
+
+            var isAssigned = allModNames.Any(modName =>
+                IsCategoryForMod(category, modName));
+
+            if (!isAssigned)
+                return true;
+        }
+
+        return false;
+    }
+
+    public IEnumerable<MelonPreferences_Category> GetUnassignedPreferences()
+    {
+        var allModNames = _mods.Keys.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var unassigned = new List<MelonPreferences_Category>();
+
+        foreach (var catObj in MelonPreferences.Categories)
+        {
+            var category = ExtractCategoryFromObject(catObj);
+            if (category == null) continue;
+
+            bool isAssigned = allModNames.Any(modName =>
+                IsCategoryForMod(category, modName));
+
+            if (!isAssigned)
+                unassigned.Add(category);
+        }
+
+        return unassigned;
+    }
+
     private MelonPreferences_Category ExtractCategoryFromObject(object catObj)
     {
         if (catObj is MelonPreferences_Category direct)
