@@ -1,7 +1,7 @@
 {
     "name": "ModsApp",
-    "version_number": "1.1.0",
-    "website_url": "",
+    "version_number": "1.1.1",
+    "website_url": "https://github.com/k073l/s1-modsapp",
     "description": "Manage your mods settings - from your phone!",
     "dependencies": [
         "LavaGang-MelonLoader-0.7.0",

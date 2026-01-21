@@ -117,109 +117,144 @@ public class ModManager
 
     private bool IsCategoryForMod(MelonPreferences_Category category, string modName)
     {
-        // first check: Category Identifier
-        if (!string.IsNullOrEmpty(category.Identifier) &&
-            category.Identifier.IndexOf(modName, StringComparison.OrdinalIgnoreCase) >= 0)
-        {
+        if (MatchesModName(category.Identifier, modName))
             return true;
-        }
 
-        // second check: Category Display Name
-        if (!string.IsNullOrEmpty(category.DisplayName) &&
-            category.DisplayName.IndexOf(modName, StringComparison.OrdinalIgnoreCase) >= 0)
-        {
+        if (MatchesModName(category.DisplayName, modName))
             return true;
-        }
 
-        if (!_reflectionCacheInitialized)
-        {
-            try
-            {
-                // try both field and property on MelonPreferences_Category
-                _cachedFileField = typeof(MelonPreferences_Category).GetField("File",
-                    BindingFlags.NonPublic | BindingFlags.Instance);
-                _cachedFileProperty = typeof(MelonPreferences_Category).GetProperty("File",
-                    BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
-                _cachedDirectFilePathField = typeof(MelonPreferences_Category).GetField("FilePath",
-                    BindingFlags.NonPublic | BindingFlags.Instance);
-                _cachedDirectFilePathProperty = typeof(MelonPreferences_Category).GetProperty("FilePath",
-                    BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
-            }
-            catch
-            {
-                /* Ignore reflection failures during initialization */
-            }
+        EnsureReflectionCacheInitialized();
 
-            _reflectionCacheInitialized = true;
-        }
-
-        // third check: File path as last resort
         try
         {
-            string filePath = null;
-
-            object fileObj = _cachedFileField?.GetValue(category);
-            if (fileObj == null)
+            var filePath = TryGetCategoryFilePath(category);
+            if (!string.IsNullOrEmpty(filePath) &&
+                MatchesModNameInFilePath(filePath, modName))
             {
-                fileObj = _cachedFileProperty?.GetValue(category);
-            }
-
-            if (fileObj != null)
-            {
-                if (_cachedFilePathField == null && _cachedFilePathProperty == null)
-                {
-                    _cachedFilePathField = fileObj.GetType().GetField("FilePath",
-                        BindingFlags.NonPublic | BindingFlags.Instance);
-                    _cachedFilePathProperty = fileObj.GetType().GetProperty("FilePath",
-                        BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
-                }
-
-                filePath = _cachedFilePathField?.GetValue(fileObj) as string;
-                if (string.IsNullOrEmpty(filePath))
-                {
-                    filePath = _cachedFilePathProperty?.GetValue(fileObj) as string;
-                }
-            }
-
-            if (string.IsNullOrEmpty(filePath))
-            {
-                filePath = _cachedDirectFilePathField?.GetValue(category) as string;
-                if (string.IsNullOrEmpty(filePath))
-                {
-                    filePath = _cachedDirectFilePathProperty?.GetValue(category) as string;
-                }
-            }
-
-            if (!string.IsNullOrEmpty(filePath))
-            {
-                var fileName = Path.GetFileNameWithoutExtension(filePath);
-
-                if (fileName.IndexOf(modName, StringComparison.OrdinalIgnoreCase) >= 0)
-                {
-                    return true;
-                }
-
-                var currentDir = Path.GetDirectoryName(filePath);
-                while (!string.IsNullOrEmpty(currentDir))
-                {
-                    var directoryName = Path.GetFileName(currentDir);
-                    if (!string.IsNullOrEmpty(directoryName) &&
-                        directoryName.IndexOf(modName, StringComparison.OrdinalIgnoreCase) >= 0)
-                    {
-                        return true;
-                    }
-
-                    currentDir = Path.GetDirectoryName(currentDir);
-                }
+                return true;
             }
         }
         catch (Exception ex)
         {
-            _logger?.Msg($"Could not check file path for category matching {modName}: {ex.Message}");
+            MelonDebug.Error($"Could not check file path for category matching {modName}: {ex.Message}");
         }
 
         return false;
     }
+
+
+    private static bool MatchesModName(string text, string modName)
+    {
+        if (string.IsNullOrEmpty(text))
+            return false;
+
+        foreach (var variant in GetModNameVariants(modName))
+        {
+            if (text.IndexOf(variant, StringComparison.OrdinalIgnoreCase) >= 0)
+                return true;
+        }
+
+        return false;
+    }
+
+    private void EnsureReflectionCacheInitialized()
+    {
+        if (_reflectionCacheInitialized)
+            return;
+
+        try
+        {
+            _cachedFileField = typeof(MelonPreferences_Category).GetField(
+                "File", BindingFlags.NonPublic | BindingFlags.Instance);
+
+            _cachedFileProperty = typeof(MelonPreferences_Category).GetProperty(
+                "File", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
+
+            _cachedDirectFilePathField = typeof(MelonPreferences_Category).GetField(
+                "FilePath", BindingFlags.NonPublic | BindingFlags.Instance);
+
+            _cachedDirectFilePathProperty = typeof(MelonPreferences_Category).GetProperty(
+                "FilePath", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
+        }
+        catch
+        {
+            /* Ignore reflection failures */
+        }
+
+        _reflectionCacheInitialized = true;
+    }
+
+    private string TryGetCategoryFilePath(MelonPreferences_Category category)
+    {
+        object fileObj = _cachedFileField?.GetValue(category)
+                         ?? _cachedFileProperty?.GetValue(category);
+
+        if (fileObj != null)
+        {
+            if (_cachedFilePathField == null && _cachedFilePathProperty == null)
+            {
+                _cachedFilePathField = fileObj.GetType().GetField(
+                    "FilePath", BindingFlags.NonPublic | BindingFlags.Instance);
+
+                _cachedFilePathProperty = fileObj.GetType().GetProperty(
+                    "FilePath", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
+            }
+
+            var path = _cachedFilePathField?.GetValue(fileObj) as string
+                       ?? _cachedFilePathProperty?.GetValue(fileObj) as string;
+
+            if (!string.IsNullOrEmpty(path))
+                return path;
+        }
+
+        return _cachedDirectFilePathField?.GetValue(category) as string
+               ?? _cachedDirectFilePathProperty?.GetValue(category) as string;
+    }
+
+    private bool MatchesModNameInFilePath(string filePath, string modName)
+    {
+        var fileName = Path.GetFileNameWithoutExtension(filePath);
+        if (MatchesModName(fileName, modName))
+            return true;
+
+        var currentDir = Path.GetDirectoryName(filePath);
+        while (!string.IsNullOrEmpty(currentDir))
+        {
+            var directoryName = Path.GetFileName(currentDir);
+            if (MatchesModName(directoryName, modName))
+                return true;
+
+            currentDir = Path.GetDirectoryName(currentDir);
+        }
+
+        return false;
+    }
+
+    // fully qualified type name since UE would crash the runtime when loading it otherwise
+    private static System.Collections.Generic.IEnumerable<string> GetModNameVariants(string modName)
+    {
+        if (string.IsNullOrWhiteSpace(modName))
+            yield break;
+
+        yield return modName;
+
+        var noSpaces = modName.Replace(" ", string.Empty);
+        yield return noSpaces;
+
+        yield return modName.Replace(" ", "_");
+        yield return modName.Replace(" ", "-");
+
+        // aggressive normalized form
+        var normalized = new string(
+            modName
+                .Where(char.IsLetterOrDigit)
+                .ToArray()
+        );
+
+        if (!string.IsNullOrEmpty(normalized))
+            yield return normalized;
+    }
+
 
     private Backend DetermineBackend(MelonMod mod)
     {

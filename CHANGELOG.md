@@ -1,5 +1,7 @@
 # Changelog
 
+## 1.1.1
+- Added more cases to check when determining category ownership
 ## 1.1.0
 - Added a search box for searching through the mod list
 - Added unassigned preferences handling for preferences that are loaded by a mod, but weren't matched to it

@@ -25,7 +25,7 @@ public static class BuildInfo
     public const string Name = "ModsApp";
     public const string Description = "In-game app to manage mods' preferences";
     public const string Author = "k073l";
-    public const string Version = "1.1.0";
+    public const string Version = "1.1.1";
 }
 
 public class ModsApp : MelonMod
