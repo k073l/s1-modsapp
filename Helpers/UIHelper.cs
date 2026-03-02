@@ -9,6 +9,62 @@ namespace ModsApp.Helpers;
 
 public static class UIHelper
 {
+    private static readonly Dictionary<(int size, int radius), Sprite> _roundedCache
+        = new();
+
+    public static Sprite GetRoundedSprite(int size = 32, int radius = 8)
+    {
+        var key = (size, radius);
+
+        if (_roundedCache.TryGetValue(key, out var cached))
+            return cached;
+
+        var texture = new Texture2D(size, size, TextureFormat.ARGB32, false);
+        texture.wrapMode = TextureWrapMode.Clamp;
+        texture.filterMode = FilterMode.Bilinear;
+
+        float r = radius;
+        const float aa = 1.0f; // 1px anti-alias width
+
+        for (var y = 0; y < size; y++)
+        {
+            for (var x = 0; x < size; x++)
+            {
+                // Distance from nearest edge
+                var dx = Mathf.Min(x + 0.5f, size - x - 0.5f);
+                var dy = Mathf.Min(y + 0.5f, size - y - 0.5f);
+
+                var alpha = 1f;
+
+                if (dx < r && dy < r)
+                {
+                    var dist = Mathf.Sqrt((dx - r) * (dx - r) + (dy - r) * (dy - r));
+
+                    // Smooth edge
+                    alpha = Mathf.Clamp01((r - dist) / aa);
+                }
+
+                texture.SetPixel(x, y, new Color(1f, 1f, 1f, alpha));
+            }
+        }
+
+        texture.Apply(false, true);
+
+        var border = new Vector4(radius, radius, radius, radius);
+
+        var sprite = Sprite.Create(
+            texture,
+            new Rect(0, 0, size, size),
+            new Vector2(0.5f, 0.5f),
+            100f,
+            0,
+            SpriteMeshType.FullRect,
+            border);
+
+        _roundedCache[key] = sprite;
+        return sprite;
+    }
+
     public static string SanitizeName(string input)
     {
         return string.IsNullOrEmpty(input) ? "Unknown" : Regex.Replace(input, @"[^\w\d_]", "_");
@@ -110,6 +166,19 @@ public static class UIHelper
             borderRt.offsetMin = panelRt.offsetMin - Vector2.one * 2f;
             borderRt.offsetMax = panelRt.offsetMax + Vector2.one * 2f;
         }
+
+        var parentImage = panel.GetComponent<Image>();
+        var borderImage = borderPanel.GetComponent<Image>();
+        if (parentImage == null || borderImage == null) return;
+        borderImage.sprite = parentImage.sprite;
+        borderImage.type = parentImage.type;
+    }
+
+    public static Image MakeRounded(this Image image, int radius = 8, int size = 32)
+    {
+        image.sprite = GetRoundedSprite(size, radius);
+        image.type = Image.Type.Sliced;
+        return image;
     }
 
     public static void RefreshLayout(RectTransform content)

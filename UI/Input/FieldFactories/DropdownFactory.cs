@@ -16,6 +16,7 @@ public static class DropdownFactory
         string name,
         T initialValue,
         Func<T, string> displaySelector,
+        UITheme theme,
         Vector2 containerSize = default,
         int inputFieldWidth = 120,
         Vector2 dropdownSize = default,
@@ -26,7 +27,7 @@ public static class DropdownFactory
         if (dropdownSize == default) dropdownSize = new Vector2(150, 110);
 
         return new DropdownInputComponent<T>(
-            parent, name, initialValue, displaySelector,
+            parent, name, initialValue, displaySelector, theme,
             containerSize, inputFieldWidth, dropdownSize, maxVisibleItems, logger);
     }
 }
@@ -40,6 +41,7 @@ public class DropdownInputComponent<T>
 
     private readonly Func<T, string> _displaySelector;
     private readonly MelonLogger.Instance _logger;
+    private UITheme _theme;
     private string _lastValidValue;
 
     public event Action<T> OnValueChanged;
@@ -51,6 +53,7 @@ public class DropdownInputComponent<T>
         string name,
         T initialValue,
         Func<T, string> displaySelector,
+        UITheme theme,
         Vector2 containerSize,
         int inputFieldWidth,
         Vector2 dropdownSize,
@@ -59,6 +62,7 @@ public class DropdownInputComponent<T>
     {
         _displaySelector = displaySelector;
         _logger = logger;
+        _theme = theme;
         _lastValidValue = displaySelector(initialValue);
 
         CreateContainer(parent, name, containerSize);
@@ -114,7 +118,7 @@ public class DropdownInputComponent<T>
         var buttonRT = buttonObj.AddComponent<RectTransform>();
         buttonRT.sizeDelta = new Vector2(25, 20);
         var buttonImage = buttonObj.AddComponent<Image>();
-        buttonImage.color = Color.gray;
+        buttonImage.color = _theme.BgCard;
         DropdownButton = buttonObj.AddComponent<Button>();
         DropdownButton.targetGraphic = buttonImage;
 
@@ -128,7 +132,7 @@ public class DropdownInputComponent<T>
         arrowText.text = "▼";
         arrowText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
         arrowText.fontSize = UIManager._theme.SizeSmall;
-        arrowText.color = Color.black;
+        arrowText.color = _theme.BgInput;
         arrowText.alignment = TextAnchor.MiddleCenter;
     }
 
@@ -141,7 +145,6 @@ public class DropdownInputComponent<T>
     {
         EventHelper.AddListener(() =>
         {
-
             if (Dropdown.IsOpen)
             {
                 Dropdown.Close();
@@ -154,7 +157,7 @@ public class DropdownInputComponent<T>
                 Dropdown.Show(Container.GetComponent<RectTransform>());
             }
         }, DropdownButton.onClick);
-        
+
         Dropdown.OnItemSelected += (selectedValue) =>
         {
             var displayText = _displaySelector(selectedValue);
@@ -239,7 +242,7 @@ public class DropdownComponent<T>
         panelRT.sizeDelta = size;
 
         var panelImage = panel.AddComponent<Image>();
-        panelImage.color = new Color(0.9f, 0.9f, 0.9f, 1f);
+        panelImage.color = UIManager._theme.BgInput;
 
         var mask = panel.AddComponent<Mask>();
 
@@ -308,7 +311,7 @@ public class DropdownComponent<T>
 
         var itemButton = item.AddComponent<Button>();
         var itemImage = item.AddComponent<Image>();
-        itemImage.color = Color.gray;
+        itemImage.color = UIManager._theme.InputSecondary * 0.75f;
         itemButton.targetGraphic = itemImage;
 
         var textGO = new GameObject("Text");
@@ -323,7 +326,7 @@ public class DropdownComponent<T>
         textComp.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
         textComp.text = displayText;
         textComp.fontSize = UIManager._theme.SizeStandard;
-        textComp.color = Color.black;
+        textComp.color = UIManager._theme.InputPrimary;
         textComp.alignment = TextAnchor.MiddleLeft;
 
         // Capture value for closure
@@ -333,7 +336,6 @@ public class DropdownComponent<T>
             OnItemSelected?.Invoke(capturedValue);
             Close();
         }, itemButton.onClick);
-
     }
 
     private void UpdatePanelSize(int itemCount)

@@ -81,31 +81,35 @@ public class KeyCodeRebindInput
         containerLayoutElement.preferredHeight = 25f;
 
         // Create label
+        var labelBg = new GameObject("LabelBG");
+        labelBg.transform.SetParent(_container.transform, false);
+        var bg = labelBg.AddComponent<Image>();
+        bg.color = theme.BgInput;
         var labelObject = new GameObject("Label");
-        labelObject.transform.SetParent(_container.transform, false);
+        labelObject.transform.SetParent(labelBg.transform, false);
         _labelText = labelObject.AddComponent<Text>();
         _labelText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
         _labelText.fontSize = _theme.SizeSmall;
-        _labelText.color = theme.TextPrimary;
+        _labelText.color = theme.InputPrimary;
         _labelText.text = _currentValue.ToString();
         _labelText.alignment = TextAnchor.MiddleLeft;
-        
-        var labelLayoutElement = labelObject.AddComponent<LayoutElement>();
+
+        var labelLayoutElement = labelBg.AddComponent<LayoutElement>();
         labelLayoutElement.minWidth = 120f;
         labelLayoutElement.preferredWidth = 120f;
         labelLayoutElement.minHeight = 25f;
 
         // Create rebind button
-        _rebindButton = CreateButton("RebindButton", "Rebind", Color.gray, 80f);
+        _rebindButton = CreateButton("RebindButton", "Rebind", _theme.BgCard, 80f);
         EventHelper.AddListener(() => BeginRebind(), _rebindButton.onClick);
 
         // Create confirm button
-        _confirmButton = CreateButton("ConfirmButton", "Confirm", new Color(0.1f, 0.4f, 0.1f), 80f);
+        _confirmButton = CreateButton("ConfirmButton", "Confirm", _theme.SuccessColor, 80f);
         EventHelper.AddListener(() => ConfirmRebind(), _confirmButton.onClick);
         _confirmButton.gameObject.SetActive(false);
 
         // Create cancel button  
-        _cancelButton = CreateButton("CancelButton", "Cancel", new Color(0.4f, 0.1f, 0.1f), 80f);
+        _cancelButton = CreateButton("CancelButton", "Cancel", _theme.WarningColor, 80f);
         EventHelper.AddListener(CancelRebind, _cancelButton.onClick);
         _cancelButton.gameObject.SetActive(false);
     }

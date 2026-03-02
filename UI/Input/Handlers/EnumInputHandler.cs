@@ -24,9 +24,9 @@ namespace ModsApp.UI.Input.Handlers
         {
             var enumType = currentValue.GetType();
             var enumValues = Enum.GetValues(enumType).Cast<object>().ToArray();
-            
+
             var dropdownInput = DropdownFactory.CreateDropdownInput<object>(
-                parent, entryKey, currentValue, val => val.ToString(),
+                parent, entryKey, currentValue, val => val.ToString(), _theme,
                 containerSize: new Vector2(150, 20),
                 inputFieldWidth: 120,
                 dropdownSize: new Vector2(150, 110),
@@ -34,27 +34,24 @@ namespace ModsApp.UI.Input.Handlers
                 logger: _logger);
 
             dropdownInput.OnFilterItems += (filter) => enumValues; // probably a custom enum, no filtering
-            
+
             dropdownInput.OnValidateInput += (input) =>
             {
                 if (TryParseEnum(enumType, input, out var exactMatch))
                     return exactMatch;
-                
+
                 if (!string.IsNullOrEmpty(input))
                 {
-                    var partialMatch = enumValues.FirstOrDefault(e => 
+                    var partialMatch = enumValues.FirstOrDefault(e =>
                         e.ToString().StartsWith(input, StringComparison.OrdinalIgnoreCase));
                     if (partialMatch != null)
                         return partialMatch;
                 }
-                
+
                 return null;
             };
-            
-            dropdownInput.OnValueChanged += (selectedValue) =>
-            {
-                onValueChanged(entryKey, selectedValue);
-            };
+
+            dropdownInput.OnValueChanged += (selectedValue) => { onValueChanged(entryKey, selectedValue); };
 
             MelonDebug.Msg($"[{entryKey}] Enum input created with {enumValues.Length} options");
         }

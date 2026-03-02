@@ -47,6 +47,7 @@ public class ModListPanel
     {
         var leftPanel = UIFactory.Panel("ModListPanel", _parent, _theme.BgSecondary,
             new Vector2(0.02f, 0.05f), new Vector2(0.35f, 0.82f));
+        leftPanel.GetComponent<Image>()?.MakeRounded(12, 48);
         UIHelper.ForceRectToAnchors(leftPanel.GetComponent<RectTransform>(),
             new Vector2(0.02f, 0.05f), new Vector2(0.35f, 0.82f),
             Vector2.zero, Vector2.zero);
@@ -56,6 +57,7 @@ public class ModListPanel
         InitializeSearchPanel(leftPanel);
 
         var listPanel = UIFactory.Panel("ListPanel", leftPanel.transform, _theme.BgPrimary);
+        listPanel.GetComponent<Image>()?.MakeRounded(12, 48);
         UIHelper.ForceRectToAnchors(listPanel.GetComponent<RectTransform>(),
             new Vector2(0f, 0f), new Vector2(1f, 0.87f),
             Vector2.zero, Vector2.zero);
@@ -72,6 +74,7 @@ public class ModListPanel
     private void InitializeSearchPanel(GameObject leftPanel)
     {
         var searchPanel = UIFactory.Panel("SearchPanel", leftPanel.transform, _theme.BgCard);
+        searchPanel.GetComponent<Image>()?.MakeRounded(4, 16);
         UIHelper.ForceRectToAnchors(searchPanel.GetComponent<RectTransform>(),
             new Vector2(0f, 0.85f), new Vector2(1f, 0.95f),
             Vector2.zero, Vector2.zero);
@@ -95,6 +98,7 @@ public class ModListPanel
 
         if (_searchInput != null)
         {
+            _searchInput.gameObject.GetComponent<Image>()?.MakeRounded(4, 16);
             var inputLayoutElem = _searchInput.GetComponent<LayoutElement>();
             if (inputLayoutElem == null) inputLayoutElem = _searchInput.gameObject.AddComponent<LayoutElement>();
             inputLayoutElem.preferredHeight = 28;
@@ -124,8 +128,9 @@ public class ModListPanel
         }
 
         var (_, clearButton, _) = UIFactory.RoundedButtonWithLabel(
-            "SearchClear", "x", searchPanel.transform,
-            new Color(1, 1, 1, 0.2f), 30, 30, _theme.SizeStandard, _theme.WarningColor);
+            "SearchClear", "x", searchPanel.transform, 
+            _theme.TextPrimary * new Color(0, 0, 0, 0.2f), 
+            30, 30, _theme.SizeStandard, _theme.WarningColor);
         clearButton.gameObject.SetActive(false);
         _clearButton = clearButton;
 
@@ -214,13 +219,15 @@ public class ModListPanel
             return _allMods;
 
         return _allMods.Where(mod =>
-            mod.Info.Name.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0);
+            mod.Info.Name.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0 ||
+            mod.Info.Author.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0);
     }
 
     private void CreateModButton(string internalName, string displayName, string version, bool isUnassigned)
     {
         var buttonGo = UIFactory.Panel($"{UIHelper.SanitizeName(internalName)}_Button", _listContent,
             _theme.AccentSecondary);
+        buttonGo.GetComponent<Image>()?.MakeRounded(4, 16);
 
         var button = buttonGo.GetOrAddComponent<Button>();
         UIHelper.SetupButton(button, _theme, () => SelectMod(internalName, isUnassigned));
@@ -265,7 +272,7 @@ public class ModListPanel
             if (_modLabels.TryGetValue(kvp.Key, out var label))
             {
                 label.fontStyle = isSelected ? FontStyle.Bold : FontStyle.Normal;
-                label.color = isSelected ? Color.white : _theme.TextPrimary;
+                label.color = isSelected ? _theme.TextPrimary + new Color(0.05f, 0.05f, 0.05f, 1f) : _theme.TextPrimary;
             }
         }
     }

@@ -24,7 +24,7 @@ public static class InputFieldFactory
         inputObj.transform.SetParent(parent.transform, false);
         
         var bg = inputObj.AddComponent<Image>();
-        bg.color = new Color(1f, 1f, 1f, 0.9f);
+        bg.color = UIManager._theme.BgInput;
 
         var inputField = inputObj.AddComponent<InputField>();
         inputField.contentType = contentType;
@@ -43,7 +43,7 @@ public static class InputFieldFactory
         text.fontSize = UIManager._theme.SizeStandard;
         text.alignment = TextAnchor.MiddleLeft;
         text.fontStyle = FontStyle.Normal;
-        text.color = Color.black;
+        text.color = UIManager._theme.InputPrimary;
         text.horizontalOverflow = HorizontalWrapMode.Wrap;
         text.verticalOverflow = VerticalWrapMode.Overflow;
 
@@ -63,7 +63,7 @@ public static class InputFieldFactory
         placeholder.font = font;
         placeholder.fontSize = UIManager._theme.SizeStandard;
         placeholder.alignment = TextAnchor.MiddleLeft;
-        placeholder.color = new Color(0.5f, 0.5f, 0.5f, 0.75f);
+        placeholder.color = UIManager._theme.InputSecondary;
         placeholder.text = "Enter value...";
 
         var phRT = placeholder.GetComponent<RectTransform>();
@@ -76,7 +76,7 @@ public static class InputFieldFactory
         
         inputField.caretBlinkRate = 0.6f;
         inputField.customCaretColor = true;
-        inputField.caretColor = Color.black;
+        inputField.caretColor = UIManager._theme.InputPrimary;
         
         var layout = inputObj.GetOrAddComponent<LayoutElement>();
         layout.minWidth = minWidth;
@@ -100,8 +100,8 @@ public static class InputFieldFactory
         
         if (validator != null)
         {
-            var normalColor = Color.black;
-            var invalidColor = Color.red;
+            var normalColor = UIManager._theme.InputPrimary;
+            var invalidColor = UIManager._theme.ErrorColor;
             string lastValid = initialValue ?? "";
 
             EventHelper.AddListener<string>(value =>

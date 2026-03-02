@@ -50,6 +50,7 @@ public class ModDetailsPanel
     {
         var rightPanel = UIFactory.Panel("ModDetailsPanel", _parent, _theme.BgCard,
             new Vector2(0.36f, 0.05f), new Vector2(0.98f, 0.82f));
+        rightPanel.GetComponent<Image>()?.MakeRounded(12, 48);
         UIHelper.ForceRectToAnchors(rightPanel.GetComponent<RectTransform>(),
             new Vector2(0.36f, 0.05f), new Vector2(0.98f, 0.82f),
             Vector2.zero, Vector2.zero);
@@ -188,6 +189,7 @@ public class ModDetailsPanel
     private GameObject CreateInfoCard(string name)
     {
         var card = UIFactory.Panel(name, _detailsContent, _theme.BgSecondary);
+        card.GetComponent<Image>()?.MakeRounded();
 
         var vlg = card.GetOrAddComponent<VerticalLayoutGroup>();
         vlg.spacing = 8;
@@ -235,6 +237,7 @@ public class ModDetailsPanel
     private void CreateModHeader(MelonMod mod, GameObject card)
     {
         var headerContainer = UIFactory.Panel("HeaderContainer", card.transform, Color.clear);
+        headerContainer.GetComponent<Image>()?.MakeRounded();
 
         var headerLayout = headerContainer.GetOrAddComponent<LayoutElement>();
         headerLayout.preferredHeight = 28;
@@ -349,7 +352,8 @@ public class ModDetailsPanel
     {
         var categoryPanel = UIFactory.Panel($"{UIHelper.SanitizeName(category.Identifier)}_Category",
             parent.transform,
-            new Color(_theme.BgCard.r - 0.02f, _theme.BgCard.g - 0.02f, _theme.BgCard.b - 0.02f, 1f));
+            _theme.BgCategory);
+        categoryPanel.GetComponent<Image>()?.MakeRounded();
 
         var vlg = categoryPanel.GetOrAddComponent<VerticalLayoutGroup>();
         vlg.spacing = 4;
@@ -389,6 +393,7 @@ public class ModDetailsPanel
         var entryContainer = UIFactory.Panel(
             $"{UIHelper.SanitizeName(categoryId)}_{UIHelper.SanitizeName(entryName)}_Container",
             parent.transform, Color.clear);
+        entryContainer.GetComponent<Image>()?.MakeRounded(4, 16);
 
         // Layout for main row + description + comment
         var vLayout = entryContainer.AddComponent<VerticalLayoutGroup>();
@@ -495,14 +500,14 @@ public class ModDetailsPanel
 
         var (applyObj, applyButton, _) = UIFactory.RoundedButtonWithLabel(
             "ApplyButton", "Apply Changes", buttonContainer.transform,
-            _theme.AccentPrimary, 120, 30, _theme.SizeStandard, Color.white);
+            _theme.AccentPrimary, 120, 30, _theme.SizeStandard, _theme.TextPrimary);
 
         _applyButton = applyButton;
         EventHelper.AddListener(() => ApplyPreferenceChanges(modName), applyButton.onClick);
 
         var (resetObj, resetButton, _) = UIFactory.RoundedButtonWithLabel(
             "ResetButton", "Reset", buttonContainer.transform,
-            _theme.WarningColor, 80, 30, _theme.SizeStandard, Color.white);
+            _theme.WarningColor, 80, 30, _theme.SizeStandard, _theme.TextPrimary);
 
         _resetButton = resetButton;
         EventHelper.AddListener(() => ResetPreferenceChanges(modName), resetButton.onClick);

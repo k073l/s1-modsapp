@@ -70,8 +70,6 @@ public class VectorHandler : IPreferenceInputHandler
 
             var input = InputFieldFactory.CreateInputField(container, $"Input_{fieldName}", fieldValue,
                 InputField.ContentType.DecimalNumber, minWidth: 60);
-            input.textComponent.color = _theme.TextPrimary;
-            input.image.color = _theme.BgPrimary;
 
             int fieldIndex = i;
             EventHelper.AddListener<string>((val) =>

@@ -32,7 +32,7 @@ public class BooleanInputHandler : IPreferenceInputHandler
         toggleObj.transform.SetParent(parent.transform, false);
 
         var bg = toggleObj.AddComponent<Image>();
-        bg.color = Color.white;
+        bg.color = _theme.BgInput;
 
         var toggle = toggleObj.AddComponent<Toggle>();
         toggle.targetGraphic = bg;
@@ -45,7 +45,7 @@ public class BooleanInputHandler : IPreferenceInputHandler
         var checkmarkGO = new GameObject("Checkmark");
         checkmarkGO.transform.SetParent(toggleObj.transform, false);
         var checkmarkImg = checkmarkGO.AddComponent<Image>();
-        checkmarkImg.color = Color.black;
+        checkmarkImg.color = _theme.BgCard;
 
         var crt = checkmarkGO.GetComponent<RectTransform>();
         crt.anchorMin = new Vector2(0.2f, 0.2f);
