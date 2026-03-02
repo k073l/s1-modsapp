@@ -96,13 +96,13 @@ public class ColorInputHandler : IPreferenceInputHandler
             previewImage.color = initialColor;
         });
 
-        CreateButton(panelGO.transform, "Cancel", Color.red, new Vector2(-100, -180),
+        CreateButton(panelGO.transform, "Cancel", _theme.WarningColor, new Vector2(-100, -180),
             () =>
             {
                 GameObject.Destroy(ColorPickerCanvas);
                 Controls.IsTyping = false;
             });
-        CreateButton(panelGO.transform, "Apply", Color.green, new Vector2(100, -180),
+        CreateButton(panelGO.transform, "Apply", _theme.SuccessColor, new Vector2(100, -180),
             () =>
             {
                 onColorSelected(initialColor);
@@ -261,7 +261,7 @@ public class ColorInputHandler : IPreferenceInputHandler
         var fillGO = new GameObject("Fill");
         fillGO.transform.SetParent(fillAreaGO.transform, false);
         var fill = fillGO.AddComponent<Image>();
-        fill.color = Color.green;
+        fill.color = _theme.AccentPrimary;
         slider.fillRect = fill.GetComponent<RectTransform>();
         var fillRT = fillGO.GetComponent<RectTransform>();
         fillRT.anchorMin = Vector2.zero;
@@ -272,7 +272,7 @@ public class ColorInputHandler : IPreferenceInputHandler
         var handleGO = new GameObject("Handle");
         handleGO.transform.SetParent(sliderGO.transform, false);
         var handle = handleGO.AddComponent<Image>();
-        handle.color = Color.white;
+        handle.color = _theme.InputPrimary;
         slider.handleRect = handle.GetComponent<RectTransform>();
         slider.direction = Slider.Direction.LeftToRight;
         handleGO.GetComponent<RectTransform>().sizeDelta = new Vector2(20, 20);
@@ -286,7 +286,7 @@ public class ColorInputHandler : IPreferenceInputHandler
         var text = textGO.AddComponent<Text>();
         text.text = label;
         text.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-        text.color = Color.white;
+        text.color = _theme.InputPrimary;
         text.alignment = TextAnchor.MiddleLeft;
         text.fontSize = _theme.SizeStandard;
     }
@@ -316,7 +316,7 @@ public class ColorInputHandler : IPreferenceInputHandler
         var text = textGO.AddComponent<Text>();
         text.text = label;
         text.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-        text.color = Color.black;
+        text.color = _theme.InputPrimary;
         text.alignment = TextAnchor.MiddleCenter;
         text.fontSize = _theme.SizeStandard;
     }

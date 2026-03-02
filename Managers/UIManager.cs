@@ -2,14 +2,17 @@
 using UnityEngine;
 using MelonLoader;
 using ModsApp.Helpers;
+using ModsApp.UI;
 using ModsApp.UI.Panels;
 using S1API.UI;
+using Object = UnityEngine.Object;
 
 namespace ModsApp.Managers;
 
 public class UIManager
 {
     private readonly GameObject _container;
+    private GameObject _mainPanel;
     private readonly ModManager _modManager;
     private readonly MelonLogger.Instance _logger;
 
@@ -37,6 +40,7 @@ public class UIManager
     private void CreateMainLayout()
     {
         var mainBg = UIFactory.Panel("MainBG", _container.transform, _theme.BgPrimary, fullAnchor: true);
+        _mainPanel = mainBg;
         var topBar = UIFactory.TopBar("ModsTopBar", mainBg.transform, "Mods", 0.95f, 75, 75, 85, 35);
 
         // Apply theme to top bar
@@ -50,7 +54,7 @@ public class UIManager
 
     private void SetupPanels()
     {
-        var mainBg = _container.transform.Find("MainBG");
+        var mainBg = _mainPanel.transform;
 
         _modListPanel = new ModListPanel(mainBg, _modManager, _theme, _logger);
         _modDetailsPanel = new ModDetailsPanel(mainBg, _modManager, _theme, _logger);
@@ -65,5 +69,12 @@ public class UIManager
     private void WirePreferences()
     {
         ModsApp.TextSizeProfileEntry.OnEntryValueChanged.Subscribe((_, newVal) => _theme.SetTextScale(newVal));
+        ModsApp.ThemeOptionEntry.OnEntryValueChanged.Subscribe((_, newVal) =>
+        {
+            _theme.SetTheme(newVal);
+            App.Instance.CloseApp();
+            Object.Destroy(_mainPanel);
+            Initialize();
+        });
     }
 }

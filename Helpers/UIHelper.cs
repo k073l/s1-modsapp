@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Text.RegularExpressions;
 using MelonLoader;
+using ModsApp.UI;
 using S1API.Internal.Abstraction;
 using UnityEngine;
 using UnityEngine.UI;
