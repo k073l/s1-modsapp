@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using System;
 using System.Globalization;
+using MelonLoader.Preferences;
 using S1API.Internal.Abstraction;
 
 namespace ModsApp.UI.Input.Handlers;
@@ -55,9 +56,70 @@ public class NumericInputHandler : IPreferenceInputHandler
             }
         };
 
-        var contentType = (type == typeof(int))
+        var isInteger = type == typeof(int) || type == typeof(uint) || type == typeof(short) ||
+                        type == typeof(ushort) || type == typeof(byte) || type == typeof(sbyte) ||
+                        type == typeof(long) || type == typeof(ulong);
+
+        var contentType = isInteger
             ? InputField.ContentType.IntegerNumber
             : InputField.ContentType.DecimalNumber;
+
+        if (entry.Validator is IValueRange range)
+        {
+            try
+            {
+                var min = Convert.ToSingle(range.MinValue);
+                var max = Convert.ToSingle(range.MaxValue);
+                var value = Convert.ToSingle(currentValue);
+
+                Slider slider = null;
+                InputField field = null;
+
+                var result = SliderFactory.CreateSlider(
+                    parent,
+                    $"{entryKey}_Slider",
+                    min,
+                    max,
+                    value,
+                    isInteger,
+                    contentType,
+                    validator,
+                    v =>
+                    {
+                        try
+                        {
+                            object converted =
+                                isInteger
+                                    ? Convert.ChangeType(Mathf.RoundToInt(v), type)
+                                    : Convert.ChangeType(v, type);
+
+                            if (!converted.Equals(currentValue))
+                            {
+                                if (Time.frameCount % 20 == 0) // This can be very spammy, so limit log frequency
+                                    _logger.Msg($"Modified preference {entryKey}: {converted}");
+                                onValueChanged(entryKey, converted);
+                            }
+                        }
+                        catch
+                        {
+                            // rollback UI
+                            if (slider != null)
+                                slider.SetValueWithoutNotify(
+                                    Convert.ToSingle(currentValue));
+                            if (field != null)
+                                field.text = stringValue;
+                        }
+                    });
+
+                (_, slider, field) = result;
+
+                return;
+            }
+            catch (Exception e)
+            {
+                /* use fallback */
+            }
+        }
 
         var input = InputFieldFactory.CreateInputField(
             parent,

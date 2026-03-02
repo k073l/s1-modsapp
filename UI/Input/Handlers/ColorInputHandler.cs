@@ -255,7 +255,7 @@ public class ColorInputHandler : IPreferenceInputHandler
         var fillAreaRT = fillAreaGO.AddComponent<RectTransform>();
         fillAreaRT.anchorMin = Vector2.zero;
         fillAreaRT.anchorMax = Vector2.one;
-        fillAreaRT.offsetMin = new Vector2(5, 0);
+        fillAreaRT.offsetMin = new Vector2(1, 0);
         fillAreaRT.offsetMax = new Vector2(-5, 0);
 
         var fillGO = new GameObject("Fill");
@@ -272,7 +272,7 @@ public class ColorInputHandler : IPreferenceInputHandler
         var handleGO = new GameObject("Handle");
         handleGO.transform.SetParent(sliderGO.transform, false);
         var handle = handleGO.AddComponent<Image>();
-        handle.color = _theme.InputPrimary;
+        handle.color = _theme.BgInput;
         slider.handleRect = handle.GetComponent<RectTransform>();
         slider.direction = Slider.Direction.LeftToRight;
         handleGO.GetComponent<RectTransform>().sizeDelta = new Vector2(20, 20);
