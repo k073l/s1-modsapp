@@ -265,6 +265,7 @@ public class DropdownComponent<T>
         fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
         var scrollRect = panel.AddComponent<ScrollRect>();
+        if (scrollRect != null) scrollRect.scrollSensitivity = 15f;
         scrollRect.horizontal = false;
         scrollRect.content = contentRT;
 

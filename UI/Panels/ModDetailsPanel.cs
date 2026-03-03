@@ -57,7 +57,8 @@ public class ModDetailsPanel
 
         UIHelper.AddBorderEffect(rightPanel, _theme.AccentPrimary);
 
-        _detailsContent = UIFactory.ScrollableVerticalList("ModDetailsContent", rightPanel.transform, out _);
+        _detailsContent = UIFactory.ScrollableVerticalList("ModDetailsContent", rightPanel.transform, out var scrollRect);
+        if (scrollRect != null) scrollRect.scrollSensitivity = 15f;
         UIHelper.ForceRectToAnchors(_detailsContent, Vector2.zero, Vector2.one,
             Vector2.zero, Vector2.zero, new Vector2(0.5f, 1f));
         UIHelper.SetupLayoutGroup(_detailsContent.gameObject, 6, true, new RectOffset(12, 12, 12, 12));

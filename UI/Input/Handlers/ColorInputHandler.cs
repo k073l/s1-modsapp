@@ -71,7 +71,7 @@ public class ColorInputHandler : IPreferenceInputHandler
         panelRT.anchoredPosition = Vector2.zero;
 
         var panelImage = panelGO.AddComponent<Image>();
-        panelImage.color = new Color(0.1f, 0.1f, 0.1f, 0.95f);
+        panelImage.color = _theme.BgPrimary;
 
         var previewGO = new GameObject("Preview");
         previewGO.transform.SetParent(panelGO.transform, false);

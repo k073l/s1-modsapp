@@ -64,7 +64,8 @@ public class ModListPanel
             new Vector2(0f, 0f), new Vector2(1f, 0.87f),
             Vector2.zero, Vector2.zero);
 
-        _listContent = UIFactory.ScrollableVerticalList("ModListContent", listPanel.transform, out _);
+        _listContent = UIFactory.ScrollableVerticalList("ModListContent", listPanel.transform, out var scrollRect);
+        if (scrollRect != null) scrollRect.scrollSensitivity = 15f;
         UIHelper.ForceRectToAnchors(_listContent, Vector2.zero, Vector2.one,
             Vector2.zero, Vector2.zero, new Vector2(0.5f, 1f));
         UIHelper.SetupLayoutGroup(_listContent.gameObject, 4, false, new RectOffset(8, 8, 8, 8));
