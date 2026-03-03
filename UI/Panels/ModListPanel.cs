@@ -10,6 +10,7 @@ using ModsApp.UI.Input.FieldFactories;
 using S1API.Input;
 using S1API.Internal.Abstraction;
 using S1API.Utils;
+using Object = UnityEngine.Object;
 
 namespace ModsApp.UI.Panels;
 
@@ -26,6 +27,7 @@ public class ModListPanel
     private readonly Dictionary<string, GameObject> _modButtons = new();
     private Dictionary<string, Text> _modLabels = new Dictionary<string, Text>();
     private string _selectedModName;
+    internal static Dictionary<MelonMod, Image> WarningIcons = new();
 
     private bool _isUnassignedSelected;
     public const string UnassignedButtonName = "Unassigned";
@@ -190,6 +192,7 @@ public class ModListPanel
 
         UIFactory.ClearChildren(_listContent);
         _modButtons.Clear();
+        WarningIcons.Clear();
 
         if (_modManager.HasUnassignedPreferences())
         {
@@ -237,8 +240,31 @@ public class ModListPanel
         var label = UIFactory.Text($"{UIHelper.SanitizeName(internalName)}_Label", displayName, buttonGo.transform,
             _theme.SizeStandard, TextAnchor.MiddleLeft);
         label.color = _theme.TextPrimary;
-        UIHelper.ConfigureButtonText(label.rectTransform, new Vector2(0f, 0f), new Vector2(0.7f, 1f), 16f, -8f, 4f,
+        UIHelper.ConfigureButtonText(label.rectTransform, new Vector2(0f, 0f), new Vector2(0.65f, 1f), 16f, -8f, 4f,
             -4f);
+
+        if (!isUnassigned)
+        {
+            var mod = _modManager.GetMod(internalName);
+            if (mod != null)
+            {
+                if (ModsApp.WarningIconSprite == null) ModsApp.WarningIconSprite = ModsApp.LoadEmbeddedPNG("ModsApp.assets.triangle-alert.png"); // gotta love il2cpp
+                if (!WarningIcons.TryGetValue(mod, out var icon))
+                {
+                    icon = UIHelper.AddIcon(
+                        ModsApp.WarningIconSprite,
+                        buttonGo.transform,
+                        new Vector2(0.85f, 0.5f),
+                        Vector2.zero,
+                        _theme.SizeStandard * 1.2f);
+                    icon.color = _theme.ErrorColor;
+                    WarningIcons.TryAdd(mod, icon);
+                }
+
+                var deps = _modManager.GetModDependencies(mod);
+                icon.gameObject.SetActive(deps.Missing.Count > 0);
+            }
+        }
 
         // Version label
         var versionText = UIFactory.Text($"{UIHelper.SanitizeName(internalName)}_Version", version,

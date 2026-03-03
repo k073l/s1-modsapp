@@ -33,6 +33,7 @@ public class ModsApp : MelonMod
 {
     private static MelonLogger.Instance Logger;
     public static Sprite AppIconSprite;
+    public static Sprite WarningIconSprite;
     
     public static MelonPreferences_Category AccessibilityCategory;
     public static MelonPreferences_Entry<TextSizeProfile> TextSizeProfileEntry;
@@ -59,6 +60,7 @@ public class ModsApp : MelonMod
         Logger = LoggerInstance;
         Logger.Msg("ModsApp initialized");
         AppIconSprite = LoadEmbeddedPNG("ModsApp.assets.appicon.png");
+        WarningIconSprite = LoadEmbeddedPNG("ModsApp.assets.triangle-alert.png");
         
         AccessibilityCategory = MelonPreferences.CreateCategory("ModsApp_Accessibility", "Accessibility");
         TextSizeProfileEntry = AccessibilityCategory.CreateEntry("ModsAppTextSize", TextSizeProfile.Normal,

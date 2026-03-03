@@ -196,6 +196,33 @@ public static class UIHelper
             // Silently continue if layout refresh fails
         }
     }
+    
+    public static Image AddIcon(
+        Sprite sprite,
+        Transform parent,
+        Vector2 anchor,
+        Vector2 anchoredPosition,
+        float size = 12f)
+    {
+        var gameObject = new GameObject("Icon");
+        gameObject.transform.SetParent(parent, false);
+
+        var rectTransform = gameObject.AddComponent<RectTransform>();
+
+        rectTransform.anchorMin = anchor;
+        rectTransform.anchorMax = anchor;
+        rectTransform.pivot = new Vector2(0.5f, 0.5f);
+
+        rectTransform.anchoredPosition = anchoredPosition;
+        rectTransform.sizeDelta = new Vector2(size, size);
+
+        var image = gameObject.AddComponent<Image>();
+        image.type = Image.Type.Simple;
+        image.sprite = sprite;
+        image.preserveAspect = true;
+
+        return image;
+    }
 }
 
 public static class GameObjectExtensions

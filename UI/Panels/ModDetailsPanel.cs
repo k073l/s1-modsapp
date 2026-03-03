@@ -466,8 +466,9 @@ public class ModDetailsPanel
 
         void UpdateCategoryVisibility()
         {
-            foreach (Transform child in categoryPanel.transform)
+            for (var i = 0; i < categoryPanel.transform.childCount; i++)
             {
+                var child = categoryPanel.transform.GetChild(i);
                 if (child.gameObject != title.gameObject)
                     child.gameObject.SetActive(CategoryState.IsExpanded(category));
             }
