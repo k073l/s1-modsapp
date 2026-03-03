@@ -12,12 +12,12 @@ namespace ModsApp.Managers;
 public class UIManager
 {
     private readonly GameObject _container;
-    private GameObject _mainPanel;
     private readonly ModManager _modManager;
     private readonly MelonLogger.Instance _logger;
 
     private ModListPanel _modListPanel;
     private ModDetailsPanel _modDetailsPanel;
+    internal static GameObject MainPanel;
     public static UITheme _theme;
 
     public UIManager(GameObject container, ModManager modManager, MelonLogger.Instance logger)
@@ -40,7 +40,7 @@ public class UIManager
     private void CreateMainLayout()
     {
         var mainBg = UIFactory.Panel("MainBG", _container.transform, _theme.BgPrimary, fullAnchor: true);
-        _mainPanel = mainBg;
+        MainPanel = mainBg;
         var topBar = UIFactory.TopBar("ModsTopBar", mainBg.transform, "Mods", 0.95f, 75, 75, 85, 35);
 
         // Apply theme to top bar
@@ -54,7 +54,7 @@ public class UIManager
 
     private void SetupPanels()
     {
-        var mainBg = _mainPanel.transform;
+        var mainBg = MainPanel.transform;
 
         _modListPanel = new ModListPanel(mainBg, _modManager, _theme, _logger);
         _modDetailsPanel = new ModDetailsPanel(mainBg, _modManager, _theme, _logger);
@@ -73,7 +73,7 @@ public class UIManager
         {
             _theme.SetTheme(newVal);
             App.Instance.CloseApp();
-            Object.Destroy(_mainPanel);
+            Object.Destroy(MainPanel);
             Initialize();
         });
     }

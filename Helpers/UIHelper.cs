@@ -64,8 +64,65 @@ public static class UIHelper
             SpriteMeshType.FullRect,
             border);
 
+        sprite.name = $"Rounded_{size}_{radius}";
         _roundedCache[key] = sprite;
         return sprite;
+    }
+    
+    public static (GameObject, Button, Image) RoundedButtonWithIcon(
+        string name,
+        Sprite icon,
+        Transform parent,
+        Color bgColor,
+        float width,
+        float height,
+        float size = 12f)
+    {
+        var maskGO = new GameObject(name + "_RoundedMask");
+        maskGO.transform.SetParent(parent, false);
+        var maskRect = maskGO.AddComponent<RectTransform>();
+        maskRect.sizeDelta = new Vector2(width, height);
+        var layout = maskGO.AddComponent<LayoutElement>();
+        layout.preferredWidth = width;
+        layout.preferredHeight = height;
+
+        var maskImage = maskGO.AddComponent<Image>();
+        maskImage.sprite = GetRoundedSprite();
+        maskImage.type = Image.Type.Sliced;
+
+        maskGO.AddComponent<Mask>().showMaskGraphic = true;
+
+        var buttonGO = new GameObject(name);
+        buttonGO.transform.SetParent(maskGO.transform, false);
+        var buttonRect = buttonGO.AddComponent<RectTransform>();
+        buttonRect.anchorMin = Vector2.zero;
+        buttonRect.anchorMax = Vector2.one;
+        buttonRect.offsetMin = Vector2.zero;
+        buttonRect.offsetMax = Vector2.zero;
+
+        var buttonImage = buttonGO.AddComponent<Image>();
+        buttonImage.sprite = GetRoundedSprite();
+        buttonImage.type = Image.Type.Sliced;
+        buttonImage.color = bgColor;
+
+        var button = buttonGO.AddComponent<Button>();
+        button.targetGraphic = buttonImage;
+
+        var iconGO = new GameObject("Icon");
+        iconGO.transform.SetParent(buttonGO.transform, false);
+        var iconRect = iconGO.AddComponent<RectTransform>();
+        iconRect.anchorMin = new Vector2(0.5f, 0.5f);
+        iconRect.anchorMax = new Vector2(0.5f, 0.5f);
+        iconRect.pivot = new Vector2(0.5f, 0.5f);
+        iconRect.sizeDelta = new Vector2(size, size);
+        iconRect.anchoredPosition = Vector2.zero;
+
+        var iconImage = iconGO.AddComponent<Image>();
+        iconImage.raycastTarget = false;
+        iconImage.sprite = icon;
+        iconImage.preserveAspect = true;
+
+        return (maskGO, button, iconImage);
     }
 
     public static string SanitizeName(string input)

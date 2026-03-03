@@ -23,6 +23,8 @@
         <PackageReference Include="Mono.Cecil" Version="0.11.6" />
         <PackageReference Include="Samboy063.Tomlet" Version="6.1.0" />
         <EmbeddedResource Include="assets\appicon.png" />
+        <EmbeddedResource Include="assets\triangle-alert.png" />
+        <EmbeddedResource Include="assets\scroll-text.png" />
     </ItemGroup>
     
     <PropertyGroup Condition="'$(Configuration)' == 'Debug Mono'">

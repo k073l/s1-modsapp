@@ -4,6 +4,7 @@ using MelonLoader;
 using ModsApp.Helpers;
 using ModsApp.UI;
 using ModsApp.UI.Input.Handlers;
+using ModsApp.UI.Panels;
 using ModsApp.UI.Themes;
 using S1API.Input;
 using UnityEngine;
@@ -34,6 +35,7 @@ public class ModsApp : MelonMod
     private static MelonLogger.Instance Logger;
     public static Sprite AppIconSprite;
     public static Sprite WarningIconSprite;
+    public static Sprite ScrollIconSprite;
     
     public static MelonPreferences_Category AccessibilityCategory;
     public static MelonPreferences_Entry<TextSizeProfile> TextSizeProfileEntry;
@@ -61,6 +63,7 @@ public class ModsApp : MelonMod
         Logger.Msg("ModsApp initialized");
         AppIconSprite = LoadEmbeddedPNG("ModsApp.assets.appicon.png");
         WarningIconSprite = LoadEmbeddedPNG("ModsApp.assets.triangle-alert.png");
+        ScrollIconSprite = LoadEmbeddedPNG("ModsApp.assets.scroll-text.png");
         
         AccessibilityCategory = MelonPreferences.CreateCategory("ModsApp_Accessibility", "Accessibility");
         TextSizeProfileEntry = AccessibilityCategory.CreateEntry("ModsAppTextSize", TextSizeProfile.Normal,
@@ -97,7 +100,9 @@ public class ModsApp : MelonMod
 
         var data = new byte[stream.Length];
         stream.Read(data, 0, data.Length);
-        return ImageUtils.LoadImageRaw(data);
+        var sprite = ImageUtils.LoadImageRaw(data);
+        if (sprite != null) sprite.name = resourceName;
+        return sprite;
     }
 
     public override void OnUpdate()
@@ -105,7 +110,10 @@ public class ModsApp : MelonMod
         // Failsafe to exit typing mode when Escape is pressed
         if (App.Instance != null && App.Instance.IsOpen())
             if (UnityEngine.Input.GetKeyDown(KeyCode.Escape))
+            {
+                FloatingPanelComponent.Cleanup();
                 Controls.IsTyping = false;
+            }
         if (ColorInputHandler.ColorPickerCanvas != null && UnityEngine.Input.GetKeyDown(KeyCode.Escape))
         {
             Controls.IsTyping = false;

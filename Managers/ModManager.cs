@@ -422,6 +422,25 @@ public class ModManager
 
         return false;
     }
+
+    public string GetChangelog(MelonMod mod, out string filepath)
+    {
+        filepath = null;
+        if (mod?.MelonAssembly?.Assembly == null || string.IsNullOrWhiteSpace(mod.MelonAssembly.Assembly.Location))
+            return null;
+        var dirLocation = Directory.GetParent(mod.MelonAssembly.Assembly.Location);
+        if (dirLocation == null) return null;
+        if (dirLocation.Name == MelonEnvironment.ModsDirectory || !dirLocation.Exists)
+            return null; // don't look in the root mods folder since it would be a mess
+        var extensions = new[] { ".txt", ".md", ".rst" };
+        var changelogFile = Directory
+            .EnumerateFiles(dirLocation.FullName)
+            .FirstOrDefault(f => extensions.Contains(Path.GetExtension(f).ToLower())
+                                 && Path.GetFileNameWithoutExtension(f)
+                                     .Equals("CHANGELOG", StringComparison.OrdinalIgnoreCase));
+        filepath = changelogFile;
+        return changelogFile == null ? null : File.ReadAllText(changelogFile);
+    }
 }
 
 internal enum Backend

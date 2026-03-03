@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using ModsApp.Helpers;
 using ModsApp.Managers;
 using ModsApp.UI.Input;
+using ModsApp.UI.Input.FieldFactories;
 using S1API.Input;
 using S1API.Internal.Abstraction;
 
@@ -277,6 +278,8 @@ public class ModDetailsPanel
 
         badgeText.fontStyle = FontStyle.Bold;
         badgeText.alignment = TextAnchor.MiddleCenter;
+        
+        CheckAndCreateChangelogButton(mod, headerContainer.transform);
 
         var spacer = new GameObject("Spacer");
         spacer.transform.SetParent(headerContainer.transform, false);
@@ -359,6 +362,60 @@ public class ModDetailsPanel
         }
 
         return string.Join(". ", parts) + (parts.Count > 0 ? "." : "");
+    }
+
+    private void CheckAndCreateChangelogButton(MelonMod mod, Transform headerContainer)
+    {
+        var changelog = _modManager.GetChangelog(mod, out var filepath);
+        if (string.IsNullOrEmpty(changelog)) return;
+        if (ModsApp.ScrollIconSprite)
+            ModsApp.ScrollIconSprite = ModsApp.LoadEmbeddedPNG("ModsApp.assets.scroll-text.png");
+        var (_, changelogBtn, changelogIcon) = UIHelper.RoundedButtonWithIcon(
+            "ChangelogButton",
+            ModsApp.ScrollIconSprite,
+            headerContainer,
+            _theme.AccentSecondary,
+            25,
+            25,
+            _theme.SizeSmall
+        );
+        changelogIcon.color = _theme.TextPrimary;
+
+        EventHelper.AddListener(() =>
+        {
+            var changelogPanel = new FloatingPanelComponent(1000, 500, $"{mod.Info.Name} Changelog");
+
+            var filepathText = UIFactory.Text(
+                "FilepathText",
+                $"Source: {filepath}",
+                changelogPanel.ContentPanel.transform,
+                _theme.SizeSmall,
+                TextAnchor.MiddleLeft
+            );
+            filepathText.color = _theme.TextPrimary;
+            var fileRect = filepathText.GetComponent<RectTransform>();
+            fileRect.anchorMin = new Vector2(0, 1);
+            fileRect.anchorMax = new Vector2(1, 1);
+            fileRect.pivot = new Vector2(0.5f, 1);
+            fileRect.sizeDelta = new Vector2(0, 28);
+            fileRect.anchoredPosition = new Vector2(2, -8);
+
+            var scrollable = new ScrollableTextFactory(
+                changelogPanel.ContentPanel.transform,
+                changelog,
+                _theme.SizeStandard,
+                _theme.InputPrimary,
+                _theme.BgInput
+            );
+            var rootRect = scrollable.Root.GetComponent<RectTransform>();
+            rootRect.anchorMin = new Vector2(0, 0);
+            rootRect.anchorMax = new Vector2(1, 1);
+            rootRect.offsetMin = new Vector2(6, 6);
+            rootRect.offsetMax = new Vector2(-6, -44);
+
+            Canvas.ForceUpdateCanvases();
+            UnityEngine.UI.LayoutRebuilder.ForceRebuildLayoutImmediate(scrollable.ContentRect);
+        }, changelogBtn.onClick);
     }
     
     private void RenderPreferences(List<MelonPreferences_Category> categories, GameObject card, string modName)
