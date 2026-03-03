@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using MelonLoader;
+using MelonLoader.Utils;
 using Mono.Cecil;
 
 namespace ModsApp.Managers;
@@ -32,6 +33,17 @@ public class ModManager
         _mods.Values.OrderBy(m => m.Info.Name, StringComparer.OrdinalIgnoreCase);
 
     public MelonMod GetMod(string name) => _mods.ContainsKey(name) ? _mods[name] : null;
+
+    public MelonMod GetModByAssemblyName(string assemblyName)
+    {
+        foreach (var key in _mods.Keys)
+        {
+            var mod = _mods[key];
+            if (mod.MelonAssembly?.Assembly?.GetName().Name.Equals(assemblyName, StringComparison.OrdinalIgnoreCase) == true)
+                return mod;
+        }
+        return null;
+    }
 
     private void LoadMods()
     {
@@ -255,6 +267,96 @@ public class ModManager
             yield return normalized;
     }
 
+    private static readonly string[] NonEnvironmentFolders =
+    {
+        MelonEnvironment.UserLibsDirectory,
+        MelonEnvironment.PluginsDirectory,
+        MelonEnvironment.ModsDirectory
+    };
+
+    private static bool IsEnvironmentAssembly(Assembly asm, HashSet<Assembly> modAssemblies)
+    {
+        if (asm == null || modAssemblies.Contains(asm))
+            return false;
+
+        string location;
+        try
+        {
+            location = asm.Location;
+        }
+        catch (NotSupportedException)
+        {
+            // dynamic assemblies, IL2CPP modules, etc.
+            return true; // treat as environment
+        }
+
+        if (string.IsNullOrWhiteSpace(location))
+            return true; // also treat as environment
+
+        return !NonEnvironmentFolders.Any(f =>
+            location.StartsWith(f, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static HashSet<string> GetEnvironmentAssemblies()
+    {
+        var modAssemblies = MelonMod.RegisteredMelons
+            .Where(m => m?.MelonAssembly?.Assembly != null)
+            .Select(m => m.MelonAssembly.Assembly)
+            .ToHashSet();
+
+        return AppDomain.CurrentDomain.GetAssemblies()
+            .Where(a => IsEnvironmentAssembly(a, modAssemblies))
+            .Select(a => a.GetName().Name)
+            .Where(n => !string.IsNullOrWhiteSpace(n))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+    }
+
+    public ModDependencyInfo GetModDependencies(MelonMod mod)
+    {
+        var result = new ModDependencyInfo();
+
+        if (mod?.MelonAssembly?.Assembly == null)
+            return result;
+
+        var loadedAssemblyNames = AppDomain.CurrentDomain.GetAssemblies()
+            .Where(a => a != null)
+            .Select(a => a.GetName().Name)
+            .Where(n => !string.IsNullOrWhiteSpace(n))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        var environmentAssemblies = GetEnvironmentAssemblies();
+
+        var assemblyLocation = mod.MelonAssembly.Assembly.Location;
+        if (string.IsNullOrWhiteSpace(assemblyLocation) || !File.Exists(assemblyLocation))
+            return result;
+
+        var assemblyDef = AssemblyDefinition.ReadAssembly(assemblyLocation);
+
+        var referencedAssemblies = assemblyDef.MainModule.AssemblyReferences
+            .Select(r => r?.Name)
+            .Where(n => !string.IsNullOrWhiteSpace(n))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        // referenced assemblies not environment
+        var required = referencedAssemblies
+            .Where(r => !environmentAssemblies.Contains(r))
+            .ToList();
+
+        result.Required = required;
+
+        // required assemblies not loaded in memory
+        result.Missing = required
+            .Where(r => !loadedAssemblyNames.Contains(r))
+            .ToList();
+
+        // optional from metadata
+        result.Optional = mod.OptionalDependencies?.AssemblyNames?
+                              .Where(x => !string.IsNullOrWhiteSpace(x))
+                              .ToList()
+                          ?? [];
+
+        return result;
+    }
 
     private Backend DetermineBackend(MelonMod mod)
     {
@@ -328,4 +430,11 @@ internal enum Backend
     IL2CPP,
     Mono,
     S1API
+}
+
+public class ModDependencyInfo
+{
+    public List<string> Required { get; set; } = new();
+    public List<string> Missing { get; set; } = new();
+    public List<string> Optional { get; set; } = new();
 }

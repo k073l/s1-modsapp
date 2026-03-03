@@ -301,8 +301,65 @@ public class ModDetailsPanel
 
         var version = UIFactory.Text("ModVersion", $"v. {mod.Info.Version}", card.transform, _theme.SizeStandard);
         version.color = _theme.TextSecondary;
+
+        var dependenciesText = CheckAndFormatDependencies(mod);
+        if (string.IsNullOrEmpty(dependenciesText)) return;
+        var dependencies = UIFactory.Text("ModDependencies", dependenciesText, card.transform,
+            _theme.SizeSmall);
+        dependencies.color = _theme.TextSecondary;
+        dependencies.supportRichText = true;
     }
 
+    private string CheckAndFormatDependencies(MelonMod mod)
+    {
+        var dependencies = _modManager.GetModDependencies(mod);
+        var successColor = ColorUtility.ToHtmlStringRGB(_theme.SuccessColor);
+        var errorColor = ColorUtility.ToHtmlStringRGB(_theme.ErrorColor);
+
+        var parts = new List<string>();
+
+        // Required dependencies
+        if (dependencies.Required.Count != 0)
+        {
+            var requiredParts = dependencies.Required.Select(dep =>
+            {
+                var found = _modManager.GetModByAssemblyName(dep);
+                if (found != null)
+                    return $"<color=#{successColor}>{found.Info.Name} ({found.Info.Version})</color>";
+                else if (!dependencies.Missing.Contains(dep))
+                    return
+                        $"<color=#{successColor}>{dep} (found)</color>"; // likely a library or something we don't have info on, but at least it's present
+                return null; // will be handled as missing later
+            }).Where(x => x != null);
+
+            if (requiredParts.Any())
+                parts.Add("Depends on: " + string.Join(", ", requiredParts));
+        }
+
+        // Missing dependencies TODO: add a warning icon to mod button if it has missing dependencies
+        if (dependencies.Missing.Count != 0)
+        {
+            var missingParts = dependencies.Missing
+                .Select(dep => $"<color=#{errorColor}>{dep} (missing)</color>");
+            parts.Add(string.Join(", ", missingParts));
+        }
+
+        // Optional dependencies
+        if (dependencies.Optional.Count != 0)
+        {
+            var optionalParts = dependencies.Optional.Select(dep =>
+            {
+                var found = _modManager.GetModByAssemblyName(dep);
+                return found != null
+                    ? $"{found.Info.Name} ({found.Info.Version})"
+                    : $"{dep} (not found)";
+            });
+            parts.Add("Optional dependencies: " + string.Join(", ", optionalParts));
+        }
+
+        return string.Join(". ", parts) + (parts.Count > 0 ? "." : "");
+    }
+    
     private void RenderPreferences(List<MelonPreferences_Category> categories, GameObject card, string modName)
     {
         var header = UIFactory.Text("PrefsHeader", "Preferences", card.transform, _theme.SizeMedium,
