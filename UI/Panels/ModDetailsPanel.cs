@@ -267,7 +267,7 @@ public class ModDetailsPanel
             70, // width
             22, // height
             _theme.SizeSmall, // font size
-            Color.white
+            _theme.TextPrimary
         );
 
         badgeBtn.transition = Selectable.Transition.None;
@@ -374,14 +374,50 @@ public class ModDetailsPanel
         var categoryTitle = string.IsNullOrWhiteSpace(category.DisplayName)
             ? category.Identifier
             : category.DisplayName;
-        var title = UIFactory.Text($"{UIHelper.SanitizeName(category.Identifier)}_Title", $"{categoryTitle}",
+
+        var arrowColor = ColorUtility.ToHtmlStringRGB(_theme.TextSecondary);
+        var expandedIcon = $"<color=#{arrowColor}>▼</color>";
+        var collapsedIcon = $"<color=#{arrowColor}>▶</color>";
+        var title = UIFactory.Text($"{UIHelper.SanitizeName(category.Identifier)}_Title",
+            CategoryState.IsExpanded(category) ? $"{expandedIcon} {categoryTitle}" : $"{collapsedIcon} {categoryTitle}",
             categoryPanel.transform, _theme.SizeStandard, TextAnchor.UpperLeft, FontStyle.Bold);
+        title.supportRichText = true; // just to make sure
         title.color = new Color(_theme.AccentPrimary.r, _theme.AccentPrimary.g, _theme.AccentPrimary.b, 0.9f);
 
         if (!(category.Entries?.Count > 0)) return;
+        var button = title.gameObject.AddComponent<Button>();
+
+        EventHelper.AddListener(() =>
+        {
+            CategoryState.Toggle(category);
+            var arrowColor = ColorUtility.ToHtmlStringRGB(_theme.TextSecondary);
+            var expandedIcon = $"<color=#{arrowColor}>▼</color>";
+            var collapsedIcon = $"<color=#{arrowColor}>▶</color>";
+            title.text = CategoryState.IsExpanded(category)
+                ? $"{expandedIcon} {categoryTitle}"
+                : $"{collapsedIcon} {categoryTitle}";
+            UpdateCategoryVisibility();
+        }, button.onClick);
+
         foreach (var entry in category.Entries)
         {
             CreatePreferenceEntry(entry, categoryPanel, category.Identifier);
+        }
+
+        UpdateCategoryVisibility(); // make sure to set initial visibility based on saved state
+        return;
+
+        void UpdateCategoryVisibility()
+        {
+            foreach (Transform child in categoryPanel.transform)
+            {
+                if (child.gameObject != title.gameObject)
+                    child.gameObject.SetActive(CategoryState.IsExpanded(category));
+            }
+
+            var parentRT = categoryPanel.transform.parent.GetComponent<RectTransform>();
+            if (parentRT != null)
+                UIHelper.RefreshLayout(parentRT);
         }
     }
 

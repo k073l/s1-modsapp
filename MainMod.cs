@@ -82,6 +82,8 @@ public class ModsApp : MelonMod
         SuccessColorEntry = ThemesCategory.CreateEntry("ModsAppSuccessColor", slate.SuccessColor, "Success Color", description: "Color used to indicate success. Set Theme Preset to Custom to use this color");
         WarningColorEntry = ThemesCategory.CreateEntry("ModsAppWarningColor", slate.WarningColor, "Warning Color", description: "Color used to indicate warnings. Set Theme Preset to Custom to use this color");
         ErrorColorEntry = ThemesCategory.CreateEntry("ModsAppErrorColor", slate.ErrorColor, "Error Color", description: "Color used to indicate errors. Set Theme Preset to Custom to use this color");
+
+        CategoryState.Load();
     }
     
     public static Sprite LoadEmbeddedPNG(string resourceName)
@@ -107,5 +109,10 @@ public class ModsApp : MelonMod
             Controls.IsTyping = false;
             GameObject.Destroy(ColorInputHandler.ColorPickerCanvas);
         }
+    }
+
+    public override void OnApplicationQuit()
+    {
+        CategoryState.Save();
     }
 }

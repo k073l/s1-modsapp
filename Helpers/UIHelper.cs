@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Text.RegularExpressions;
 using MelonLoader;
+using MelonLoader.Utils;
+using Newtonsoft.Json;
 using ModsApp.UI;
 using S1API.Internal.Abstraction;
 using UnityEngine;
@@ -201,5 +203,62 @@ public static class GameObjectExtensions
     public static T GetOrAddComponent<T>(this GameObject go) where T : Component
     {
         return go.GetComponent<T>() ?? go.AddComponent<T>();
+    }
+}
+
+public static class CategoryState
+{
+    private static Dictionary<MelonPreferences_Category, bool> _expandedCategories = new();
+    private static string _savePath = Path.Combine(MelonEnvironment.UserDataDirectory, "ModsApp", "CategoryState.json");
+
+    public static bool IsExpanded(MelonPreferences_Category category)
+    {
+        if (!_expandedCategories.TryGetValue(category, out var isExpanded))
+        {
+            isExpanded = true;
+            _expandedCategories[category] = isExpanded;
+        }
+
+        return isExpanded;
+    }
+
+    public static void Toggle(MelonPreferences_Category category) =>
+        _expandedCategories[category] = !IsExpanded(category);
+
+    public static void Load()
+    {
+        if (!File.Exists(_savePath)) return;
+        try
+        {
+            var json = File.ReadAllText(_savePath);
+            var dto = JsonConvert.DeserializeObject<Dictionary<string, bool>>(json);
+            if (dto == null)
+            {
+                _expandedCategories = new Dictionary<MelonPreferences_Category, bool>();
+                return;
+            }
+
+            _expandedCategories = dto
+                .Select(kv => new
+                {
+                    Category = MelonPreferences.Categories
+                        .FirstOrDefault(cat => cat.Identifier == kv.Key),
+                    kv.Value
+                })
+                .Where(x => x.Category != null)
+                .ToDictionary(x => x.Category!, x => x.Value);
+        }
+        catch
+        {
+            _expandedCategories = new Dictionary<MelonPreferences_Category, bool>();
+        }
+    }
+
+    public static void Save()
+    {
+        var dto = _expandedCategories.ToDictionary(kv => kv.Key.Identifier, kv => kv.Value);
+        var json = JsonConvert.SerializeObject(dto, Formatting.Indented);
+        Directory.CreateDirectory(Path.GetDirectoryName(_savePath) ?? string.Empty);
+        File.WriteAllText(_savePath, json);
     }
 }
