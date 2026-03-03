@@ -4,7 +4,9 @@ using MelonLoader;
 using ModsApp.Helpers;
 using ModsApp.UI;
 using ModsApp.UI.Panels;
+using S1API.Internal.Abstraction;
 using S1API.UI;
+using UnityEngine.UI;
 using Object = UnityEngine.Object;
 
 namespace ModsApp.Managers;
@@ -18,7 +20,10 @@ public class UIManager
     private ModListPanel _modListPanel;
     private ModDetailsPanel _modDetailsPanel;
     internal static GameObject MainPanel;
+    internal static Button LogsBtn;
     public static UITheme _theme;
+    
+    private MelonMod _selectedMod;
 
     public UIManager(GameObject container, ModManager modManager, MelonLogger.Instance logger)
     {
@@ -43,6 +48,14 @@ public class UIManager
         MainPanel = mainBg;
         var topBar = UIFactory.TopBar("ModsTopBar", mainBg.transform, "Mods", 0.95f, 75, 75, 85, 35);
 
+        var (_, logsBtn, _) = UIFactory.RoundedButtonWithLabel("LogsBtn", "Logs", topBar.transform, _theme.AccentPrimary, 80, 40, _theme.SizeMedium, _theme.TextPrimary);
+        var hLayout = topBar.GetComponent<HorizontalLayoutGroup>();
+        if (hLayout != null)
+        {
+            hLayout.childControlHeight = false;
+        }
+        LogsBtn = logsBtn;
+
         // Apply theme to top bar
         var topBarImg = topBar.GetComponent<UnityEngine.UI.Image>();
         if (topBarImg != null) topBarImg.color = _theme.BgSecondary;
@@ -63,7 +76,12 @@ public class UIManager
         _modDetailsPanel.Initialize();
 
         // Connect panels
-        _modListPanel.OnModSelected += _modDetailsPanel.ShowModDetails;
+        _modListPanel.OnModSelected += mod =>
+        {
+            _selectedMod = mod;
+            _modDetailsPanel.ShowModDetails(mod);
+        };
+        EventHelper.AddListener(() => { _ = new LogExplorerPanel(_selectedMod); }, LogsBtn.onClick);
     }
 
     private void WirePreferences()

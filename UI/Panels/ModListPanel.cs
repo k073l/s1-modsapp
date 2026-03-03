@@ -27,7 +27,7 @@ public class ModListPanel
     private readonly Dictionary<string, GameObject> _modButtons = new();
     private Dictionary<string, Text> _modLabels = new Dictionary<string, Text>();
     private string _selectedModName;
-    internal static Dictionary<MelonMod, Image> WarningIcons = new();
+    private static Dictionary<MelonMod, Image> WarningIcons = new();
 
     private bool _isUnassignedSelected;
     public const string UnassignedButtonName = "Unassigned";
@@ -264,6 +264,9 @@ public class ModListPanel
 
                 var deps = _modManager.GetModDependencies(mod);
                 icon.gameObject.SetActive(deps.Missing.Count > 0);
+                
+                if (LogManager.Instance.HasErrorsForMod(mod.Info.Name))
+                    icon.gameObject.SetActive(true);
             }
         }
 

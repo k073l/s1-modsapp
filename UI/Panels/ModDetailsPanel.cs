@@ -307,11 +307,20 @@ public class ModDetailsPanel
         version.color = _theme.TextSecondary;
 
         var dependenciesText = CheckAndFormatDependencies(mod);
-        if (string.IsNullOrEmpty(dependenciesText)) return;
-        var dependencies = UIFactory.Text("ModDependencies", dependenciesText, card.transform,
-            _theme.SizeSmall);
-        dependencies.color = _theme.TextSecondary;
-        dependencies.supportRichText = true;
+        if (!string.IsNullOrEmpty(dependenciesText))
+        {
+            var dependencies = UIFactory.Text("ModDependencies", dependenciesText, card.transform,
+                _theme.SizeSmall);
+            dependencies.color = _theme.TextSecondary;
+            dependencies.supportRichText = true;
+        }
+
+        if (LogManager.Instance.HasErrorsForMod(mod.Info.Name))
+        {
+            var errors = UIFactory.Text("ModErrors", "This mod has logged errors - click the Logs button for details",
+                card.transform, _theme.SizeSmall);
+            errors.color = _theme.ErrorColor;
+        }
     }
 
     private string CheckAndFormatDependencies(MelonMod mod)
@@ -340,7 +349,7 @@ public class ModDetailsPanel
                 parts.Add("Depends on: " + string.Join(", ", requiredParts));
         }
 
-        // Missing dependencies TODO: add a warning icon to mod button if it has missing dependencies
+        // Missing dependencies
         if (dependencies.Missing.Count != 0)
         {
             var missingParts = dependencies.Missing

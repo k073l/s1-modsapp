@@ -2,6 +2,7 @@ using System.Collections;
 using System.Reflection;
 using MelonLoader;
 using ModsApp.Helpers;
+using ModsApp.Managers;
 using ModsApp.UI;
 using ModsApp.UI.Input.Handlers;
 using ModsApp.UI.Panels;
@@ -19,6 +20,7 @@ using S1API.Utils;
 )]
 [assembly: MelonColor(1, 255, 0, 0)]
 [assembly: MelonGame("TVGS", "Schedule I")]
+[assembly: MelonPriority(int.MinValue + 100)] // Ensure this runs before most other mods to capture logs, but after S1API
 
 namespace ModsApp;
 
@@ -59,6 +61,8 @@ public class ModsApp : MelonMod
 
     public override void OnInitializeMelon()
     {
+        LogManager.Instance.WireEvents();
+
         Logger = LoggerInstance;
         Logger.Msg("ModsApp initialized");
         AppIconSprite = LoadEmbeddedPNG("ModsApp.assets.appicon.png");

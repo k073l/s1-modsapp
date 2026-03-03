@@ -88,6 +88,7 @@ public class ScrollableTextFactory
         Text.alignment = TextAnchor.UpperLeft;
         Text.horizontalOverflow = HorizontalWrapMode.Wrap;
         Text.verticalOverflow = VerticalWrapMode.Overflow;
+        Text.supportRichText = true;
         Text.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
 
         var textRect = Text.rectTransform;

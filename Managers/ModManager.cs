@@ -243,7 +243,7 @@ public class ModManager
     }
 
     // fully qualified type name since UE would crash the runtime when loading it otherwise
-    private static System.Collections.Generic.IEnumerable<string> GetModNameVariants(string modName)
+    internal static System.Collections.Generic.IEnumerable<string> GetModNameVariants(string modName)
     {
         if (string.IsNullOrWhiteSpace(modName))
             yield break;
