@@ -2,7 +2,7 @@
 
 Convenient preferences management for Schedule I mods.
 
-**Note:** This mod **requires** Bars' fork of S1API (>=v2.8.8). You can get it [here](https://github.com/ifBars/S1API/releases/).
+**Note:** This mod **requires** Bars' fork of S1API (>=v2.8.8). You can get it on [GitHub](https://github.com/ifBars/S1API/releases/), [Thunderstore](https://thunderstore.io/c/schedule-i/p/ifBars/S1API_Forked/) or [NexusMods](https://www.nexusmods.com/schedule1/mods/1194).
 
 ## Features
 - New "Mods" app in the phone for easy access
