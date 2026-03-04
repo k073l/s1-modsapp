@@ -1,0 +1,85 @@
+[size=5]Mods App[/size]
+Convenient preferences management for Schedule I mods.
+
+[b]Note:[/b] This mod [b]requires[/b] Bars' fork of S1API (>=v2.8.8). You can get it [url=https://github.com/ifBars/S1API/releases/]here[/url].
+
+[size=4]Features[/size]
+[list][*]New "Mods" app in the phone for easy access
+[*]See all loaded mods, including their name, version, author and compatibility status (S1API/Mono/IL2CPP)
+[*]Search through the mod list
+[*]Comprehensive preference management:[list][*]Support for multiple data types (boolean, integer, enum, vector3, string, float, keycode, color)
+[*]Organized categories for better preference organization
+[*]Real-time editing with type-appropriate input controls
+[*]Apply/Reset functionality for easy preference management
+[/list]
+
+[*]Smart heuristics to automatically match preferences and configurations to their respective mods
+[*]JSON configuration support for mods without MelonPreferences
+[*]Manual JSON file path specification and live editing
+[*]Clean, intuitive interface[list][*]Text size scaling options for accessibility
+[*]Collapsible categories for better organization
+[*]Theme presets and custom theming options for personalization
+[/list]
+
+[*]Mod changelog viewer for easy access to update information
+[*]Dependency tracking to see which mods require others to function properly
+[*]In-app log explorer to view mod logs and errors without leaving the app
+[*]Open source (MIT License)
+[/list]
+[b]Important Notes[/b]
+[b]Preference Changes:[/b] When you modify preferences through this app, other mods may not immediately reflect the changes. The app will remind you when a restart might be necessary for changes to take effect. This depends on how individual mods handle preference updates.
+
+If you're a mod developer, check out the [url=https://github.com/k073l/s1-modsapp/blob/master/PREFERENCES.md]preferences guide[/url].
+
+[b]Enabling/Disabling Mods:[/b] This app does not support enabling or disabling mods. This is by design - MelonLoader doesn't support dynamic mod loading/unloading and the restart would be required anyway. I'd recommend using a dedicated, mod platform aware mod manager, like [url=https://thunderstore.io/c/schedule-i/p/ebkr/r2modman/]r2modman[/url], [url=https://thunderstore.io/c/schedule-i/p/Kesomannen/GaleModManager/]Gale[/url] or [url=https://www.nexusmods.com/site/mods/1]Vortex[/url] just to name a few. They can handle loading/unloading mods, updates and some even have mod profile support.
+
+[b]Backup Your Configs:[/b] Always back up your configuration files before making changes. While the app is designed to be safe, unexpected issues can arise.
+
+[size=4]Screenshots[/size]
+[img]https://raw.githubusercontent.com/k073l/s1-modsapp/refs/heads/master/assets/categories_customization.png[/img]
+
+[img]https://raw.githubusercontent.com/k073l/s1-modsapp/refs/heads/master/assets/controls.png[/img]
+
+[img]https://raw.githubusercontent.com/k073l/s1-modsapp/refs/heads/master/assets/unassigned.png[/img]
+
+[img]https://raw.githubusercontent.com/k073l/s1-modsapp/refs/heads/master/assets/json_alerts.png[/img]
+
+[img]https://raw.githubusercontent.com/k073l/s1-modsapp/refs/heads/master/assets/changelog.png[/img]
+
+[img]https://raw.githubusercontent.com/k073l/s1-modsapp/refs/heads/master/assets/logexplorer.png[/img]
+
+Select different themes:
+
+[img]https://raw.githubusercontent.com/k073l/s1-modsapp/refs/heads/master/assets/forest_theme.png[/img]
+
+[img]https://raw.githubusercontent.com/k073l/s1-modsapp/refs/heads/master/assets/twilight_theme.png[/img]
+
+[size=4]Preferences Types Supported[/size]
+[b]MelonPreferences[/b]
+[list][*]Boolean - checkbox
+[*]Integer/Float - number input, with optional slider if the entry uses a [url=https://github.com/LavaGang/MelonLoader/blob/master/MelonLoader/Preferences/ValueValidator.cs]Validator with a specified range[/url]
+[*]String - text input
+[*]Enum - dropdown
+[*]Color - color wheel picker
+[*]KeyCode - key binding input
+[*]Vector3/other float structs - three number inputs
+[/list]
+There's also a fallback for unsupported types (like List, Dictionary, custom classes) that's a text input. It may not work properly for all types.
+
+[b]JSON[/b]
+Fallback to JSON configuration for mods that don't use MelonPreferences.
+
+You can specify the path in the appropriate field. It's relative to [i][font=Courier New]UserData[/font][/i].If the file exists and is a valid JSON, you can edit it directly in the app.Changes are applied to the file on save (if valid JSON).
+
+[size=4]Installation[/size]
+1. Install MelonLoader
+2. Install Bars' fork of S1API (>=v2.8.8).
+3. Extract the zip file
+4. Place the dll file into the [i][font=Courier New]Mods[/font][/i] directory
+5. Launch the game
+[size=4]Credits[/size]
+[list][*]Bars for forking S1API, continuing its development and providing support. Also for helping with making this mod compatible with IL2CPP.
+[*]All the open source projects that made this possible (MelonLoader, S1API and many more).
+[*]Original wrench icon from [url=https://fontawesome.com/icons/wrench?s=solid]FontAwesome[/url]
+[*]Original [url=https://lucide.dev/icons/triangle-alert]warning[/url] and [url=https://lucide.dev/icons/scroll-text]scroll[/url] icon from [url=https://lucide.dev/license]Lucide[/url], ISC License
+[/list]

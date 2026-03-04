@@ -42,11 +42,13 @@ If you're a mod developer, check out the [preferences guide](https://github.com/
 
 ![Unassigned preferences, numeric input type fallback](https://raw.githubusercontent.com/k073l/s1-modsapp/refs/heads/master/assets/unassigned.png)
 
-![Mod with JSON preferences, alerts for missing dependecies and errors in log](https://raw.githubusercontent.com/k073l/s1-modsapp/refs/heads/master/assets/json-alerts.png)
+![Mod with JSON preferences, alerts for missing dependecies and errors in log](https://raw.githubusercontent.com/k073l/s1-modsapp/refs/heads/master/assets/json_alerts.png)
 
 ![Pop-up panel for mod's changelog](https://raw.githubusercontent.com/k073l/s1-modsapp/refs/heads/master/assets/changelog.png)
 
 ![In-app log explorer showing mod logs and errors](https://raw.githubusercontent.com/k073l/s1-modsapp/refs/heads/master/assets/logexplorer.png)
+
+Select different themes:
 
 ![Different theming options - Forest theme](https://raw.githubusercontent.com/k073l/s1-modsapp/refs/heads/master/assets/forest_theme.png)
 
