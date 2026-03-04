@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.0
+- Improved UI visually by implementing panel corners
+- Added theme presets and custom theming options
+- Added sliders for numeric inputs validated via IValueRange
+- Implemented collapsible categories that are remembered across sessions
+- Added a Dependencies line to mod headers that shows which mods are required for it to work
+- Fixed scroll sensitivity being too low (thanks HODL!)
+- Added an in-app log explorer that shows logs and errors for the current mod
 ## 1.1.1
 - Added more cases to check when determining category ownership
 ## 1.1.0

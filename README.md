@@ -2,7 +2,7 @@
 
 Convenient preferences management for Schedule I mods.
 
-**Note:** This mod **requires** Bars' fork of S1API (>=v1.7.5). You can get it [here](https://github.com/ifBars/S1API/releases/).
+**Note:** This mod **requires** Bars' fork of S1API (>=v2.8.8). You can get it [here](https://github.com/ifBars/S1API/releases/).
 
 ## Features
 - New "Mods" app in the phone for easy access
@@ -16,7 +16,13 @@ Convenient preferences management for Schedule I mods.
 - Smart heuristics to automatically match preferences and configurations to their respective mods
 - JSON configuration support for mods without MelonPreferences
 - Manual JSON file path specification and live editing
-- Clean, intuitive dark theme interface
+- Clean, intuitive interface
+  - Text size scaling options for accessibility
+  - Collapsible categories for better organization
+  - Theme presets and custom theming options for personalization
+- Mod changelog viewer for easy access to update information
+- Dependency tracking to see which mods require others to function properly
+- In-app log explorer to view mod logs and errors without leaving the app
 - Open source (MIT License)
 
 ### Important Notes
@@ -29,15 +35,27 @@ If you're a mod developer, check out the [preferences guide](https://github.com/
 **Backup Your Configs:** Always back up your configuration files before making changes. While the app is designed to be safe, unexpected issues can arise.
 
 ## Screenshots
-![Mod with preferences, first category](https://raw.githubusercontent.com/k073l/s1-modsapp/refs/heads/master/assets/pref-1.png)
-![Mod with preferences, second category](https://raw.githubusercontent.com/k073l/s1-modsapp/refs/heads/master/assets/pref-2.png)
-![Mod without preferences, JSON config](https://raw.githubusercontent.com/k073l/s1-modsapp/refs/heads/master/assets/json-compat.png)
-![Mod without preferences](https://raw.githubusercontent.com/k073l/s1-modsapp/refs/heads/master/assets/no-pref.png)
+
+![ModsApp preferences, collapsible categories and customization](https://raw.githubusercontent.com/k073l/s1-modsapp/refs/heads/master/assets/categories_customization.png)
+
+![Mod with preferences, various types of input types](https://raw.githubusercontent.com/k073l/s1-modsapp/refs/heads/master/assets/controls.png)
+
+![Unassigned preferences, numeric input type fallback](https://raw.githubusercontent.com/k073l/s1-modsapp/refs/heads/master/assets/unassigned.png)
+
+![Mod with JSON preferences, alerts for missing dependecies and errors in log](https://raw.githubusercontent.com/k073l/s1-modsapp/refs/heads/master/assets/json-alerts.png)
+
+![Pop-up panel for mod's changelog](https://raw.githubusercontent.com/k073l/s1-modsapp/refs/heads/master/assets/changelog.png)
+
+![In-app log explorer showing mod logs and errors](https://raw.githubusercontent.com/k073l/s1-modsapp/refs/heads/master/assets/logexplorer.png)
+
+![Different theming options - Forest theme](https://raw.githubusercontent.com/k073l/s1-modsapp/refs/heads/master/assets/forest_theme.png)
+
+![Different themind options - Twilight theme](https://raw.githubusercontent.com/k073l/s1-modsapp/refs/heads/master/assets/twilight_theme.png)
 
 ## Preferences Types Supported
 #### MelonPreferences
 - Boolean - checkbox
-- Integer/Float - number input
+- Integer/Float - number input, with optional slider if the entry uses a [Validator with a specified range](https://github.com/LavaGang/MelonLoader/blob/master/MelonLoader/Preferences/ValueValidator.cs)
 - String - text input
 - Enum - dropdown
 - Color - color wheel picker
@@ -55,7 +73,7 @@ Changes are applied to the file on save (if valid JSON).
 
 ## Installation
 1. Install MelonLoader
-2. Install Bars' fork of S1API (>=v1.7.5).
+2. Install Bars' fork of S1API (>=v2.8.8).
 3. Extract the zip file
 4. Place the dll file into the `Mods` directory
 5. Launch the game
@@ -64,4 +82,4 @@ Changes are applied to the file on save (if valid JSON).
 - Bars for forking S1API, continuing its development and providing support. Also for helping with making this mod compatible with IL2CPP.
 - All the open source projects that made this possible (MelonLoader, S1API and many more).
 - Original wrench icon from [FontAwesome](https://fontawesome.com/icons/wrench?s=solid)
-- Original warning icon from [Lucide](https://lucide.dev/icons/triangle-alert), ISC License
+- Original [warning](https://lucide.dev/icons/triangle-alert) and [scroll](https://lucide.dev/icons/scroll-text) icon from [Lucide](https://lucide.dev/license), ISC License

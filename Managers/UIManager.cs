@@ -19,6 +19,7 @@ public class UIManager
 
     private ModListPanel _modListPanel;
     private ModDetailsPanel _modDetailsPanel;
+    private Action _openLogsAction;
     internal static GameObject MainPanel;
     internal static Button LogsBtn;
     public static UITheme _theme;
@@ -81,7 +82,12 @@ public class UIManager
             _selectedMod = mod;
             _modDetailsPanel.ShowModDetails(mod);
         };
-        EventHelper.AddListener(() => { _ = new LogExplorerPanel(_selectedMod); }, LogsBtn.onClick);
+        _openLogsAction = () =>
+        {
+            _ = new LogExplorerPanel(_selectedMod);
+        };
+
+        EventHelper.AddListener(_openLogsAction, LogsBtn.onClick);
     }
 
     private void WirePreferences()
@@ -91,6 +97,8 @@ public class UIManager
         {
             _theme.SetTheme(newVal);
             App.Instance.CloseApp();
+            EventHelper.RemoveListener(_openLogsAction, LogsBtn.onClick);
+            _selectedMod = null;
             Object.Destroy(MainPanel);
             Initialize();
         });

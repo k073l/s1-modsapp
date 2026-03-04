@@ -40,8 +40,8 @@ public class LogExplorerPanel
         _inputHex = ColorUtility.ToHtmlStringRGB(_theme.InputPrimary);
 
         var title = mod != null
-            ? $"{mod.Info.Name} — Log Explorer"
-            : "Log Explorer — All Mods";
+            ? $"{mod.Info.Name} - Log Explorer"
+            : "Log Explorer - All Mods";
 
         var panel = new FloatingPanelComponent(1100, 600, title);
 
