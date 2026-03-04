@@ -1,5 +1,6 @@
 ﻿using System.Globalization;
 using ModsApp.Managers;
+using S1API.Input;
 using S1API.Internal.Abstraction;
 using UnityEngine;
 using UnityEngine.UI;
@@ -141,6 +142,7 @@ public static class SliderFactory
                 ? ((int)v).ToString()
                 : v.ToString("G6",
                     CultureInfo.InvariantCulture);
+            Controls.IsTyping = false;
 
             onChanged?.Invoke(v);
 

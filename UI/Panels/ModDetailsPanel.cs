@@ -680,6 +680,7 @@ public class ModDetailsPanel
     {
         var isUnassigned = modName == UnassignedModName;
         var mod = isUnassigned ? null : _modManager.GetMod(modName);
+        Controls.IsTyping = false;
         foreach (var kvp in _modifiedPreferences)
         {
             var parts = kvp.Key.Split('.');
@@ -754,6 +755,7 @@ public class ModDetailsPanel
         else
             ShowModDetails(_modManager.GetMod(modName));
 
+        Controls.IsTyping = false;
         _logger.Msg("Preference changes reset");
     }
 

@@ -1,5 +1,7 @@
 # Changelog
 
+## 1.2.1
+- Fixed a bug where the phone wasn't closing with Tab, only Esc after using a slider
 ## 1.2.0
 - Improved UI visually by implementing panel corners
 - Added theme presets and custom theming options
