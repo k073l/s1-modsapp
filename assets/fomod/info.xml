@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<fomod>
+    <Name>ModsApp</Name>
+    <Author>k073l</Author>
+    <Version>1.2.1</Version>
+    <Website>https://github.com/k073l/s1-modsapp</Website>
+    <Description>In-game app to manage mods' preferences</Description>
+</fomod>
