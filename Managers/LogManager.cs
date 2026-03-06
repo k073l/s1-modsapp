@@ -43,8 +43,19 @@ public class LogManager
         foreach (var mod in MelonMod.RegisteredMelons)
         {
             var modName = mod.Info.Name;
-            foreach (var variant in ModManager.GetModNameVariants(modName))
-                _sectionToModName.TryAdd(variant, modName);
+
+            foreach (var name in new[]
+                     {
+                         modName,
+                         mod.MelonAssembly?.Assembly?.GetName()?.Name
+                     })
+            {
+                if (string.IsNullOrEmpty(name))
+                    continue;
+
+                foreach (var variant in ModManager.GetModNameVariants(name))
+                    _sectionToModName.TryAdd(variant, modName);
+            }
         }
     }
 
@@ -139,8 +150,24 @@ public class LogManager
         _modEntryCount[modKey] = (_modEntryCount.TryGetValue(modKey, out var c) ? c : 0) + 1;
     }
 
-    private string Resolve(string section) =>
-        _sectionToModName.TryGetValue(section, out var name) ? name : null;
+    private string Resolve(string section)
+    {
+        if (string.IsNullOrEmpty(section))
+            return null;
+
+        // check exact first
+        if (_sectionToModName.TryGetValue(section, out var name))
+            return name;
+
+        // then check case-insensitive contains (for sections like "ModName:Subsection")
+        foreach (var kvp in _sectionToModName)
+        {
+            if (section.Contains(kvp.Key, StringComparison.OrdinalIgnoreCase))
+                return kvp.Value;
+        }
+
+        return null;
+    }
 
     private string EntryModKey(LogEntry e) =>
         e.ModName ?? e.Section;

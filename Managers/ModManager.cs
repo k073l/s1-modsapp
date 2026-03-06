@@ -39,9 +39,11 @@ public class ModManager
         foreach (var key in _mods.Keys)
         {
             var mod = _mods[key];
-            if (mod.MelonAssembly?.Assembly?.GetName().Name.Equals(assemblyName, StringComparison.OrdinalIgnoreCase) == true)
+            if (mod.MelonAssembly?.Assembly?.GetName().Name.Equals(assemblyName, StringComparison.OrdinalIgnoreCase) ==
+                true)
                 return mod;
         }
+
         return null;
     }
 
@@ -63,7 +65,8 @@ public class ModManager
             foreach (var catObj in MelonPreferences.Categories)
             {
                 var category = ExtractCategoryFromObject(catObj);
-                if (category != null && IsCategoryForMod(category, modName))
+                if (category != null &&
+                    IsCategoryForMod(category, modName, mod.MelonAssembly?.Assembly?.GetName().Name))
                 {
                     categories.Add(category);
                 }
@@ -87,7 +90,7 @@ public class ModManager
             if (category == null) continue;
 
             var isAssigned = allModNames.Any(modName =>
-                IsCategoryForMod(category, modName));
+                IsCategoryForMod(category, modName, GetMod(modName)?.MelonAssembly?.Assembly?.GetName().Name));
 
             if (!isAssigned)
                 return true;
@@ -106,8 +109,8 @@ public class ModManager
             var category = ExtractCategoryFromObject(catObj);
             if (category == null) continue;
 
-            bool isAssigned = allModNames.Any(modName =>
-                IsCategoryForMod(category, modName));
+            var isAssigned = allModNames.Any(modName =>
+                IsCategoryForMod(category, modName, GetMod(modName)?.MelonAssembly?.Assembly?.GetName().Name));
 
             if (!isAssigned)
                 unassigned.Add(category);
@@ -127,23 +130,33 @@ public class ModManager
         return valueProp?.GetValue(catObj) as MelonPreferences_Category;
     }
 
-    private bool IsCategoryForMod(MelonPreferences_Category category, string modName)
+    private bool IsCategoryForMod(MelonPreferences_Category category, string modName, string assemblyName = null)
     {
-        if (MatchesModName(category.Identifier, modName))
-            return true;
+        var namesToMatch = string.IsNullOrEmpty(assemblyName)
+            ? new[] { modName }
+            : new[] { modName, assemblyName };
 
-        if (MatchesModName(category.DisplayName, modName))
-            return true;
+        foreach (var name in namesToMatch)
+        {
+            if (MatchesModName(category.Identifier, name))
+                return true;
+
+            if (MatchesModName(category.DisplayName, name))
+                return true;
+        }
 
         EnsureReflectionCacheInitialized();
 
         try
         {
             var filePath = TryGetCategoryFilePath(category);
-            if (!string.IsNullOrEmpty(filePath) &&
-                MatchesModNameInFilePath(filePath, modName))
+            if (!string.IsNullOrEmpty(filePath))
             {
-                return true;
+                foreach (var name in namesToMatch)
+                {
+                    if (MatchesModNameInFilePath(filePath, name))
+                        return true;
+                }
             }
         }
         catch (Exception ex)
