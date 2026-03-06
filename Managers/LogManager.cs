@@ -1,4 +1,5 @@
-﻿using MelonLoader;
+﻿using System.Reflection;
+using MelonLoader;
 
 namespace ModsApp.Managers;
 
@@ -49,20 +50,42 @@ public class LogManager
 
     public void WireEvents()
     {
-        MelonLogger.MsgDrawingCallbackHandler += (_, _, section, msg) =>
+        // ugly event reflection hack to capture MsgDrawing in ML 0.7.0 and 0.7.2 (one uses Color, the other ColorARGB)
+        var evt = typeof(MelonLogger).GetEvent("MsgDrawingCallbackHandler");
+        if (evt != null)
         {
-            if (string.IsNullOrEmpty(section))
-                return;
+            try
+            {
+                var handlerType = evt.EventHandlerType;
+                var invoke = handlerType.GetMethod("Invoke");
 
-            Append(section, msg, LogLevel.Msg);
-        };
+                var parameters = invoke!.GetParameters()
+                    .Select(p => System.Linq.Expressions.Expression.Parameter(p.ParameterType))
+                    .ToArray();
+
+                var call = System.Linq.Expressions.Expression.Call(
+                    System.Linq.Expressions.Expression.Constant(this),
+                    typeof(LogManager).GetMethod(nameof(OnMsgDrawingInternal),
+                        BindingFlags.Instance | BindingFlags.NonPublic)!,
+                    System.Linq.Expressions.Expression.Convert(parameters[2], typeof(string)),
+                    System.Linq.Expressions.Expression.Convert(parameters[3], typeof(string))
+                );
+
+                var lambda = System.Linq.Expressions.Expression.Lambda(handlerType, call, parameters);
+                var del = lambda.Compile();
+
+                evt.AddEventHandler(null, del);
+            }
+            catch (Exception e)
+            {
+                MelonLogger.Error($"Failed to wire MsgDrawingCallbackHandler: {e}");
+            }
+        }
 
         MelonLogger.WarningCallbackHandler += (section, msg) =>
         {
-            if (string.IsNullOrEmpty(section))
-                return;
-
-            Append(section, msg, LogLevel.Warning);
+            if (!string.IsNullOrEmpty(section))
+                Append(section, msg, LogLevel.Warning);
         };
 
         MelonLogger.ErrorCallbackHandler += (section, msg) =>
@@ -76,6 +99,12 @@ public class LogManager
             if (modName != null)
                 _modsWithErrors.Add(modName);
         };
+    }
+
+    private void OnMsgDrawingInternal(string section, string msg)
+    {
+        if (!string.IsNullOrEmpty(section))
+            Append(section, msg, LogLevel.Msg);
     }
 
     private void Append(string section, string message, LogLevel level)
