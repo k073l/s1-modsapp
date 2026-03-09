@@ -20,6 +20,12 @@ public class UITheme
     public Color SuccessColor => _theme.SuccessColor;
     public Color WarningColor => _theme.WarningColor;
     public Color ErrorColor => _theme.ErrorColor;
+    public Color JsonKeyColor => _theme.JsonKeyColor;
+    public Color JsonStringColor => _theme.JsonStringColor;
+    public Color JsonNumberColor => _theme.JsonNumberColor;
+    public Color JsonLiteralColor => _theme.JsonLiteralColor;
+    public Color JsonBracketColor => _theme.JsonBracketColor;
+    public Color JsonPunctuationColor => _theme.JsonPunctuationColor;
 
     private const int _sizeTiny = 10;
     private const int _sizeSmall = 12;

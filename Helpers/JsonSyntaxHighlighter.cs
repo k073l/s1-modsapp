@@ -1,17 +1,19 @@
 ﻿using System;
 using System.Text;
 using MelonLoader;
+using ModsApp.Managers;
+using UnityEngine;
 
 namespace ModsApp.Helpers;
 
 public static class JsonSyntaxHighlighter
 {
-    private const string KeyColor = "#0451A5";
-    private const string StringColor = "#A31515";
-    private const string NumberColor = "#098658";
-    private const string BoolColor = "#0000FF";
-    private const string BracketColor = "#AF00DB";
-    private const string PunctColor = "#333333";
+    private static string KeyColor => $"#{ColorUtility.ToHtmlStringRGB(UIManager._theme.JsonKeyColor)}";
+    private static string StringColor => $"#{ColorUtility.ToHtmlStringRGB(UIManager._theme.JsonStringColor)}";
+    private static string NumberColor => $"#{ColorUtility.ToHtmlStringRGB(UIManager._theme.JsonNumberColor)}";
+    private static string BoolColor => $"#{ColorUtility.ToHtmlStringRGB(UIManager._theme.JsonLiteralColor)}";
+    private static string BracketColor => $"#{ColorUtility.ToHtmlStringRGB(UIManager._theme.JsonBracketColor)}";
+    private static string PunctColor => $"#{ColorUtility.ToHtmlStringRGB(UIManager._theme.JsonPunctuationColor)}";
 
     public static string Highlight(string json)
     {

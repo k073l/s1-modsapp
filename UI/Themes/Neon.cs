@@ -18,4 +18,10 @@ public class Neon : ITheme
     public Color SuccessColor => new Color(0.00f, 1.00f, 0.40f, 1f);
     public Color WarningColor => new Color(1.00f, 0.80f, 0.00f, 1f);
     public Color ErrorColor => new Color(1.00f, 0.05f, 0.20f, 1f);
+    public Color JsonKeyColor => new Color(0.016f, 0.318f, 0.647f, 1f);
+    public Color JsonStringColor => new Color(0.639f, 0.082f, 0.082f, 1f);
+    public Color JsonNumberColor => new Color(0.035f, 0.525f, 0.345f, 1f);
+    public Color JsonLiteralColor => new Color(0f, 0f, 1f, 1f);
+    public Color JsonBracketColor => new Color(0.686f, 0f, 0.859f, 1f);
+    public Color JsonPunctuationColor => new Color(0.200f, 0.200f, 0.200f, 1f);
 }

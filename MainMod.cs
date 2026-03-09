@@ -59,6 +59,12 @@ public class ModsApp : MelonMod
     public static MelonPreferences_Entry<Color> SuccessColorEntry;
     public static MelonPreferences_Entry<Color> WarningColorEntry;
     public static MelonPreferences_Entry<Color> ErrorColorEntry;
+    public static MelonPreferences_Entry<Color> JsonKeyColor;
+    public static MelonPreferences_Entry<Color> JsonStringColor;
+    public static MelonPreferences_Entry<Color> JsonNumberColor;
+    public static MelonPreferences_Entry<Color> JsonLiteralColor;
+    public static MelonPreferences_Entry<Color> JsonBracketColor;
+    public static MelonPreferences_Entry<Color> JsonPunctuationColor;
 
     public override void OnInitializeMelon()
     {
@@ -94,6 +100,12 @@ public class ModsApp : MelonMod
         SuccessColorEntry = ThemesCategory.CreateEntry("ModsAppSuccessColor", slate.SuccessColor, "Success Color", description: "Color used to indicate success. Set Theme Preset to Custom to use this color");
         WarningColorEntry = ThemesCategory.CreateEntry("ModsAppWarningColor", slate.WarningColor, "Warning Color", description: "Color used to indicate warnings. Set Theme Preset to Custom to use this color");
         ErrorColorEntry = ThemesCategory.CreateEntry("ModsAppErrorColor", slate.ErrorColor, "Error Color", description: "Color used to indicate errors. Set Theme Preset to Custom to use this color");
+        JsonKeyColor = ThemesCategory.CreateEntry("ModsAppJsonKeyColor", slate.JsonKeyColor, "JSON Editor Key Color", description: "Color used for keys in the JSON editor (the property names before colons).");
+        JsonStringColor = ThemesCategory.CreateEntry("ModsAppJsonStringColor", slate.JsonStringColor, "JSON Editor String Color", description: "Color used for string values in the JSON editor.");
+        JsonNumberColor = ThemesCategory.CreateEntry( "ModsAppJsonNumberColor", slate.JsonNumberColor, "JSON Editor Number Color", description: "Color used for numeric values in the JSON editor.");
+        JsonLiteralColor = ThemesCategory.CreateEntry( "ModsAppJsonLiteralColor", slate.JsonLiteralColor, "JSON Editor Literal Color", description: "Color used for boolean and null values (true, false, null) in the JSON editor.");
+        JsonBracketColor = ThemesCategory.CreateEntry( "ModsAppJsonBracketColor", slate.JsonBracketColor, "JSON Editor Bracket Color", description: "Color used for brackets in JSON ({, }, [, ]) in the editor.");
+        JsonPunctuationColor = ThemesCategory.CreateEntry( "ModsAppJsonPunctuationColor", slate.JsonPunctuationColor, "JSON Editor Punctuation Color", description: "Color used for punctuation characters (colon ':' and comma ',') in the JSON editor.");
 
         CategoryState.Load();
         ReflectionHelper.TryInitTMP();
