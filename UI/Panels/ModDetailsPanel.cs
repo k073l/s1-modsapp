@@ -107,7 +107,7 @@ public class ModDetailsPanel
         UIFactory.ClearChildren(_detailsContent);
         _modifiedPreferences.Clear();
 
-        _jsonConfigUI.ResetState();
+        _jsonConfigUI?.ResetState();
 
         var headerCard = CreateInfoCard($"{UIHelper.SanitizeName(mod.Info.Name)}_HeaderCard");
         CreateModHeader(mod, headerCard);
@@ -127,12 +127,24 @@ public class ModDetailsPanel
         {
             // No MelonPreferences - show JSON fallback
             var jsonCard = CreateInfoCard($"{UIHelper.SanitizeName(mod.Info.Name)}_JsonCard");
-            _jsonConfigUI.CreateJsonConfigSection(mod, jsonCard, () => UIHelper.RefreshLayout(_detailsContent), () =>
+            try
             {
-                _modifiedMods.Add(mod.Info.Name);
-                _modifiedLabel.text = "Changes applied, restart may be required";
-                _modifiedLabel.gameObject.SetActive(true);
-            });
+                _jsonConfigUI?.CreateJsonConfigSection(mod, jsonCard, () => UIHelper.RefreshLayout(_detailsContent),
+                    () =>
+                    {
+                        _modifiedMods.Add(mod.Info.Name);
+                        _modifiedLabel.text = "Changes applied, restart may be required";
+                        _modifiedLabel.gameObject.SetActive(true);
+                    });
+            }
+            catch (Exception e)
+            {
+                Melon<ModsApp>.Logger.Error($"JsonConfigUI crashed. Set the JSON UI config option to false, restart the game. " +
+                                            $"Report this message on ModsApp Nexus page or in modding discord. {e}");
+                var crashText = UIFactory.Text("CrashInfo", "JSON Editor unavailable. See logs for more info.",
+                    jsonCard.transform, _theme.SizeStandard, TextAnchor.MiddleLeft, FontStyle.Bold);
+                crashText.color = _theme.TextPrimary;
+            }
         }
 
         UIHelper.RefreshLayout(_detailsContent);
@@ -143,7 +155,7 @@ public class ModDetailsPanel
         UIFactory.ClearChildren(_detailsContent);
         _modifiedPreferences.Clear();
 
-        _jsonConfigUI.ResetState();
+        _jsonConfigUI?.ResetState();
 
         var headerCard = CreateInfoCard("UnassignedHeaderCard");
 
