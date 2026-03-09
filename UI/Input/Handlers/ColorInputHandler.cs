@@ -318,8 +318,10 @@ public class ColorInputHandler : IPreferenceInputHandler
         var (_, cancelBtn, _) = UIFactory.RoundedButtonWithLabel(
             "CancelBtn", "Cancel", btnRow.transform,
             _theme.WarningColor, 100, 30, _theme.SizeStandard, _theme.TextPrimary);
+        var empty = "";
         EventHelper.AddListener(() =>
         {
+            empty = empty;
             Controls.IsTyping = false;
             FloatingPanelComponent.Cleanup();
         }, cancelBtn.onClick);
