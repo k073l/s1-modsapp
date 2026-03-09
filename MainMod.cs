@@ -35,9 +35,14 @@ public static class BuildInfo
 public class ModsApp : MelonMod
 {
     private static MelonLogger.Instance Logger;
-    public static Sprite AppIconSprite;
-    public static Sprite WarningIconSprite;
-    public static Sprite ScrollIconSprite;
+
+    public static Sprite AppIconSprite => GetIcon(ref _appIconSprite, "ModsApp.assets.appicon.png");
+    public static Sprite WarningIconSprite => GetIcon(ref _warningIconSprite, "ModsApp.assets.triangle-alert.png");
+    public static Sprite ScrollIconSprite => GetIcon(ref _scrollIconSprite, "ModsApp.assets.scroll-text.png");
+
+    private static Sprite _appIconSprite;
+    private static Sprite _warningIconSprite;
+    private static Sprite _scrollIconSprite;
 
     public static MelonPreferences_Category AccessibilityCategory;
     public static MelonPreferences_Entry<TextSizeProfile> TextSizeProfileEntry;
@@ -65,9 +70,10 @@ public class ModsApp : MelonMod
 
         Logger = LoggerInstance;
         Logger.Msg("ModsApp initialized");
-        AppIconSprite = LoadEmbeddedPNG("ModsApp.assets.appicon.png");
-        WarningIconSprite = LoadEmbeddedPNG("ModsApp.assets.triangle-alert.png");
-        ScrollIconSprite = LoadEmbeddedPNG("ModsApp.assets.scroll-text.png");
+        // prefetch
+        _ = AppIconSprite;
+        _ = WarningIconSprite;
+        _ = ScrollIconSprite;
 
         AccessibilityCategory = MelonPreferences.CreateCategory("ModsApp_Accessibility", "Accessibility");
         TextSizeProfileEntry = AccessibilityCategory.CreateEntry("ModsAppTextSize", TextSizeProfile.Normal,
@@ -114,7 +120,7 @@ public class ModsApp : MelonMod
         CategoryState.Load();
     }
 
-    public static Sprite LoadEmbeddedPNG(string resourceName)
+    private static Sprite LoadEmbeddedPNG(string resourceName)
     {
         Assembly asm = Assembly.GetExecutingAssembly();
 
@@ -126,6 +132,16 @@ public class ModsApp : MelonMod
         var sprite = ImageUtils.LoadImageRaw(data);
         if (sprite != null) sprite.name = resourceName;
         return sprite;
+    }
+
+    private static Sprite GetIcon(ref Sprite spriteField, string resourceName)
+    {
+        if (spriteField == null)
+        {
+            spriteField = LoadEmbeddedPNG(resourceName);
+        }
+
+        return spriteField;
     }
 
     public override void OnUpdate()

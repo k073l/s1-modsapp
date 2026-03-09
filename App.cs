@@ -26,12 +26,6 @@ public class App : PhoneApp
 
     protected override void OnCreated()
     {
-        if (ModsApp.AppIconSprite == null)
-        {
-            // il2cpp :)
-            ModsApp.AppIconSprite = ModsApp.LoadEmbeddedPNG("ModsApp.assets.appicon.png");
-        }
-        
         if (!SetIconSprite(ModsApp.AppIconSprite))
             _logger.Error("[Pre-base] Failed to set app icon sprite");
         

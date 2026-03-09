@@ -249,7 +249,6 @@ public class ModListPanel
             var mod = _modManager.GetMod(internalName);
             if (mod != null)
             {
-                if (ModsApp.WarningIconSprite == null) ModsApp.WarningIconSprite = ModsApp.LoadEmbeddedPNG("ModsApp.assets.triangle-alert.png"); // gotta love il2cpp
                 if (!WarningIcons.TryGetValue(mod, out var icon))
                 {
                     icon = UIHelper.AddIcon(

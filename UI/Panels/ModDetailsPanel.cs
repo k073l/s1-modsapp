@@ -377,8 +377,6 @@ public class ModDetailsPanel
     {
         var changelog = _modManager.GetChangelog(mod, out var filepath);
         if (string.IsNullOrEmpty(changelog)) return;
-        if (ModsApp.ScrollIconSprite == null)
-            ModsApp.ScrollIconSprite = ModsApp.LoadEmbeddedPNG("ModsApp.assets.scroll-text.png");
         var (_, changelogBtn, changelogIcon) = UIHelper.RoundedButtonWithIcon(
             "ChangelogButton",
             ModsApp.ScrollIconSprite,
