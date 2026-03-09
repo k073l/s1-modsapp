@@ -1,8 +1,12 @@
 ﻿using System;
+using System.Collections;
 using System.IO;
+using System.Reflection;
 using MelonLoader;
 using MelonLoader.Utils;
+using ModsApp.Helpers;
 using ModsApp.Managers;
+using ModsApp.UI;
 using ModsApp.UI.Input.Handlers;
 using ModsApp.UI.Panels;
 using S1API.Input;
@@ -21,6 +25,7 @@ public class App : PhoneApp
     protected override string IconFileName => Path.Combine(MelonEnvironment.UserDataDirectory, "ModsApp", "appicon.png");
 
     private static MelonLogger.Instance _logger = Melon<ModsApp>.Logger;
+    private static Transform _homeScreenInstanceTransform;
     private UIManager _uiManager;
     private ModManager _modManager;
 
@@ -48,6 +53,20 @@ public class App : PhoneApp
             _logger.Error($"UI initialization failed: {ex.Message}");
             _logger.Error(ex.StackTrace);
         }
+
+        var homeScreenField =
+            typeof(PhoneApp).GetField("_homeScreenInstance", BindingFlags.NonPublic | BindingFlags.Instance);
+        var homeScreen = (Component)homeScreenField?.GetValue(this);
+
+        _homeScreenInstanceTransform = homeScreen != null
+            ? homeScreen.transform
+            : container.transform.root.FindInHierarchy(
+                "Player_Local/CameraContainer/Camera/OverlayCamera/GameplayMenu/Phone/phone/HomeScreen");
+
+        if (_homeScreenInstanceTransform != null)
+        {
+            MelonCoroutines.Start(WaitForModsIcon());
+        }
     }
 
     protected override void OnPhoneClosed()
@@ -55,5 +74,23 @@ public class App : PhoneApp
         Controls.IsTyping = false;
         FloatingPanelComponent.Cleanup();
         base.OnPhoneClosed();
+    }
+
+    private IEnumerator WaitForModsIcon()
+    {
+        Transform modsappIcon;
+        while ((modsappIcon = _homeScreenInstanceTransform.FindInHierarchy("AppIcons/Mods")) == null)
+            yield return new WaitForSeconds(0.1f);
+        NotificationBadge.Initialize(modsappIcon);
+        UpdateNotificationBadge();
+        LogManager.Instance.OnError += UpdateNotificationBadge;
+    }
+    
+    private static void UpdateNotificationBadge()
+    {
+        if (LogManager.Instance.ModsWithErrors.Count > 0)
+        {
+            NotificationBadge.ShowCount(LogManager.Instance.ModsWithErrors.Count);
+        }
     }
 }

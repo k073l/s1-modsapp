@@ -36,7 +36,9 @@ public class LogManager
     private readonly Dictionary<string, int> _modEntryCount = new();
 
     // mod Info.Name -> had at least one error this session
-    private readonly HashSet<string> _modsWithErrors = new();
+    internal readonly HashSet<string> ModsWithErrors = new();
+
+    internal event Action OnError;
 
     private LogManager()
     {
@@ -107,8 +109,9 @@ public class LogManager
             Append(section, msg, LogLevel.Error);
 
             var modName = Resolve(section);
-            if (modName != null)
-                _modsWithErrors.Add(modName);
+            if (modName == null) return;
+            ModsWithErrors.Add(modName);
+            OnError?.Invoke();
         };
     }
 
@@ -179,7 +182,7 @@ public class LogManager
         Filter(_globalBuffer, levels);
 
     public bool HasErrorsForMod(string modName) =>
-        _modsWithErrors.Contains(modName);
+        ModsWithErrors.Contains(modName);
 
     private static IEnumerable<LogEntry> Filter(
         IEnumerable<LogEntry> source, LogLevel[] levels) =>

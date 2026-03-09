@@ -290,6 +290,36 @@ public static class GameObjectExtensions
     }
 }
 
+public static class TransformExtensions
+{
+    public static Transform FindInHierarchy(this Transform startTransform, string path)
+    {
+        var currentTransform = startTransform;
+        var pathParts = path.Split('/');
+
+        foreach (var part in pathParts)
+        {
+            currentTransform = FindChildWithNameRecursive(currentTransform, part);
+            if (currentTransform == null) return null;
+        }
+
+        return currentTransform;
+    }
+
+    private static Transform FindChildWithNameRecursive(Transform parent, string name)
+    {
+        for (var i = 0; i < parent.childCount; i++)
+        {
+            var child = parent.GetChild(i);
+            if (child.name == name) return child;
+            var result = FindChildWithNameRecursive(child, name);
+            if (result != null) return result;
+        }
+
+        return null;
+    }
+}
+
 public static class CategoryState
 {
     private static Dictionary<MelonPreferences_Category, bool> _expandedCategories = new();
