@@ -21,45 +21,9 @@ public class JsonConfigUI
     private readonly MelonLogger.Instance _logger;
     private readonly JsonConfigManager _configManager;
 
-    // tmp reflection data
-    private static bool _tmpInitialized;
-    private static bool _tmpAvailable;
-    private static Type _tmpInputFieldType;
-    private static Type _tmpTextType;
-    private static Type _tmpTextBaseType;
-
-    // TMP_InputField members
-    private static MemberInfo _m_if_text;
-    private static MemberInfo _m_if_textComponent;
-    private static MemberInfo _m_if_placeholder;
-    private static MemberInfo _m_if_textViewport;
-    private static MemberInfo _m_if_lineType;
-    private static MemberInfo _m_if_contentType;
-    private static MemberInfo _m_if_caretColor;
-    private static MemberInfo _m_if_customCaret;
-    private static MemberInfo _m_if_caretBlinkRate;
-    private static MemberInfo _m_if_onValueChanged;
-    private static MemberInfo _m_if_onEndEdit;
-    private static MemberInfo _m_if_richText;
-    private static MemberInfo _m_if_stringPosition;
-    private static MemberInfo _m_if_onFocusSelectAll;
-    private static MethodInfo _mi_setTextWithoutNotify;
-    private static MethodInfo _mi_activateInputField;
-    private static MethodInfo _mi_createFontAsset;
-    private static object _tmpFontAsset;
-
-    // TMP_Text members
-    private static MemberInfo _m_t_text;
-    private static MemberInfo _m_t_color;
-    private static MemberInfo _m_t_fontSize;
-    private static MemberInfo _m_t_richText;
-    private static MemberInfo _m_t_wordWrap;
-    private static MemberInfo _m_t_overflow;
-    private static MemberInfo _m_t_autoSize;
-    private static MemberInfo _m_t_alignment;
-
     private object _tmpInputField;
     private object _tmpTextComponent;
+    private static object _tmpFontAsset;
 
     private InputField _legacyEditor;
 
@@ -86,7 +50,7 @@ public class JsonConfigUI
         _theme = theme;
         _logger = logger;
         _configManager = configManager;
-        TryInitTMP();
+        CheckTMP();
     }
 
     public void ResetState()
@@ -152,7 +116,7 @@ public class JsonConfigUI
 
         var (_, loadBtn, _) = UIFactory.RoundedButtonWithLabel(
             "LoadJsonButton", "Load", inputRow.transform,
-            _theme.AccentPrimary, 60, 25, _theme.SizeSmall, Color.white);
+            _theme.AccentPrimary, 60, 25, _theme.SizeSmall, _theme.TextPrimary);
 
         EventHelper.AddListener(() =>
         {
@@ -221,7 +185,7 @@ public class JsonConfigUI
             container.transform, _theme.SizeSmall, TextAnchor.UpperLeft, FontStyle.Bold);
         label.color = _theme.TextPrimary;
 
-        if (_tmpAvailable)
+        if (ReflectionHelper.TMPAvailable)
             CreateTMPEditor(container);
         else
             CreateLegacyEditor(container);
@@ -263,7 +227,7 @@ public class JsonConfigUI
         if (_tmpTextComponent == null || placeholder == null)
         {
             _logger.Warning("[JsonConfigUI] TMP text AddComponent failed — falling back.");
-            _tmpAvailable = false;
+            ReflectionHelper.TMPAvailable = false;
             UnityEngine.Object.Destroy(wrapper);
             CreateLegacyEditor(parent);
             return;
@@ -274,12 +238,12 @@ public class JsonConfigUI
         object inputField;
         try
         {
-            inputField = ReflectionHelper.AddComponent(wrapper, _tmpInputFieldType);
+            inputField = ReflectionHelper.AddComponent(wrapper, ReflectionHelper.TMPInputFieldType);
         }
         catch (Exception ex)
         {
             _logger.Warning($"[JsonConfigUI] TMP_InputField AddComponent threw: {ex.Message}");
-            _tmpAvailable = false;
+            ReflectionHelper.TMPAvailable = false;
             wrapper.SetActive(true);
             UnityEngine.Object.Destroy(wrapper);
             CreateLegacyEditor(parent);
@@ -289,7 +253,7 @@ public class JsonConfigUI
         if (inputField == null)
         {
             _logger.Warning("[JsonConfigUI] TMP_InputField AddComponent returned null.");
-            _tmpAvailable = false;
+            ReflectionHelper.TMPAvailable = false;
             wrapper.SetActive(true);
             UnityEngine.Object.Destroy(wrapper);
             CreateLegacyEditor(parent);
@@ -298,39 +262,50 @@ public class JsonConfigUI
 
         _tmpInputField = inputField;
 
-        ReflectionHelper.SetValue(_m_if_textViewport, _tmpInputField, textAreaRT);
-        ReflectionHelper.SetValue(_m_if_textComponent, _tmpInputField, _tmpTextComponent);
-        ReflectionHelper.SetValue(_m_if_placeholder, _tmpInputField, placeholder);
-        ReflectionHelper.SetValue(_m_if_contentType, _tmpInputField,
-            ReflectionHelper.EnumValue(_m_if_contentType, 0)); // Standard
-        ReflectionHelper.SetValue(_m_if_lineType, _tmpInputField,
-            ReflectionHelper.EnumValue(_m_if_lineType, 2)); // MultiLineNewline
-        ReflectionHelper.SetValue(_m_if_richText, _tmpInputField, true);
-        ReflectionHelper.SetValue(_m_if_customCaret, _tmpInputField, true);
-        ReflectionHelper.SetValue(_m_if_caretColor, _tmpInputField, _theme.InputPrimary);
-        ReflectionHelper.SetValue(_m_if_caretBlinkRate, _tmpInputField, 0.6f);
+        ReflectionHelper.SetValue(ReflectionHelper.MIfTextViewport, _tmpInputField, textAreaRT);
+        ReflectionHelper.SetValue(ReflectionHelper.MIfTextComponent, _tmpInputField, _tmpTextComponent);
+        ReflectionHelper.SetValue(ReflectionHelper.MIfPlaceholder, _tmpInputField, placeholder);
+        ReflectionHelper.SetValue(ReflectionHelper.MIfContentType, _tmpInputField,
+            ReflectionHelper.EnumValue(ReflectionHelper.MIfContentType, 0)); // Standard
+        ReflectionHelper.SetValue(ReflectionHelper.MIfLineType, _tmpInputField,
+            ReflectionHelper.EnumValue(ReflectionHelper.MIfLineType, 2)); // MultiLineNewline
+        ReflectionHelper.SetValue(ReflectionHelper.MIfRichText, _tmpInputField, true);
+        ReflectionHelper.SetValue(ReflectionHelper.MIfCustomCaret, _tmpInputField, true);
+        ReflectionHelper.SetValue(ReflectionHelper.MIfCaretColor, _tmpInputField, _theme.InputPrimary);
+        ReflectionHelper.SetValue(ReflectionHelper.MIfCaretBlinkRate, _tmpInputField, 0.6f);
 
-        if (_m_if_onFocusSelectAll != null)
-            ReflectionHelper.SetValue(_m_if_onFocusSelectAll, _tmpInputField, false);
+        if (ReflectionHelper.MIfOnFocusSelectAll != null)
+            ReflectionHelper.SetValue(ReflectionHelper.MIfOnFocusSelectAll, _tmpInputField, false);
 
-        var onValueChangedObj = ReflectionHelper.GetValue(_m_if_onValueChanged, _tmpInputField);
-        ReflectionHelper.AddStringListener(onValueChangedObj, OnEditorValueChanged);
+        List<bool> eventWiringResults = [];
+        var onValueChangedObj = ReflectionHelper.GetValue(ReflectionHelper.MIfOnValueChanged, _tmpInputField);
+        eventWiringResults.Add(ReflectionHelper.AddStringListener(onValueChangedObj, OnEditorValueChanged));
 
-        var onEndEditObj = ReflectionHelper.GetValue(_m_if_onEndEdit, _tmpInputField);
-        ReflectionHelper.AddStringListener(onEndEditObj, OnEditorEndEdit);
+        var onEndEditObj = ReflectionHelper.GetValue(ReflectionHelper.MIfOnEndEdit, _tmpInputField);
+        eventWiringResults.Add(ReflectionHelper.AddStringListener(onEndEditObj, OnEditorEndEdit));
 
-        var onSelectMember = ReflectionHelper.GetMember(_tmpInputFieldType, "onSelect");
+        var onSelectMember = ReflectionHelper.GetMember(ReflectionHelper.TMPInputFieldType, "onSelect");
         if (onSelectMember != null)
         {
             var onSelectObj = ReflectionHelper.GetValue(onSelectMember, _tmpInputField);
-            ReflectionHelper.AddStringListener(onSelectObj, _ => Controls.IsTyping = true);
+            eventWiringResults.Add(ReflectionHelper.AddStringListener(onSelectObj, _ => Controls.IsTyping = true));
         }
 
-        var onDeselectMember = ReflectionHelper.GetMember(_tmpInputFieldType, "onDeselect");
+        var onDeselectMember = ReflectionHelper.GetMember(ReflectionHelper.TMPInputFieldType, "onDeselect");
         if (onDeselectMember != null)
         {
             var onDeselectObj = ReflectionHelper.GetValue(onDeselectMember, _tmpInputField);
-            ReflectionHelper.AddStringListener(onDeselectObj, _ => Controls.IsTyping = false);
+            eventWiringResults.Add(ReflectionHelper.AddStringListener(onDeselectObj, _ => Controls.IsTyping = false));
+        }
+
+        if (!eventWiringResults.All(b => b))
+        {
+            _logger.Warning("[JsonConfigUI] Some TMP events couldn't be wired correctly");
+            ReflectionHelper.TMPAvailable = false;
+            wrapper.SetActive(true);
+            UnityEngine.Object.Destroy(wrapper);
+            CreateLegacyEditor(parent);
+            return;
         }
 
         AddScrollPassthrough(wrapper);
@@ -365,22 +340,22 @@ public class JsonConfigUI
     {
         var raw = StripTags(value);
         // game calls DeactivateInputField on Enter externally, firing onEndEdit.
-        // insert the newline manually, and re-activate the field. TODO: il2cpp as always has issues
+        // insert the newline manually, and re-activate the field.
         if (UnityEngine.Input.GetKey(KeyCode.Return) || UnityEngine.Input.GetKey(KeyCode.KeypadEnter))
         {
             var caret = 0;
-            if (_m_if_stringPosition != null)
+            if (ReflectionHelper.MIfStringPosition != null)
             {
-                var hlPos = (int)ReflectionHelper.GetValue(_m_if_stringPosition, _tmpInputField);
+                var hlPos = (int)ReflectionHelper.GetValue(ReflectionHelper.MIfStringPosition, _tmpInputField);
                 caret = HighlightedIndexToRawIndex(raw, hlPos);
             }
 
             raw = raw.Insert(caret, "\n");
             _currentJsonContent = raw;
-            ApplyHighlight(raw, caret + 1);
+            ApplyHighlight(raw, caret);
             UpdateButtonStates();
-            if (_mi_activateInputField != null)
-                _mi_activateInputField.Invoke(_tmpInputField, null);
+            if (ReflectionHelper.MiActivateInputField != null)
+                ReflectionHelper.MiActivateInputField.Invoke(_tmpInputField, null);
             return;
         }
 
@@ -418,6 +393,7 @@ public class JsonConfigUI
 
     private static int FindRawCaretAfterEdit(string oldRaw, string newRaw)
     {
+        if (oldRaw == null || newRaw == null) return -1;
         var oldLen = oldRaw?.Length ?? 0;
         var newLen = newRaw?.Length ?? 0;
 
@@ -446,8 +422,8 @@ public class JsonConfigUI
 
         SetTMPFieldText(JsonSyntaxHighlighter.Highlight(raw));
 
-        if (_m_if_stringPosition != null)
-            ReflectionHelper.SetValue(_m_if_stringPosition, _tmpInputField,
+        if (ReflectionHelper.MIfStringPosition != null)
+            ReflectionHelper.SetValue(ReflectionHelper.MIfStringPosition, _tmpInputField,
                 JsonSyntaxHighlighter.RawIndexToHighlightedIndex(raw, rawCaret));
     }
 
@@ -455,11 +431,11 @@ public class JsonConfigUI
     {
         if (_tmpInputField == null) return;
 
-        if (_mi_setTextWithoutNotify != null)
+        if (ReflectionHelper.MiSetTextWithoutNotify != null)
         {
             try
             {
-                _mi_setTextWithoutNotify.Invoke(_tmpInputField, [text]);
+                ReflectionHelper.MiSetTextWithoutNotify.Invoke(_tmpInputField, [text]);
                 return;
             }
             catch
@@ -468,7 +444,7 @@ public class JsonConfigUI
             }
         }
 
-        ReflectionHelper.SetValue(_m_if_text, _tmpInputField, text);
+        ReflectionHelper.SetValue(ReflectionHelper.MIfText, _tmpInputField, text);
     }
 
     private static string StripTags(string s)
@@ -485,7 +461,7 @@ public class JsonConfigUI
         object tmp;
         try
         {
-            tmp = ReflectionHelper.AddComponent(go, _tmpTextType);
+            tmp = ReflectionHelper.AddComponent(go, ReflectionHelper.TMPTextType);
         }
         catch (Exception ex)
         {
@@ -499,16 +475,19 @@ public class JsonConfigUI
             _tmpFontAsset = CreateTMPFontAsset();
 
         if (_tmpFontAsset != null)
-            ReflectionHelper.SetValue(ReflectionHelper.GetMember(_tmpTextBaseType, "font"), tmp, _tmpFontAsset);
+            ReflectionHelper.SetValue(ReflectionHelper.GetMember(ReflectionHelper.TMPTextBaseType, "font"), tmp,
+                _tmpFontAsset);
 
-        ReflectionHelper.SetValue(_m_t_text, tmp, text);
-        ReflectionHelper.SetValue(_m_t_color, tmp, color);
-        ReflectionHelper.SetValue(_m_t_fontSize, tmp, fontSize);
-        ReflectionHelper.SetValue(_m_t_richText, tmp, richText);
-        ReflectionHelper.SetValue(_m_t_wordWrap, tmp, true);
-        ReflectionHelper.SetValue(_m_t_autoSize, tmp, false);
-        ReflectionHelper.SetValue(_m_t_overflow, tmp, ReflectionHelper.EnumValue(_m_t_overflow, 0));
-        ReflectionHelper.SetValue(_m_t_alignment, tmp, ReflectionHelper.EnumValue(_m_t_alignment, 257)); // top left
+        ReflectionHelper.SetValue(ReflectionHelper.MTText, tmp, text);
+        ReflectionHelper.SetValue(ReflectionHelper.MTColor, tmp, color);
+        ReflectionHelper.SetValue(ReflectionHelper.MTFontSize, tmp, fontSize);
+        ReflectionHelper.SetValue(ReflectionHelper.MTRichText, tmp, richText);
+        ReflectionHelper.SetValue(ReflectionHelper.MTWordWrap, tmp, true);
+        ReflectionHelper.SetValue(ReflectionHelper.MTAutoSize, tmp, false);
+        ReflectionHelper.SetValue(ReflectionHelper.MTOverflow, tmp,
+            ReflectionHelper.EnumValue(ReflectionHelper.MTOverflow, 0));
+        ReflectionHelper.SetValue(ReflectionHelper.MTAlignment, tmp,
+            ReflectionHelper.EnumValue(ReflectionHelper.MTAlignment, 257)); // top left
 
         return tmp;
     }
@@ -643,7 +622,7 @@ public class JsonConfigUI
 
     private void SetEditorContent(string raw)
     {
-        if (_tmpAvailable && _tmpInputField != null)
+        if (ReflectionHelper.TMPAvailable && _tmpInputField != null)
             ApplyHighlight(raw, 0);
         else if (_legacyEditor != null)
             _legacyEditor.text = raw;
@@ -697,7 +676,9 @@ public class JsonConfigUI
         {
             var font = _consolaFont ?? Resources.GetBuiltinResource<Font>("Arial.ttf");
             if (font == null) return null;
-            return _mi_createFontAsset == null ? null : _mi_createFontAsset.Invoke(null, [font]);
+            return ReflectionHelper.MiCreateFontAsset == null
+                ? null
+                : ReflectionHelper.MiCreateFontAsset.Invoke(null, [font]);
         }
         catch (Exception ex)
         {
@@ -706,77 +687,20 @@ public class JsonConfigUI
     }
 
 
-    private void TryInitTMP()
+    private void CheckTMP()
     {
-        if (_tmpInitialized) return;
-        _tmpInitialized = true;
-
         try
         {
-            var asm = ReflectionHelper.TryLoadAssembly("Il2CppTMPro")
-                      ?? ReflectionHelper.TryLoadAssembly("Unity.TextMeshPro");
-
-            if (asm == null)
-            {
-                _logger.Warning("[JsonConfigUI] TMP assembly not found — using legacy editor.");
-                return;
-            }
-
-            var ns = MelonUtils.IsGameIl2Cpp() ? "Il2CppTMPro" : "TMPro";
-
-            _tmpInputFieldType = asm.GetType($"{ns}.TMP_InputField");
-            _tmpTextType = asm.GetType($"{ns}.TextMeshProUGUI");
-            _tmpTextBaseType = asm.GetType($"{ns}.TMP_Text") ?? _tmpTextType;
-            var tmpFontAssetType = asm.GetType($"{ns}.TMP_FontAsset");
-
-            if (_tmpInputFieldType == null || _tmpTextType == null) return;
-
-            _m_if_text = ReflectionHelper.GetMember(_tmpInputFieldType, "text");
-            _m_if_textComponent = ReflectionHelper.GetMember(_tmpInputFieldType, "textComponent");
-            _m_if_placeholder = ReflectionHelper.GetMember(_tmpInputFieldType, "placeholder");
-            _m_if_textViewport = ReflectionHelper.GetMember(_tmpInputFieldType, "textViewport");
-            _m_if_lineType = ReflectionHelper.GetMember(_tmpInputFieldType, "lineType");
-            _m_if_contentType = ReflectionHelper.GetMember(_tmpInputFieldType, "contentType");
-            _m_if_caretColor = ReflectionHelper.GetMember(_tmpInputFieldType, "caretColor");
-            _m_if_customCaret = ReflectionHelper.GetMember(_tmpInputFieldType, "customCaretColor");
-            _m_if_caretBlinkRate = ReflectionHelper.GetMember(_tmpInputFieldType, "caretBlinkRate");
-            _m_if_onValueChanged = ReflectionHelper.GetMember(_tmpInputFieldType, "onValueChanged");
-            _m_if_onEndEdit = ReflectionHelper.GetMember(_tmpInputFieldType, "onEndEdit");
-            _m_if_richText = ReflectionHelper.GetMember(_tmpInputFieldType, "richText");
-            _m_if_stringPosition = ReflectionHelper.GetMember(_tmpInputFieldType, "stringPosition");
-            _m_if_onFocusSelectAll = ReflectionHelper.GetMember(_tmpInputFieldType, "onFocusSelectAll");
-
-            _mi_setTextWithoutNotify = _tmpInputFieldType.GetMethod("SetTextWithoutNotify",
-                BindingFlags.Public | BindingFlags.Instance);
-            _mi_activateInputField = _tmpInputFieldType.GetMethod("ActivateInputField",
-                BindingFlags.Public | BindingFlags.Instance);
-            _mi_createFontAsset = tmpFontAssetType.GetMethod("CreateFontAsset",
-                BindingFlags.Public | BindingFlags.Static,
-                null,
-                new[] { typeof(Font) },
-                null);
-
-            _m_t_text = ReflectionHelper.GetMember(_tmpTextBaseType, "text");
-            _m_t_color = ReflectionHelper.GetMember(_tmpTextBaseType, "color");
-            _m_t_fontSize = ReflectionHelper.GetMember(_tmpTextBaseType, "fontSize");
-            _m_t_richText = ReflectionHelper.GetMember(_tmpTextBaseType, "richText");
-            _m_t_wordWrap = ReflectionHelper.GetMember(_tmpTextBaseType, "enableWordWrapping");
-            _m_t_overflow = ReflectionHelper.GetMember(_tmpTextBaseType, "overflowMode");
-            _m_t_autoSize = ReflectionHelper.GetMember(_tmpTextBaseType, "enableAutoSizing");
-            _m_t_alignment = ReflectionHelper.GetMember(_tmpTextBaseType, "alignment");
-
-            _tmpAvailable = _m_if_text != null
-                            && _m_if_textComponent != null
-                            && _m_t_text != null;
-
-            if (!_tmpAvailable)
+            ReflectionHelper.TryInitTMP();
+            if (!ReflectionHelper.TMPAvailable)
                 _logger.Warning("[JsonConfigUI] TMP incomplete — using legacy editor.");
-
 
             foreach (var font in ReflectionHelper.FindObjectsOfType(typeof(Font)))
             {
                 var f = font as Font;
-                if (f?.name == "CONSOLA") _consolaFont = f;
+                if (f == null) continue;
+                if (f.name.ToLower().Contains("consola")) _consolaFont = f;
+                if (_consolaFont != null) break;
             }
         }
         catch (Exception ex)

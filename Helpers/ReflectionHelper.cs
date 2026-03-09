@@ -1,12 +1,115 @@
 ﻿using System;
 using System.Collections;
 using System.Reflection;
+using MelonLoader;
 using UnityEngine;
 
 namespace ModsApp.Helpers;
 
 public static class ReflectionHelper
 {
+    // tmp reflection data
+    internal static bool TMPAvailable;
+    internal static Type TMPInputFieldType;
+    internal static Type TMPTextType;
+    internal static Type TMPTextBaseType;
+
+    // TMP_InputField members
+    internal static MemberInfo MIfText;
+    internal static MemberInfo MIfTextComponent;
+    internal static MemberInfo MIfPlaceholder;
+    internal static MemberInfo MIfTextViewport;
+    internal static MemberInfo MIfLineType;
+    internal static MemberInfo MIfContentType;
+    internal static MemberInfo MIfCaretColor;
+    internal static MemberInfo MIfCustomCaret;
+    internal static MemberInfo MIfCaretBlinkRate;
+    internal static MemberInfo MIfOnValueChanged;
+    internal static MemberInfo MIfOnEndEdit;
+    internal static MemberInfo MIfRichText;
+    internal static MemberInfo MIfStringPosition;
+    internal static MemberInfo MIfOnFocusSelectAll;
+    internal static MethodInfo MiSetTextWithoutNotify;
+    internal static MethodInfo MiActivateInputField;
+    internal static MethodInfo MiCreateFontAsset;
+
+    // TMP_Text members
+    internal static MemberInfo MTText;
+    internal static MemberInfo MTColor;
+    internal static MemberInfo MTFontSize;
+    internal static MemberInfo MTRichText;
+    internal static MemberInfo MTWordWrap;
+    internal static MemberInfo MTOverflow;
+    internal static MemberInfo MTAutoSize;
+    internal static MemberInfo MTAlignment;
+
+    public static void TryInitTMP()
+    {
+        try
+        {
+            var asm = TryLoadAssembly("Il2CppTMPro")
+                      ?? TryLoadAssembly("Unity.TextMeshPro");
+
+            if (asm == null)
+            {
+                Melon<ModsApp>.Logger.Warning("[JsonConfigUI] TMP assembly not found");
+                return;
+            }
+
+            var ns = MelonUtils.IsGameIl2Cpp() ? "Il2CppTMPro" : "TMPro";
+
+            TMPInputFieldType ??= asm.GetType($"{ns}.TMP_InputField");
+            TMPTextType ??= asm.GetType($"{ns}.TextMeshProUGUI");
+            TMPTextBaseType ??= asm.GetType($"{ns}.TMP_Text") ?? TMPTextType;
+            var tmpFontAssetType = asm.GetType($"{ns}.TMP_FontAsset");
+
+            if (TMPInputFieldType == null || TMPTextType == null) return;
+
+            MIfText ??= GetMember(TMPInputFieldType, "text");
+            MIfTextComponent ??= GetMember(TMPInputFieldType, "textComponent");
+            MIfPlaceholder ??= GetMember(TMPInputFieldType, "placeholder");
+            MIfTextViewport ??= GetMember(TMPInputFieldType, "textViewport");
+            MIfLineType ??= GetMember(TMPInputFieldType, "lineType");
+            MIfContentType ??= GetMember(TMPInputFieldType, "contentType");
+            MIfCaretColor ??= GetMember(TMPInputFieldType, "caretColor");
+            MIfCustomCaret ??= GetMember(TMPInputFieldType, "customCaretColor");
+            MIfCaretBlinkRate ??= GetMember(TMPInputFieldType, "caretBlinkRate");
+            MIfOnValueChanged ??= GetMember(TMPInputFieldType, "onValueChanged");
+            MIfOnEndEdit ??= GetMember(TMPInputFieldType, "onEndEdit");
+            MIfRichText ??= GetMember(TMPInputFieldType, "richText");
+            MIfStringPosition ??= GetMember(TMPInputFieldType, "stringPosition");
+            MIfOnFocusSelectAll ??= GetMember(TMPInputFieldType, "onFocusSelectAll");
+
+            MiSetTextWithoutNotify ??= TMPInputFieldType.GetMethod("SetTextWithoutNotify",
+                BindingFlags.Public | BindingFlags.Instance);
+            MiActivateInputField ??= TMPInputFieldType.GetMethod("ActivateInputField",
+                BindingFlags.Public | BindingFlags.Instance);
+            MiCreateFontAsset ??= tmpFontAssetType.GetMethod("CreateFontAsset",
+                BindingFlags.Public | BindingFlags.Static,
+                null,
+                new[] { typeof(Font) },
+                null);
+
+            MTText ??= GetMember(TMPTextBaseType, "text");
+            MTColor ??= GetMember(TMPTextBaseType, "color");
+            MTFontSize ??= GetMember(TMPTextBaseType, "fontSize");
+            MTRichText ??= GetMember(TMPTextBaseType, "richText");
+            MTWordWrap ??= GetMember(TMPTextBaseType, "enableWordWrapping");
+            MTOverflow ??= GetMember(TMPTextBaseType, "overflowMode");
+            MTAutoSize ??= GetMember(TMPTextBaseType, "enableAutoSizing");
+            MTAlignment ??= GetMember(TMPTextBaseType, "alignment");
+
+            TMPAvailable = MIfText != null
+                           && MIfTextComponent != null
+                           && MTText != null
+                           && ModsApp.UseNewJsonEditor.Value;
+        }
+        catch (Exception ex)
+        {
+            Melon<ModsApp>.Logger.Warning($"[JsonConfigUI] TMP init threw: {ex.Message}");
+        }
+    }
+
     public static MemberInfo GetMember(Type type, string name,
         BindingFlags flags = BindingFlags.Public | BindingFlags.Instance)
     {
@@ -55,7 +158,7 @@ public static class ReflectionHelper
         }
         catch (Exception ex)
         {
-            MelonLoader.MelonLogger.Warning($"[ReflectionHelper] SetValue {member.Name} failed: {ex.Message}");
+            Melon<ModsApp>.Logger.Warning($"[ReflectionHelper] SetValue {member.Name} failed: {ex.Message}");
             return false;
         }
     }
@@ -78,30 +181,51 @@ public static class ReflectionHelper
         try
         {
             var addListener = unityEvent.GetType()
-                .GetMethod("AddListener", BindingFlags.Public | BindingFlags.Instance);
+                .GetMethods(BindingFlags.Public | BindingFlags.Instance)
+                .FirstOrDefault(m => m.Name == "AddListener" && m.GetParameters().Length == 1);
+
             if (addListener == null) return false;
 
-            var paramType = addListener.GetParameters()[0].ParameterType;
-            var del = Delegate.CreateDelegate(paramType, callback.Target,
-                callback.Method, throwOnBindFailure: false);
+            var delegateType = addListener.GetParameters()[0].ParameterType;
 
-            if (del == null) return false;
+            object del;
+            if (MelonUtils.IsGameIl2Cpp())
+            {
+                var interopAsm = AppDomain.CurrentDomain.GetAssemblies()
+                    .FirstOrDefault(a => a.GetName().Name == "Il2CppInterop.Runtime");
+                var delegateSupport = interopAsm?.GetType("Il2CppInterop.Runtime.DelegateSupport");
+                var convertMethod = delegateSupport?.GetMethod("ConvertDelegate",
+                    BindingFlags.Public | BindingFlags.Static);
+                var closedMethod = convertMethod?.MakeGenericMethod(delegateType);
+                del = closedMethod?.Invoke(null, new object[] { callback });
+            }
+            else
+            {
+                del = Delegate.CreateDelegate(delegateType, callback.Target, callback.Method);
+            }
+
+            if (del == null)
+            {
+                Melon<ModsApp>.Logger.Error("[AddStringListener] Delegate is null");
+                return false;
+            }
 
             addListener.Invoke(unityEvent, new object[] { del });
             return true;
         }
-        catch
+        catch (Exception ex)
         {
+            Melon<ModsApp>.Logger.Error($"[AddStringListener] Crashed: {ex}");
             return false;
         }
     }
 
 
-    public static System.Reflection.Assembly TryLoadAssembly(string name)
+    public static Assembly TryLoadAssembly(string name)
     {
         try
         {
-            return System.Reflection.Assembly.Load(name);
+            return Assembly.Load(name);
         }
         catch
         {

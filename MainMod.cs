@@ -41,6 +41,7 @@ public class ModsApp : MelonMod
     
     public static MelonPreferences_Category AccessibilityCategory;
     public static MelonPreferences_Entry<TextSizeProfile> TextSizeProfileEntry;
+    public static MelonPreferences_Entry<bool> UseNewJsonEditor;
     
     public static MelonPreferences_Category ThemesCategory;
     public static MelonPreferences_Entry<ThemeOption> ThemeOptionEntry;
@@ -72,6 +73,8 @@ public class ModsApp : MelonMod
         AccessibilityCategory = MelonPreferences.CreateCategory("ModsApp_Accessibility", "Accessibility");
         TextSizeProfileEntry = AccessibilityCategory.CreateEntry("ModsAppTextSize", TextSizeProfile.Normal,
             "Text Size Setting", description: "Text size preset");
+        UseNewJsonEditor = AccessibilityCategory.CreateEntry("ModsAppNewJSONEditor", true,
+            "Use new JSON editor", description: "Determines if ModsApp should use TMP JSON editor. Set to false if you have any issues (switches to legacy editor)");
         
         ThemesCategory = MelonPreferences.CreateCategory("ModsApp_Themes", "Themes");
         ThemeOptionEntry = ThemesCategory.CreateEntry("ModsAppThemeOption", ThemeOption.Slate,
@@ -93,6 +96,7 @@ public class ModsApp : MelonMod
         ErrorColorEntry = ThemesCategory.CreateEntry("ModsAppErrorColor", slate.ErrorColor, "Error Color", description: "Color used to indicate errors. Set Theme Preset to Custom to use this color");
 
         CategoryState.Load();
+        ReflectionHelper.TryInitTMP();
     }
     
     public static Sprite LoadEmbeddedPNG(string resourceName)

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Text;
+using MelonLoader;
 
 namespace ModsApp.Helpers;
 
@@ -200,7 +201,7 @@ public static class JsonSyntaxHighlighter
             i++; // unrecognized character, no tags emitted
         }
 
-        return rawIndex + tagBytes;
+        return rawIndex + tagBytes + 1;
     }
 
 
