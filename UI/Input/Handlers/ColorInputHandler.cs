@@ -1,8 +1,12 @@
 ﻿using System;
-using System.Reflection;
 using MelonLoader;
+using ModsApp.Helpers;
 using S1API.Input;
 using S1API.Internal.Abstraction;
+using S1API.UI;
+using ModsApp.Managers;
+using ModsApp.UI.Input.FieldFactories;
+using ModsApp.UI.Panels;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
@@ -13,7 +17,6 @@ public class ColorInputHandler : IPreferenceInputHandler
 {
     private readonly UITheme _theme;
     private readonly MelonLogger.Instance _logger;
-    public static GameObject ColorPickerCanvas;
 
     public ColorInputHandler(UITheme theme, MelonLogger.Instance logger)
     {
@@ -33,18 +36,20 @@ public class ColorInputHandler : IPreferenceInputHandler
 
         var buttonImage = colorButtonGO.AddComponent<Image>();
         buttonImage.color = colorValue;
+        var btnOutline = colorButtonGO.AddComponent<Outline>();
+        btnOutline.effectColor = _theme.BgInput;
+        btnOutline.effectDistance = new Vector2(1, 1);
 
         var button = colorButtonGO.AddComponent<Button>();
         EventHelper.AddListener(() =>
         {
-            ShowColorPickerWheel(colorValue, newColor =>
+            ShowColorPicker(colorValue, newColor =>
             {
                 if (newColor == colorValue) return;
-
                 colorValue = newColor;
                 buttonImage.color = colorValue;
                 onValueChanged(entryKey, colorValue);
-                _logger.Msg($"Modified preference {entryKey}: {ColorUtility.ToHtmlStringRGBA(colorValue)}");
+                _logger.Msg($"Modified preference {entryKey}: #{ColorUtility.ToHtmlStringRGBA(colorValue)}");
             });
         }, button.onClick);
 
@@ -55,133 +60,282 @@ public class ColorInputHandler : IPreferenceInputHandler
         colorButtonGO.AddComponent<RectTransform>();
     }
 
-    private void ShowColorPickerWheel(Color initialColor, Action<Color> onColorSelected)
+
+    private void ShowColorPicker(Color initialColor, Action<Color> onColorSelected)
     {
-        ColorPickerCanvas = new GameObject("ColorPickerCanvas");
-        var canvas = ColorPickerCanvas.AddComponent<Canvas>();
-        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-        ColorPickerCanvas.AddComponent<CanvasScaler>();
-        ColorPickerCanvas.AddComponent<GraphicRaycaster>();
+        var current = initialColor;
 
-        var panelGO = new GameObject("ColorPickerPanel");
-        panelGO.transform.SetParent(ColorPickerCanvas.transform, false);
-        var panelRT = panelGO.AddComponent<RectTransform>();
-        panelRT.sizeDelta = new Vector2(350, 450);
-        panelRT.anchorMin = panelRT.anchorMax = new Vector2(0.5f, 0.5f);
-        panelRT.anchoredPosition = Vector2.zero;
+        var panel = new FloatingPanelComponent(460, 560, "Color Picker");
+        var content = panel.ContentPanel.transform;
 
-        var panelImage = panelGO.AddComponent<Image>();
-        panelImage.color = _theme.BgPrimary;
+        var vlg = panel.ContentPanel.AddComponent<VerticalLayoutGroup>();
+        vlg.spacing = 4;
+        vlg.padding = new RectOffset(8, 8, 6, 6);
+        vlg.childControlWidth = true;
+        vlg.childForceExpandWidth = true;
+        vlg.childForceExpandHeight = false;
+        vlg.childControlHeight = true;
 
-        var previewGO = new GameObject("Preview");
-        previewGO.transform.SetParent(panelGO.transform, false);
-        var previewRT = previewGO.AddComponent<RectTransform>();
-        previewRT.sizeDelta = new Vector2(100, 50);
-        previewRT.anchoredPosition = new Vector2(0, 180);
+        var previewGO = new GameObject("ColorPreview");
+        previewGO.transform.SetParent(content, false);
+
         var previewImage = previewGO.AddComponent<Image>();
-        previewImage.color = initialColor;
+        previewImage.color = current;
+        previewGO.AddComponent<LayoutElement>().preferredHeight = 28;
+        var prevOutline = previewGO.AddComponent<Outline>();
+        prevOutline.effectColor = _theme.BgInput;
+        prevOutline.effectDistance = new Vector2(1, 1);
 
-        Controls.IsTyping = true;
-        CreateColorWheel(panelGO.transform, 200, color =>
+        // declared here for sync callbacks
+        Slider rSlider = null, gSlider = null, bSlider = null, aSlider = null;
+        InputField rField = null, gField = null, bField = null, aField = null;
+        InputField hexField = null;
+        RectTransform knobRT = null;
+        Image knobFillImg = null;
+
+        var syncing = false;
+
+        void SyncAll()
         {
-            initialColor.r = color.r;
-            initialColor.g = color.g;
-            initialColor.b = color.b;
-            previewImage.color = initialColor;
-        });
+            if (syncing) return;
+            syncing = true;
 
-        CreateSlider(panelGO.transform, "A", initialColor.a, new Vector2(0, -130), value =>
-        {
-            initialColor.a = value;
-            previewImage.color = initialColor;
-        });
+            previewImage.color = current;
 
-        CreateButton(panelGO.transform, "Cancel", _theme.WarningColor, new Vector2(-100, -180),
-            () =>
+            if (rSlider != null) rSlider.value = current.r;
+            if (gSlider != null) gSlider.value = current.g;
+            if (bSlider != null) bSlider.value = current.b;
+            if (aSlider != null) aSlider.value = current.a;
+
+            if (rField != null) rField.text = current.r.ToString("F2");
+            if (gField != null) gField.text = current.g.ToString("F2");
+            if (bField != null) bField.text = current.b.ToString("F2");
+            if (aField != null) aField.text = current.a.ToString("F2");
+
+            if (hexField != null) hexField.text = ColorUtility.ToHtmlStringRGBA(current);
+
+            // sync knob position to current HSV
+            Color.RGBToHSV(current, out var h, out var s, out _);
+            if (knobRT != null)
             {
-                GameObject.Destroy(ColorPickerCanvas);
-                Controls.IsTyping = false;
-            });
-        CreateButton(panelGO.transform, "Apply", _theme.SuccessColor, new Vector2(100, -180),
-            () =>
-            {
-                onColorSelected(initialColor);
-                GameObject.Destroy(ColorPickerCanvas);
-                Controls.IsTyping = false;
-            });
-    }
+                var angle = h * 2f * Mathf.PI;
+                var radius = 120f;
+                knobRT.anchoredPosition = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * s * radius;
+            }
 
-    private void CreateColorWheel(Transform parent, float size, Action<Color> onColorChanged)
-    {
+            if (knobFillImg != null)
+                knobFillImg.color = Color.HSVToRGB(h, s, 1f);
+
+            syncing = false;
+        }
+
+        var wheelSlot = new GameObject("WheelSlot");
+        wheelSlot.transform.SetParent(content, false);
+        wheelSlot.AddComponent<RectTransform>();
+        var wheelSlotLE = wheelSlot.AddComponent<LayoutElement>();
+        wheelSlotLE.preferredHeight = 260;
+        wheelSlotLE.flexibleHeight = 0;
+
+        const float wheelSize = 240f;
+        const float wheelRadius = wheelSize / 2f;
+
         var wheelGO = new GameObject("ColorWheel");
-        wheelGO.transform.SetParent(parent, false);
+        wheelGO.transform.SetParent(wheelSlot.transform, false);
         var wheelRT = wheelGO.AddComponent<RectTransform>();
-        wheelRT.sizeDelta = new Vector2(size, size);
+        wheelRT.anchorMin = new Vector2(0.5f, 0.5f);
+        wheelRT.anchorMax = new Vector2(0.5f, 0.5f);
+        wheelRT.pivot = new Vector2(0.5f, 0.5f);
+        wheelRT.sizeDelta = new Vector2(wheelSize, wheelSize);
+        wheelRT.anchoredPosition = Vector2.zero;
 
         var wheelImage = wheelGO.AddComponent<RawImage>();
-        wheelImage.texture = GenerateColorWheelTexture((int)size);
+        wheelImage.texture = GenerateColorWheelTexture((int)wheelSize);
 
         var knobGO = new GameObject("Knob");
         knobGO.transform.SetParent(wheelGO.transform, false);
-        var knobImage = knobGO.AddComponent<Image>();
-        knobImage.sprite = GenerateCircleSprite(16, Color.white);
-        knobImage.type = Image.Type.Simple;
-        knobGO.GetComponent<RectTransform>().sizeDelta = new Vector2(16, 16);
+        var knobImg = knobGO.AddComponent<Image>();
+        knobImg.sprite = GenerateCircleSprite(16, Color.black);
+        knobImg.type = Image.Type.Simple;
+        knobRT = knobGO.GetComponent<RectTransform>();
+        knobRT.sizeDelta = new Vector2(16, 16);
 
         var knobFillGO = new GameObject("Fill");
         knobFillGO.transform.SetParent(knobGO.transform, false);
         var knobFill = knobFillGO.AddComponent<Image>();
         knobFill.sprite = GenerateCircleSprite(10, Color.white);
         knobFill.type = Image.Type.Simple;
-        knobFillGO.GetComponent<RectTransform>().anchoredPosition = Vector2.zero;
-        knobFillGO.GetComponent<RectTransform>().sizeDelta = new Vector2(10, 10);
+        knobFillImg = knobFill;
+        var knobFillRT = knobFillGO.GetComponent<RectTransform>();
+        knobFillRT.anchoredPosition = Vector2.zero;
+        knobFillRT.sizeDelta = new Vector2(10, 10);
 
+        var canvas = wheelGO.GetComponentInParent<Canvas>();
+        var worldCamera = canvas != null ? canvas.worldCamera : null;
         var trigger = wheelGO.AddComponent<EventTrigger>();
 
-        void HandleEvent(PointerEventData eventData)
+        void HandleWheel(PointerEventData eventData)
         {
-            Vector2 screenPos = eventData.position;
-
-            if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(wheelRT, screenPos, null, out var local))
+            if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                    wheelRT, eventData.position, worldCamera, out var local))
                 return;
 
-            var radius = size / 2f;
-            var norm = local / radius;
+            var norm = local / wheelRadius;
             if (norm.magnitude > 1f) norm = norm.normalized;
 
             var hue = Mathf.Atan2(norm.y, norm.x) / (2f * Mathf.PI);
             if (hue < 0) hue += 1f;
             var sat = Mathf.Min(norm.magnitude, 1f);
 
-            Color color = Color.HSVToRGB(hue, sat, 1f);
-            onColorChanged?.Invoke(color);
+            var rgb = Color.HSVToRGB(hue, sat, 1f);
+            current.r = rgb.r;
+            current.g = rgb.g;
+            current.b = rgb.b;
 
-            knobGO.GetComponent<RectTransform>().anchoredPosition = norm * radius;
-            knobFill.color = color;
+            knobRT.anchoredPosition = norm * wheelRadius;
+            knobFill.color = rgb;
+
+            SyncAll();
         }
-        
-        // Inline lambda that enforces PointerEventData before calling HandleEvent
-        EventHelper.AddEventTrigger(trigger, EventTriggerType.PointerDown, (BaseEventData e) => {
-            if (e is PointerEventData pe)
-                HandleEvent(pe);
-            else
-                HandleEvent(new PointerEventData(EventSystem.current) { position = UnityEngine.Input.mousePosition });
+
+        EventHelper.AddEventTrigger(trigger, EventTriggerType.PointerDown, e =>
+        {
+            if (e is PointerEventData pe) HandleWheel(pe);
+            else HandleWheel(new PointerEventData(EventSystem.current) { position = UnityEngine.Input.mousePosition });
+        });
+        EventHelper.AddEventTrigger(trigger, EventTriggerType.Drag, e =>
+        {
+            if (e is PointerEventData pe) HandleWheel(pe);
+            else HandleWheel(new PointerEventData(EventSystem.current) { position = UnityEngine.Input.mousePosition });
         });
 
-        EventHelper.AddEventTrigger(trigger, EventTriggerType.Drag, (BaseEventData e) => {
-            if (e is PointerEventData pe)
-                HandleEvent(pe);
-            else
-                HandleEvent(new PointerEventData(EventSystem.current) { position = UnityEngine.Input.mousePosition });
-        });
+        (Slider s, InputField f) AddLabeledSlider(string label, float initial, Action<float> onChanged)
+        {
+            var row = new GameObject($"{label}Row");
+            row.transform.SetParent(content, false);
+            row.AddComponent<RectTransform>();
+            var rowLE = row.AddComponent<LayoutElement>();
+            rowLE.preferredHeight = 20;
+            rowLE.flexibleHeight = 0;
+            var rowHLG = row.AddComponent<HorizontalLayoutGroup>();
+            rowHLG.spacing = 6;
+            rowHLG.childControlWidth = true;
+            rowHLG.childForceExpandWidth = false;
+            rowHLG.childForceExpandHeight = false;
+            rowHLG.childControlHeight = true;
 
+            var lbl = UIFactory.Text($"{label}Lbl", label, row.transform, _theme.SizeSmall, TextAnchor.MiddleLeft);
+            lbl.color = _theme.TextSecondary;
+            lbl.gameObject.GetOrAddComponent<LayoutElement>().preferredWidth = 14;
+
+            var (_, slider, field) = SliderFactory.CreateSlider(
+                row, $"{label}Slider",
+                0f, 1f, initial,
+                false, InputField.ContentType.DecimalNumber,
+                t => float.TryParse(t, out var v) && v >= 0f && v <= 1f,
+                onChanged);
+
+            slider.gameObject.GetOrAddComponent<LayoutElement>().flexibleWidth = 1;
+            field.gameObject.GetOrAddComponent<LayoutElement>().preferredWidth = 48;
+
+            return (slider, field);
+        }
+
+        syncing = true;
+        (rSlider, rField) = AddLabeledSlider("R", current.r, v =>
+        {
+            current.r = v;
+            SyncAll();
+        });
+        (gSlider, gField) = AddLabeledSlider("G", current.g, v =>
+        {
+            current.g = v;
+            SyncAll();
+        });
+        (bSlider, bField) = AddLabeledSlider("B", current.b, v =>
+        {
+            current.b = v;
+            SyncAll();
+        });
+        (aSlider, aField) = AddLabeledSlider("A", current.a, v =>
+        {
+            current.a = v;
+            SyncAll();
+        });
+        syncing = false;
+
+        var hexRow = new GameObject("HexRow");
+        hexRow.transform.SetParent(content, false);
+        hexRow.AddComponent<RectTransform>();
+        var hexLayout = hexRow.AddComponent<HorizontalLayoutGroup>();
+        hexLayout.spacing = 6;
+        hexLayout.childControlWidth = true;
+        hexLayout.childForceExpandWidth = false;
+        hexLayout.childForceExpandHeight = false;
+        hexLayout.childControlHeight = true;
+        hexRow.AddComponent<LayoutElement>().preferredHeight = 22;
+
+        var hexLabel = UIFactory.Text("HexLabel", "#", hexRow.transform, _theme.SizeStandard);
+        hexLabel.color = _theme.TextSecondary;
+        hexLabel.gameObject.GetOrAddComponent<LayoutElement>().preferredWidth = 12;
+
+        hexField = InputFieldFactory.CreateInputField(
+            hexRow, "HexInput",
+            ColorUtility.ToHtmlStringRGBA(current),
+            InputField.ContentType.Standard, 160);
+        hexField.gameObject.GetOrAddComponent<LayoutElement>().flexibleWidth = 1;
+
+        EventHelper.AddListener<string>(text =>
+        {
+            if (ColorUtility.TryParseHtmlString("#" + text.TrimStart('#'), out var parsed))
+            {
+                current = parsed;
+                SyncAll();
+            }
+        }, hexField.onEndEdit);
+
+        var btnRow = new GameObject("ButtonRow");
+        btnRow.transform.SetParent(content, false);
+        btnRow.AddComponent<RectTransform>();
+        var btnLayout = btnRow.AddComponent<HorizontalLayoutGroup>();
+        btnLayout.spacing = 8;
+        btnLayout.childAlignment = TextAnchor.MiddleCenter;
+        btnLayout.childForceExpandWidth = false;
+        btnLayout.childForceExpandHeight = false;
+        btnLayout.childControlWidth = true;
+        btnLayout.childControlHeight = true;
+        btnRow.AddComponent<LayoutElement>().preferredHeight = 30;
+
+        var (_, applyBtn, _) = UIFactory.RoundedButtonWithLabel(
+            "ApplyBtn", "Apply", btnRow.transform,
+            _theme.AccentPrimary, 100, 30, _theme.SizeStandard, _theme.TextPrimary);
+        EventHelper.AddListener(() =>
+        {
+            onColorSelected(current);
+            Controls.IsTyping = false;
+            FloatingPanelComponent.Cleanup();
+        }, applyBtn.onClick);
+
+        var (_, cancelBtn, _) = UIFactory.RoundedButtonWithLabel(
+            "CancelBtn", "Cancel", btnRow.transform,
+            _theme.WarningColor, 100, 30, _theme.SizeStandard, _theme.TextPrimary);
+        EventHelper.AddListener(() =>
+        {
+            Controls.IsTyping = false;
+            FloatingPanelComponent.Cleanup();
+        }, cancelBtn.onClick);
+
+        Controls.IsTyping = true;
+
+        // try restoring current - slider quantization might have skewed the values
+        current = initialColor;
+        SyncAll();
     }
 
-    private Texture2D GenerateColorWheelTexture(int size)
+
+    private static Texture2D GenerateColorWheelTexture(int size)
     {
         var tex = new Texture2D(size, size);
         tex.wrapMode = TextureWrapMode.Clamp;
-
         var radius = size / 2f;
         var center = new Vector2(radius, radius);
 
@@ -198,15 +352,14 @@ public class ColorInputHandler : IPreferenceInputHandler
 
             var hue = Mathf.Atan2(pos.y, pos.x) / (2f * Mathf.PI);
             if (hue < 0) hue += 1f;
-            var sat = r;
-            tex.SetPixel(x, y, Color.HSVToRGB(hue, sat, 1f));
+            tex.SetPixel(x, y, Color.HSVToRGB(hue, r, 1f));
         }
 
         tex.Apply();
         return tex;
     }
 
-    private Sprite GenerateCircleSprite(int size, Color color)
+    private static Sprite GenerateCircleSprite(int size, Color color)
     {
         var tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
         tex.filterMode = FilterMode.Bilinear;
@@ -215,109 +368,10 @@ public class ColorInputHandler : IPreferenceInputHandler
 
         for (var y = 0; y < size; y++)
         for (var x = 0; x < size; x++)
-        {
-            var dist = Vector2.Distance(new Vector2(x, y), center);
-            tex.SetPixel(x, y, dist <= radius ? color : Color.clear);
-        }
+            tex.SetPixel(x, y,
+                Vector2.Distance(new Vector2(x, y), center) <= radius ? color : Color.clear);
 
         tex.Apply();
         return Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f));
-    }
-
-    private void CreateSlider(Transform parent, string label, float initialValue, Vector2 anchoredPosition,
-        Action<float> onChanged)
-    {
-        var sliderGO = new GameObject($"{label}Slider");
-        sliderGO.transform.SetParent(parent, false);
-        var sliderRT = sliderGO.AddComponent<RectTransform>();
-        sliderRT.sizeDelta = new Vector2(200, 20);
-        sliderRT.anchoredPosition = anchoredPosition;
-
-        var slider = sliderGO.AddComponent<Slider>();
-        slider.minValue = 0f;
-        slider.maxValue = 1f;
-        slider.value = initialValue;
-        EventHelper.AddListener<float>((v) => onChanged(v), slider.onValueChanged);
-
-        var bgGO = new GameObject("Background");
-        bgGO.transform.SetParent(sliderGO.transform, false);
-        var bg = bgGO.AddComponent<Image>();
-        bg.color = new Color(0.3f, 0.3f, 0.3f, 1f);
-        var bgRT = bgGO.GetComponent<RectTransform>();
-        bgRT.anchorMin = Vector2.zero;
-        bgRT.anchorMax = Vector2.one;
-        bgRT.offsetMin = Vector2.zero;
-        bgRT.offsetMax = Vector2.zero;
-        slider.targetGraphic = bg;
-
-        var fillAreaGO = new GameObject("Fill Area");
-        fillAreaGO.transform.SetParent(sliderGO.transform, false);
-        var fillAreaRT = fillAreaGO.AddComponent<RectTransform>();
-        fillAreaRT.anchorMin = Vector2.zero;
-        fillAreaRT.anchorMax = Vector2.one;
-        fillAreaRT.offsetMin = new Vector2(1, 0);
-        fillAreaRT.offsetMax = new Vector2(-5, 0);
-
-        var fillGO = new GameObject("Fill");
-        fillGO.transform.SetParent(fillAreaGO.transform, false);
-        var fill = fillGO.AddComponent<Image>();
-        fill.color = _theme.AccentPrimary;
-        slider.fillRect = fill.GetComponent<RectTransform>();
-        var fillRT = fillGO.GetComponent<RectTransform>();
-        fillRT.anchorMin = Vector2.zero;
-        fillRT.anchorMax = Vector2.one;
-        fillRT.offsetMin = Vector2.zero;
-        fillRT.offsetMax = Vector2.zero;
-
-        var handleGO = new GameObject("Handle");
-        handleGO.transform.SetParent(sliderGO.transform, false);
-        var handle = handleGO.AddComponent<Image>();
-        handle.color = _theme.BgInput;
-        slider.handleRect = handle.GetComponent<RectTransform>();
-        slider.direction = Slider.Direction.LeftToRight;
-        handleGO.GetComponent<RectTransform>().sizeDelta = new Vector2(20, 20);
-
-        var textGO = new GameObject($"{label}Label");
-        textGO.transform.SetParent(sliderGO.transform, false);
-        var textRT = textGO.AddComponent<RectTransform>();
-        textRT.sizeDelta = new Vector2(40, 20);
-        textRT.anchoredPosition = new Vector2(-120, 0);
-
-        var text = textGO.AddComponent<Text>();
-        text.text = label;
-        text.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-        text.color = _theme.InputPrimary;
-        text.alignment = TextAnchor.MiddleLeft;
-        text.fontSize = _theme.SizeStandard;
-    }
-
-    private void CreateButton(Transform parent, string label, Color color, Vector2 anchoredPosition, Action onClick)
-    {
-        var buttonGO = new GameObject($"{label}Button");
-        buttonGO.transform.SetParent(parent, false);
-        var rt = buttonGO.AddComponent<RectTransform>();
-        rt.sizeDelta = new Vector2(80, 30);
-        rt.anchoredPosition = anchoredPosition;
-
-        var image = buttonGO.AddComponent<Image>();
-        image.color = color;
-
-        var btn = buttonGO.AddComponent<Button>();
-        EventHelper.AddListener(() => onClick(), btn.onClick);
-
-        var textGO = new GameObject("Text");
-        textGO.transform.SetParent(buttonGO.transform, false);
-        var textRT = textGO.AddComponent<RectTransform>();
-        textRT.anchorMin = Vector2.zero;
-        textRT.anchorMax = Vector2.one;
-        textRT.offsetMin = Vector2.zero;
-        textRT.offsetMax = Vector2.zero;
-
-        var text = textGO.AddComponent<Text>();
-        text.text = label;
-        text.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-        text.color = _theme.InputPrimary;
-        text.alignment = TextAnchor.MiddleCenter;
-        text.fontSize = _theme.SizeStandard;
     }
 }

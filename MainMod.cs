@@ -38,10 +38,10 @@ public class ModsApp : MelonMod
     public static Sprite AppIconSprite;
     public static Sprite WarningIconSprite;
     public static Sprite ScrollIconSprite;
-    
+
     public static MelonPreferences_Category AccessibilityCategory;
     public static MelonPreferences_Entry<TextSizeProfile> TextSizeProfileEntry;
-    
+
     public static MelonPreferences_Category ThemesCategory;
     public static MelonPreferences_Entry<ThemeOption> ThemeOptionEntry;
     public static MelonPreferences_Entry<Color> BackgroundPrimaryEntry;
@@ -68,33 +68,52 @@ public class ModsApp : MelonMod
         AppIconSprite = LoadEmbeddedPNG("ModsApp.assets.appicon.png");
         WarningIconSprite = LoadEmbeddedPNG("ModsApp.assets.triangle-alert.png");
         ScrollIconSprite = LoadEmbeddedPNG("ModsApp.assets.scroll-text.png");
-        
+
         AccessibilityCategory = MelonPreferences.CreateCategory("ModsApp_Accessibility", "Accessibility");
         TextSizeProfileEntry = AccessibilityCategory.CreateEntry("ModsAppTextSize", TextSizeProfile.Normal,
             "Text Size Setting", description: "Text size preset");
-        
+
         ThemesCategory = MelonPreferences.CreateCategory("ModsApp_Themes", "Themes");
         ThemeOptionEntry = ThemesCategory.CreateEntry("ModsAppThemeOption", ThemeOption.Slate,
-            "Theme Preset", description: "Predefined theme presets. Set to Custom to use custom colors defined below - Custom may require game restart to apply fully, but changing presets should apply immediately");
+            "Theme Preset",
+            description:
+            "Predefined theme presets. Set to Custom to use custom colors defined below - Custom may require game restart to apply fully, but changing presets should apply immediately");
         var slate = new Slate();
-        BackgroundPrimaryEntry = ThemesCategory.CreateEntry("ModsAppBackgroundPrimary", slate.BgPrimary, "Background Primary", description: "Primary background color. Set Theme Preset to Custom to use this color");
-        BackgroundSecondaryEntry = ThemesCategory.CreateEntry("ModsAppBackgroundSecondary", slate.BgSecondary, "Background Secondary", description: "Secondary background color. Set Theme Preset to Custom to use this color");
-        BackgroundCardEntry = ThemesCategory.CreateEntry("ModsAppBackgroundCard", slate.BgCard, "Background Card", description: "Card background color. Set Theme Preset to Custom to use this color");
-        BackgroundCategoryEntry = ThemesCategory.CreateEntry("ModsAppBackgroundCategory", slate.BgCategory, "Background Category", description: "Category background color. Set Theme Preset to Custom to use this color");
-        BackgroundInputEntry = ThemesCategory.CreateEntry("ModsAppBackgroundInput", slate.BgInput, "Background Input", description: "Input background color. Set Theme Preset to Custom to use this color");
-        AccentPrimaryEntry = ThemesCategory.CreateEntry("ModsAppAccentPrimary", slate.AccentPrimary, "Accent Primary", description: "Primary accent color. Set Theme Preset to Custom to use this color");
-        AccentSecondaryEntry = ThemesCategory.CreateEntry("ModsAppAccentSecondary", slate.AccentSecondary, "Accent Secondary", description: "Secondary accent color. Set Theme Preset to Custom to use this color");
-        TextPrimaryEntry = ThemesCategory.CreateEntry("ModsAppTextPrimary", slate.TextPrimary, "Text Primary", description: "Primary text color. Set Theme Preset to Custom to use this color");
-        TextSecondaryEntry = ThemesCategory.CreateEntry("ModsAppTextSecondary", slate.TextSecondary, "Text Secondary", description: "Secondary text color. Set Theme Preset to Custom to use this color");
-        InputPrimaryEntry = ThemesCategory.CreateEntry("ModsAppInputPrimary", slate.InputPrimary, "Input Primary", description: "Primary input color. Set Theme Preset to Custom to use this color");
-        InputSecondaryEntry = ThemesCategory.CreateEntry("ModsAppInputSecondary", slate.InputSecondary, "Input Secondary", description: "Secondary input color. Set Theme Preset to Custom to use this color");
-        SuccessColorEntry = ThemesCategory.CreateEntry("ModsAppSuccessColor", slate.SuccessColor, "Success Color", description: "Color used to indicate success. Set Theme Preset to Custom to use this color");
-        WarningColorEntry = ThemesCategory.CreateEntry("ModsAppWarningColor", slate.WarningColor, "Warning Color", description: "Color used to indicate warnings. Set Theme Preset to Custom to use this color");
-        ErrorColorEntry = ThemesCategory.CreateEntry("ModsAppErrorColor", slate.ErrorColor, "Error Color", description: "Color used to indicate errors. Set Theme Preset to Custom to use this color");
+        BackgroundPrimaryEntry = ThemesCategory.CreateEntry("ModsAppBackgroundPrimary", slate.BgPrimary,
+            "Background Primary",
+            description: "Primary background color. Set Theme Preset to Custom to use this color");
+        BackgroundSecondaryEntry = ThemesCategory.CreateEntry("ModsAppBackgroundSecondary", slate.BgSecondary,
+            "Background Secondary",
+            description: "Secondary background color. Set Theme Preset to Custom to use this color");
+        BackgroundCardEntry = ThemesCategory.CreateEntry("ModsAppBackgroundCard", slate.BgCard, "Background Card",
+            description: "Card background color. Set Theme Preset to Custom to use this color");
+        BackgroundCategoryEntry = ThemesCategory.CreateEntry("ModsAppBackgroundCategory", slate.BgCategory,
+            "Background Category",
+            description: "Category background color. Set Theme Preset to Custom to use this color");
+        BackgroundInputEntry = ThemesCategory.CreateEntry("ModsAppBackgroundInput", slate.BgInput, "Background Input",
+            description: "Input background color. Set Theme Preset to Custom to use this color");
+        AccentPrimaryEntry = ThemesCategory.CreateEntry("ModsAppAccentPrimary", slate.AccentPrimary, "Accent Primary",
+            description: "Primary accent color. Set Theme Preset to Custom to use this color");
+        AccentSecondaryEntry = ThemesCategory.CreateEntry("ModsAppAccentSecondary", slate.AccentSecondary,
+            "Accent Secondary", description: "Secondary accent color. Set Theme Preset to Custom to use this color");
+        TextPrimaryEntry = ThemesCategory.CreateEntry("ModsAppTextPrimary", slate.TextPrimary, "Text Primary",
+            description: "Primary text color. Set Theme Preset to Custom to use this color");
+        TextSecondaryEntry = ThemesCategory.CreateEntry("ModsAppTextSecondary", slate.TextSecondary, "Text Secondary",
+            description: "Secondary text color. Set Theme Preset to Custom to use this color");
+        InputPrimaryEntry = ThemesCategory.CreateEntry("ModsAppInputPrimary", slate.InputPrimary, "Input Primary",
+            description: "Primary input color. Set Theme Preset to Custom to use this color");
+        InputSecondaryEntry = ThemesCategory.CreateEntry("ModsAppInputSecondary", slate.InputSecondary,
+            "Input Secondary", description: "Secondary input color. Set Theme Preset to Custom to use this color");
+        SuccessColorEntry = ThemesCategory.CreateEntry("ModsAppSuccessColor", slate.SuccessColor, "Success Color",
+            description: "Color used to indicate success. Set Theme Preset to Custom to use this color");
+        WarningColorEntry = ThemesCategory.CreateEntry("ModsAppWarningColor", slate.WarningColor, "Warning Color",
+            description: "Color used to indicate warnings. Set Theme Preset to Custom to use this color");
+        ErrorColorEntry = ThemesCategory.CreateEntry("ModsAppErrorColor", slate.ErrorColor, "Error Color",
+            description: "Color used to indicate errors. Set Theme Preset to Custom to use this color");
 
         CategoryState.Load();
     }
-    
+
     public static Sprite LoadEmbeddedPNG(string resourceName)
     {
         Assembly asm = Assembly.GetExecutingAssembly();
@@ -112,16 +131,11 @@ public class ModsApp : MelonMod
     public override void OnUpdate()
     {
         // Failsafe to exit typing mode when Escape is pressed
-        if (App.Instance != null && App.Instance.IsOpen())
-            if (UnityEngine.Input.GetKeyDown(KeyCode.Escape))
-            {
-                FloatingPanelComponent.Cleanup();
-                Controls.IsTyping = false;
-            }
-        if (ColorInputHandler.ColorPickerCanvas != null && UnityEngine.Input.GetKeyDown(KeyCode.Escape))
+        if (App.Instance == null || !App.Instance.IsOpen()) return;
+        if (UnityEngine.Input.GetKeyDown(KeyCode.Escape))
         {
+            FloatingPanelComponent.Cleanup();
             Controls.IsTyping = false;
-            GameObject.Destroy(ColorInputHandler.ColorPickerCanvas);
         }
     }
 

@@ -25,7 +25,7 @@ public class FloatingPanelComponent
 
         // look in main panel for existing floating panel (in case multiple are opened, kill the old one)
         var existing = UIManager.MainPanel.transform.Find("FloatingPanel");
-        if (existing != null) Object.Destroy(existing.gameObject);
+        if (existing != null) Cleanup();
 
         _panelObject = UIFactory.Panel("FloatingPanel", UIManager.MainPanel.transform, _theme.BgPrimary);
         _panelObject.transform.SetParent(UIManager.MainPanel.transform, false);

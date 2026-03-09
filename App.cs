@@ -4,6 +4,7 @@ using MelonLoader;
 using MelonLoader.Utils;
 using ModsApp.Managers;
 using ModsApp.UI.Input.Handlers;
+using ModsApp.UI.Panels;
 using S1API.Input;
 using S1API.PhoneApp;
 using UnityEngine;
@@ -58,8 +59,7 @@ public class App : PhoneApp
     protected override void OnPhoneClosed()
     {
         Controls.IsTyping = false;
-        if (ColorInputHandler.ColorPickerCanvas != null)
-            GameObject.Destroy(ColorInputHandler.ColorPickerCanvas);
+        FloatingPanelComponent.Cleanup();
         base.OnPhoneClosed();
     }
 }
