@@ -113,15 +113,6 @@ public static class SliderFactory
             validator
         );
 
-        // ensure layout sizing
-        var fieldLE =
-            field.gameObject.GetComponent<LayoutElement>()
-            ?? field.gameObject.AddComponent<LayoutElement>();
-
-        fieldLE.preferredWidth = 60f;
-        fieldLE.minWidth = 60f;
-        fieldLE.flexibleWidth = 0f;
-
         // precision
         var step = wholeNumbers
             ? 1f
