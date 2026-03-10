@@ -34,6 +34,11 @@ public static class TypeNameHelper
             return $"{typeName}<{string.Join(", ", args.Select(GetFriendlyTypeName))}>";
         }
 
+        if (type.IsEnum)
+        {
+            return type.Name;
+        }
+
         var alias = GetCSharpAlias(type);
         return alias ?? type.Name;
     }

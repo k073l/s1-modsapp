@@ -1,5 +1,6 @@
 ﻿using System;
 using MelonLoader;
+using ModsApp.Helpers;
 using ModsApp.UI.Input.FieldFactories;
 using S1API.Internal.Abstraction;
 using S1API.UI;
@@ -30,12 +31,20 @@ public class FallbackInputHandler : IPreferenceInputHandler
         string initialValue = NormalizeValue(entry.GetReflectedType(), currentValue);
 
         var input = InputFieldFactory.CreateInputField(parent, $"{entryKey}_Input",
-            initialValue, InputField.ContentType.Standard, 100);
+            initialValue, InputField.ContentType.Standard, 60);
+        var inputLayout = input.gameObject.GetOrAddComponent<LayoutElement>();
+        inputLayout.minWidth = 60;
+        inputLayout.preferredWidth = 60;
+        inputLayout.flexibleWidth = 1;
 
         var label = UIFactory.Text($"{entryKey}_Label", "(Fallback, might not work properly)", parent.transform,
             _theme.SizeTiny);
         label.color = _theme.TextSecondary;
         label.fontStyle = FontStyle.Italic;
+        var labelLayout = label.gameObject.GetOrAddComponent<LayoutElement>();
+        labelLayout.minWidth = label.preferredWidth;
+        labelLayout.preferredWidth = label.preferredWidth;
+        labelLayout.flexibleWidth = 0;
 
         string lastValid = initialValue;
 
