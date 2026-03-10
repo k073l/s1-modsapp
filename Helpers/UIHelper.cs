@@ -388,12 +388,14 @@ public static class ModVersionTracker
 
     public static bool IsNew(MelonMod mod)
     {
+        if (mod?.Info?.Name == null) return false;
         _thisSession.TryAdd(mod, mod.Info.Version);
         return !_versions.ContainsKey(mod) || _versions[mod] == null;
     }
 
     public static bool IsUpdated(MelonMod mod)
     {
+        if (mod?.Info?.Name == null) return false;
         _thisSession.TryAdd(mod, mod.Info.Version);
         return _versions.TryGetValue(mod, out var saved)
                && saved != null
@@ -414,6 +416,7 @@ public static class ModVersionTracker
     public static void Load()
     {
         var fallback = () => _versions = MelonMod.RegisteredMelons
+            .Where(m => m?.Info?.Name != null)
             .ToDictionary(m => m, m => m.Info.Version);
 
         if (!File.Exists(_savePath))
