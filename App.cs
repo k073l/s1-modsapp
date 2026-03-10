@@ -82,6 +82,8 @@ public class App : PhoneApp
         while ((modsappIcon = _homeScreenInstanceTransform.FindInHierarchy("AppIcons/Mods")) == null)
             yield return new WaitForSeconds(0.1f);
         NotificationBadge.Initialize(modsappIcon);
+        if (ModVersionTracker.AreAnyUpdatedOrNew())
+            NotificationBadge.ShowDot();
         UpdateNotificationBadge();
         LogManager.Instance.OnError += UpdateNotificationBadge;
     }

@@ -303,8 +303,22 @@ public class ModDetailsPanel
         var author = UIFactory.Text("ModAuthor", $"by: {mod.Info.Author}", card.transform, _theme.SizeStandard);
         author.color = _theme.TextSecondary;
 
-        var version = UIFactory.Text("ModVersion", $"v. {mod.Info.Version}", card.transform, _theme.SizeStandard);
+        var versionText = $"v. {mod.Info.Version}";
+        if (ModVersionTracker.IsUpdated(mod))
+        {
+            var successColor = ColorUtility.ToHtmlStringRGB(_theme.SuccessColor);
+            versionText += $" - <color=#{successColor}>Updated since last launch!</color>";
+        }
+
+        if (ModVersionTracker.IsNew(mod))
+        {
+            var warningColor = ColorUtility.ToHtmlStringRGB(_theme.WarningColor);
+            versionText += $" - <color=#{warningColor}>New mod!</color>";
+        }
+
+        var version = UIFactory.Text("ModVersion", versionText, card.transform, _theme.SizeStandard);
         version.color = _theme.TextSecondary;
+        version.supportRichText = true;
 
         var dependenciesText = CheckAndFormatDependencies(mod);
         if (!string.IsNullOrEmpty(dependenciesText))

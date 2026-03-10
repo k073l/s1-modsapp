@@ -249,6 +249,9 @@ public class ModListPanel
             var mod = _modManager.GetMod(internalName);
             if (mod != null)
             {
+                var isNew = ModVersionTracker.IsNew(mod);
+                var isUpdated = ModVersionTracker.IsUpdated(mod);
+
                 if (!WarningIcons.TryGetValue(mod, out var icon))
                 {
                     icon = UIHelper.AddIcon(
@@ -262,10 +265,23 @@ public class ModListPanel
                 }
 
                 var deps = _modManager.GetModDependencies(mod);
-                icon.gameObject.SetActive(deps.Missing.Count > 0);
-                
-                if (LogManager.Instance.HasErrorsForMod(mod.Info.Name))
-                    icon.gameObject.SetActive(true);
+                var hasWarning = deps.Missing.Count > 0 || LogManager.Instance.HasErrorsForMod(mod.Info.Name);
+                icon.gameObject.SetActive(hasWarning);
+
+                if (isNew || isUpdated)
+                {
+                    var dotColor = isUpdated
+                        ? new Color(_theme.SuccessColor.r, _theme.SuccessColor.g, _theme.SuccessColor.b, 0.7f)
+                        : new Color(_theme.WarningColor.r, _theme.WarningColor.g, _theme.WarningColor.b, 0.5f);
+
+                    var dot = UIHelper.AddIcon(
+                        UIHelper.GetRoundedSprite(32, 16),
+                        buttonGo.transform,
+                        new Vector2(hasWarning ? 0.78f : 0.85f, 0.5f),
+                        Vector2.zero,
+                        _theme.SizeStandard * 0.6f);
+                    dot.color = dotColor;
+                }
             }
         }
 

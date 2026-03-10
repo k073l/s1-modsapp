@@ -118,6 +118,7 @@ public class ModsApp : MelonMod
             description: "Color used to indicate errors. Set Theme Preset to Custom to use this color");
 
         CategoryState.Load();
+        ModVersionTracker.Load();
     }
 
     private static Sprite LoadEmbeddedPNG(string resourceName)
@@ -158,5 +159,6 @@ public class ModsApp : MelonMod
     public override void OnApplicationQuit()
     {
         CategoryState.Save();
+        ModVersionTracker.Save();
     }
 }

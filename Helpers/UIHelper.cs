@@ -5,6 +5,7 @@ using MelonLoader.Utils;
 using Newtonsoft.Json;
 using ModsApp.UI;
 using S1API.Internal.Abstraction;
+using Semver;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -372,6 +373,86 @@ public static class CategoryState
     {
         var dto = _expandedCategories.ToDictionary(kv => kv.Key.Identifier, kv => kv.Value);
         var json = JsonConvert.SerializeObject(dto, Formatting.Indented);
+        Directory.CreateDirectory(Path.GetDirectoryName(_savePath) ?? string.Empty);
+        File.WriteAllText(_savePath, json);
+    }
+}
+
+public static class ModVersionTracker
+{
+    private static Dictionary<MelonMod, string> _versions = new();
+    private static Dictionary<MelonMod, string> _thisSession = new();
+
+    private static string _savePath =
+        Path.Combine(MelonEnvironment.UserDataDirectory, "ModsApp", "VersionTracker.json");
+
+    public static bool IsNew(MelonMod mod)
+    {
+        _thisSession.TryAdd(mod, mod.Info.Version);
+        return !_versions.ContainsKey(mod) || _versions[mod] == null;
+    }
+
+    public static bool IsUpdated(MelonMod mod)
+    {
+        _thisSession.TryAdd(mod, mod.Info.Version);
+        return _versions.TryGetValue(mod, out var saved)
+               && saved != null
+               && IsNewerVersion(mod.Info.Version, saved);
+    }
+
+    public static bool AreAnyUpdatedOrNew() =>
+        MelonMod.RegisteredMelons.Any(m => IsNew(m) || IsUpdated(m));
+
+    private static bool IsNewerVersion(string current, string saved)
+    {
+        if (SemVersion.TryParse(current, out var c) &&
+            SemVersion.TryParse(saved, out var s))
+            return c > s;
+        return current != saved;
+    }
+
+    public static void Load()
+    {
+        var fallback = () => _versions = MelonMod.RegisteredMelons
+            .ToDictionary(m => m, m => m.Info.Version);
+
+        if (!File.Exists(_savePath))
+        {
+            fallback();
+            return;
+        }
+
+        try
+        {
+            var json = File.ReadAllText(_savePath);
+            var dto = JsonConvert.DeserializeObject<Dictionary<string, string>>(json);
+            if (dto == null)
+            {
+                fallback();
+                return;
+            }
+
+            _versions = dto
+                .Select(kv => new
+                {
+                    Mod = MelonMod.RegisteredMelons.FirstOrDefault(m => m.Info.Name == kv.Key),
+                    kv.Value
+                })
+                .Where(x => x.Mod != null)
+                .ToDictionary(x => x.Mod!, x => x.Value);
+        }
+        catch
+        {
+            fallback();
+        }
+    }
+
+    public static void Save()
+    {
+        var merged = _versions.ToDictionary(kv => kv.Key.Info.Name, kv => kv.Value);
+        foreach (var kv in _thisSession)
+            merged[kv.Key.Info.Name] = kv.Value;
+        var json = JsonConvert.SerializeObject(merged, Formatting.Indented);
         Directory.CreateDirectory(Path.GetDirectoryName(_savePath) ?? string.Empty);
         File.WriteAllText(_savePath, json);
     }
