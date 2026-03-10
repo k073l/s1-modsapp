@@ -13,6 +13,8 @@ public class ModManager
     private readonly Dictionary<string, MelonMod> _mods = new();
     private readonly MelonLogger.Instance _logger;
 
+    private static readonly Dictionary<MelonMod, ModDependencyInfo> DependencyCache = new();
+    private static readonly Dictionary<MelonMod, Backend> BackendCache = new();
     private static FieldInfo _cachedFileField;
     private static PropertyInfo _cachedFileProperty;
     private static FieldInfo _cachedFilePathField;
@@ -326,6 +328,8 @@ public class ModManager
 
     public ModDependencyInfo GetModDependencies(MelonMod mod)
     {
+        if (DependencyCache.TryGetValue(mod, out var cached))
+            return cached;
         var result = new ModDependencyInfo();
 
         if (mod?.MelonAssembly?.Assembly == null)
@@ -368,11 +372,14 @@ public class ModManager
                               .ToList()
                           ?? [];
 
+        DependencyCache[mod] = result;
         return result;
     }
 
     private Backend DetermineBackend(MelonMod mod)
     {
+        if (BackendCache.TryGetValue(mod, out var cached))
+            return cached;
         var assemblyPath = mod.MelonAssembly.Assembly.Location;
         var assemblyDef = AssemblyDefinition.ReadAssembly(assemblyPath);
 
@@ -413,7 +420,9 @@ public class ModManager
             return Backend.IL2CPP;
         if (hasMono)
             return Backend.Mono;
-        return hasS1API ? Backend.S1API : Backend.Unknown;
+        var result = hasS1API ? Backend.S1API : Backend.Unknown;
+        BackendCache[mod] = result;
+        return result;
     }
 
     public bool isCompatible(MelonMod mod, ref string backend)
