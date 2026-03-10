@@ -324,6 +324,7 @@ public static class TransformExtensions
 public static class CategoryState
 {
     private static Dictionary<MelonPreferences_Category, bool> _expandedCategories = new();
+    private static HashSet<string> _explicitlySet = new();
     private static string _savePath = Path.Combine(MelonEnvironment.UserDataDirectory, "ModsApp", "CategoryState.json");
 
     public static bool IsExpanded(MelonPreferences_Category category)
@@ -337,8 +338,17 @@ public static class CategoryState
         return isExpanded;
     }
 
-    public static void Toggle(MelonPreferences_Category category) =>
+    public static bool HasExplicitState(MelonPreferences_Category category) =>
+        _explicitlySet.Contains(category.Identifier);
+
+    public static void SetDefault(MelonPreferences_Category category, bool expanded) =>
+        _expandedCategories[category] = expanded;
+
+    public static void Toggle(MelonPreferences_Category category)
+    {
         _expandedCategories[category] = !IsExpanded(category);
+        _explicitlySet.Add(category.Identifier);
+    }
 
     public static void Load()
     {
@@ -349,7 +359,8 @@ public static class CategoryState
             var dto = JsonConvert.DeserializeObject<Dictionary<string, bool>>(json);
             if (dto == null)
             {
-                _expandedCategories = new Dictionary<MelonPreferences_Category, bool>();
+                _expandedCategories = new();
+                _explicitlySet = new();
                 return;
             }
 
@@ -362,16 +373,23 @@ public static class CategoryState
                 })
                 .Where(x => x.Category != null)
                 .ToDictionary(x => x.Category!, x => x.Value);
+
+            // saved data is user intent
+            _explicitlySet = new HashSet<string>(dto.Keys);
         }
         catch
         {
-            _expandedCategories = new Dictionary<MelonPreferences_Category, bool>();
+            _expandedCategories = new();
+            _explicitlySet = new();
         }
     }
 
     public static void Save()
     {
-        var dto = _expandedCategories.ToDictionary(kv => kv.Key.Identifier, kv => kv.Value);
+        // only save explicitly user-set states, not auto-collapse defaults
+        var dto = _expandedCategories
+            .Where(kv => _explicitlySet.Contains(kv.Key.Identifier))
+            .ToDictionary(kv => kv.Key.Identifier, kv => kv.Value);
         var json = JsonConvert.SerializeObject(dto, Formatting.Indented);
         Directory.CreateDirectory(Path.GetDirectoryName(_savePath) ?? string.Empty);
         File.WriteAllText(_savePath, json);

@@ -478,10 +478,55 @@ public class ModDetailsPanel
             return;
         }
 
+        // only auto-collapse if we have no explicit saved state for ANY of these categories
+        var hasAnySavedState = categories.Any(CategoryState.HasExplicitState);
+        if (!hasAnySavedState)
+        {
+            var estimatedHeight = EstimateExpandedHeight(categories);
+            var scrollViewHeight = _detailsContent.rect.height;
+
+            if (estimatedHeight > scrollViewHeight * 2f)
+            {
+                // collapse all except first
+                for (var i = 0; i < categories.Count; i++)
+                    CategoryState.SetDefault(categories[i], expanded: i == 0);
+            }
+        }
+
         foreach (var category in categories)
         {
             CreateCategorySection(category, card);
         }
+    }
+
+    private float EstimateExpandedHeight(List<MelonPreferences_Category> categories)
+    {
+        const float categoryTopBottomPadding = 12f; // vlg.padding top(6) + bottom(6)
+        const float categorySpacing = 6f; // spacing between category panels in parent vlg
+        var titleHeight = _theme.SizeStandard + 4f; // title text + vlg spacing(4)
+        const float entryTopPadding = 4f; // vLayout.padding top
+        const float entrySpacing = 4f; // vLayout.spacing
+        var mainRowHeight = _theme.SizeStandard + 4f; // input row
+        var descriptionHeight = _theme.SizeSmall + 4f; // if present
+        var commentHeight = _theme.SizeTiny + 4f; // if present
+
+        return categories.Sum(cat =>
+        {
+            var height = categoryTopBottomPadding + titleHeight;
+
+            foreach (var entry in cat.Entries ?? [])
+            {
+                height += entryTopPadding + mainRowHeight;
+                if (!string.IsNullOrEmpty(entry.Description)) height += descriptionHeight + entrySpacing;
+                if (!string.IsNullOrEmpty(entry.Comment)) height += commentHeight + entrySpacing;
+            }
+
+            // vlg.spacing(4) between entries
+            if ((cat.Entries?.Count ?? 0) > 1)
+                height += (cat.Entries!.Count - 1) * 4f;
+
+            return height + categorySpacing;
+        });
     }
 
     private void CreateCategorySection(MelonPreferences_Category category, GameObject parent)
