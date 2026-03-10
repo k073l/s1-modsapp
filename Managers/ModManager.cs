@@ -463,6 +463,24 @@ public class ModManager
         filepath = changelogFile;
         return changelogFile == null ? null : File.ReadAllText(changelogFile);
     }
+
+    public string GetReadme(MelonMod mod, out string filepath)
+    {
+        filepath = null;
+        if (mod?.MelonAssembly?.Assembly == null || string.IsNullOrWhiteSpace(mod.MelonAssembly.Assembly.Location))
+            return null;
+        var dirLocation = Directory.GetParent(mod.MelonAssembly.Assembly.Location);
+        if (dirLocation == null || dirLocation.Name == MelonEnvironment.ModsDirectory || !dirLocation.Exists)
+            return null;
+        var extensions = new[] { ".txt", ".md", ".rst" };
+        var readmeFile = Directory
+            .EnumerateFiles(dirLocation.FullName)
+            .FirstOrDefault(f => extensions.Contains(Path.GetExtension(f).ToLower())
+                                 && Path.GetFileNameWithoutExtension(f)
+                                     .Equals("README", StringComparison.OrdinalIgnoreCase));
+        filepath = readmeFile;
+        return readmeFile == null ? null : File.ReadAllText(readmeFile);
+    }
 }
 
 internal enum Backend

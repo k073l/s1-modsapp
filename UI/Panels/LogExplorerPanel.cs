@@ -70,7 +70,7 @@ public class LogExplorerPanel
         
         if (_mod != null)
         {
-            var modOnlyToggle = CreateLabelledToggle(
+            var modOnlyToggle = UIHelper.CreateLabelledToggle(
                 filterBar.transform,
                 "ModOnlyToggle",
                 "Selected mod only",
@@ -92,14 +92,14 @@ public class LogExplorerPanel
         Toggle issuesToggle = null;
         Toggle allLogsToggle = null;
 
-        issuesToggle = CreateLabelledToggle(
+        issuesToggle = UIHelper.CreateLabelledToggle(
             filterBar.transform,
             "IssuesOnlyToggle",
             "Warns & Errors",
             _issuesOnly
         );
 
-        allLogsToggle = CreateLabelledToggle(
+        allLogsToggle = UIHelper.CreateLabelledToggle(
             filterBar.transform,
             "AllLogsToggle",
             "All messages",
@@ -221,59 +221,5 @@ public class LogExplorerPanel
                 e.Level == LogLevel.Warning || e.Level == LogLevel.Error);
 
         return source;
-    }
-
-    private Toggle CreateLabelledToggle(Transform parent, string name, string labelText, bool initialValue)
-    {
-        var container = new GameObject(name);
-        container.transform.SetParent(parent, false);
-
-        var hLayout = container.AddComponent<HorizontalLayoutGroup>();
-        hLayout.spacing = 6;
-        hLayout.childAlignment = TextAnchor.MiddleLeft;
-        hLayout.childForceExpandWidth = false;
-        hLayout.childForceExpandHeight = false;
-        hLayout.childControlWidth = false;
-        hLayout.childControlHeight = true;
-
-        container.AddComponent<LayoutElement>().preferredHeight = 24;
-
-        var toggleObj = new GameObject($"{name}_Box");
-        toggleObj.transform.SetParent(container.transform, false);
-
-        var bg = toggleObj.AddComponent<Image>();
-        bg.color = _theme.BgInput;
-
-        var toggle = toggleObj.AddComponent<Toggle>();
-        toggle.targetGraphic = bg;
-
-        var rt = toggleObj.GetComponent<RectTransform>();
-        rt.sizeDelta = new Vector2(20, 20);
-
-        var toggleLayout = toggleObj.AddComponent<LayoutElement>();
-        toggleLayout.minWidth = 20;
-        toggleLayout.minHeight = 20;
-        toggleLayout.preferredWidth = 20;
-        toggleLayout.preferredHeight = 20;
-
-        var checkmarkGO = new GameObject("Checkmark");
-        checkmarkGO.transform.SetParent(toggleObj.transform, false);
-        var checkmarkImg = checkmarkGO.AddComponent<Image>();
-        checkmarkImg.color = _theme.BgCard;
-
-        var crt = checkmarkGO.GetComponent<RectTransform>();
-        crt.anchorMin = new Vector2(0.2f, 0.2f);
-        crt.anchorMax = new Vector2(0.8f, 0.8f);
-        crt.offsetMin = crt.offsetMax = Vector2.zero;
-
-        ToggleUtils.SetGraphic(toggle, checkmarkImg);
-        toggle.isOn = initialValue;
-
-        var label = UIFactory.Text($"{name}_Label", labelText, container.transform,
-            _theme.SizeSmall, TextAnchor.MiddleLeft);
-        label.color = _theme.TextPrimary;
-        label.gameObject.AddComponent<LayoutElement>().preferredWidth = label.preferredWidth;
-
-        return toggle;
     }
 }

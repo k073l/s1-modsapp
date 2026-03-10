@@ -11,6 +11,7 @@ using ModsApp.UI.Input;
 using ModsApp.UI.Input.FieldFactories;
 using S1API.Input;
 using S1API.Internal.Abstraction;
+using S1API.Utils;
 
 namespace ModsApp.UI.Panels;
 
@@ -279,7 +280,7 @@ public class ModDetailsPanel
         badgeText.fontStyle = FontStyle.Bold;
         badgeText.alignment = TextAnchor.MiddleCenter;
         
-        CheckAndCreateChangelogButton(mod, headerContainer.transform);
+        CheckAndCreateDocsButton(mod, headerContainer.transform);
 
         var spacer = new GameObject("Spacer");
         spacer.transform.SetParent(headerContainer.transform, false);
@@ -387,56 +388,118 @@ public class ModDetailsPanel
         return string.Join(". ", parts) + (parts.Count > 0 ? "." : "");
     }
 
-    private void CheckAndCreateChangelogButton(MelonMod mod, Transform headerContainer)
+    private void CheckAndCreateDocsButton(MelonMod mod, Transform headerContainer)
     {
-        var changelog = _modManager.GetChangelog(mod, out var filepath);
-        if (string.IsNullOrEmpty(changelog)) return;
-        var (_, changelogBtn, changelogIcon) = UIHelper.RoundedButtonWithIcon(
-            "ChangelogButton",
+        var changelog = _modManager.GetChangelog(mod, out var changelogPath);
+        var readme = _modManager.GetReadme(mod, out var readmePath);
+
+        if (string.IsNullOrEmpty(changelog) && string.IsNullOrEmpty(readme)) return;
+
+        var (_, docsBtn, docsIcon) = UIHelper.RoundedButtonWithIcon(
+            "DocsButton",
             ModsApp.ScrollIconSprite,
             headerContainer,
             _theme.AccentSecondary,
-            25,
-            25,
+            25, 25,
             _theme.SizeSmall
         );
-        changelogIcon.color = _theme.TextPrimary;
+        docsIcon.color = _theme.TextPrimary;
 
         EventHelper.AddListener(() =>
         {
-            var changelogPanel = new FloatingPanelComponent(1000, 500, $"{mod.Info.Name} Changelog");
+            var hasBoth = !string.IsNullOrEmpty(changelog) && !string.IsNullOrEmpty(readme);
+            var panel = new FloatingPanelComponent(1000, 500, $"{mod.Info.Name} - Docs");
+            var showChangelog = !string.IsNullOrEmpty(changelog);
 
-            var filepathText = UIFactory.Text(
+            ScrollableTextFactory scrollable = null;
+            Text filepathLabel = null;
+
+            void BuildScrollable(string text, string path)
+            {
+                if (scrollable != null)
+                    UnityEngine.Object.Destroy(scrollable.Root);
+
+                scrollable = new ScrollableTextFactory(
+                    panel.ContentPanel.transform,
+                    text,
+                    _theme.SizeStandard,
+                    _theme.InputPrimary,
+                    _theme.BgInput
+                );
+                var rootRect = scrollable.Root.GetComponent<RectTransform>();
+                rootRect.anchorMin = Vector2.zero;
+                rootRect.anchorMax = Vector2.one;
+                rootRect.offsetMin = new Vector2(6, 6);
+                rootRect.offsetMax = new Vector2(-6, hasBoth ? -80 : -44);
+
+                if (filepathLabel != null)
+                    filepathLabel.text = $"Source: {path}";
+
+                Canvas.ForceUpdateCanvases();
+                LayoutRebuilder.ForceRebuildLayoutImmediate(scrollable.ContentRect);
+            }
+
+            var filepathGO = UIFactory.Text(
                 "FilepathText",
-                $"Source: {filepath}",
-                changelogPanel.ContentPanel.transform,
+                $"Source: {(showChangelog ? changelogPath : readmePath)}",
+                panel.ContentPanel.transform,
                 _theme.SizeSmall,
                 TextAnchor.MiddleLeft
             );
-            filepathText.color = _theme.TextPrimary;
-            var fileRect = filepathText.GetComponent<RectTransform>();
+            filepathGO.color = _theme.TextSecondary;
+            filepathLabel = filepathGO;
+            var fileRect = filepathGO.GetComponent<RectTransform>();
             fileRect.anchorMin = new Vector2(0, 1);
             fileRect.anchorMax = new Vector2(1, 1);
             fileRect.pivot = new Vector2(0.5f, 1);
             fileRect.sizeDelta = new Vector2(0, 28);
             fileRect.anchoredPosition = new Vector2(2, -8);
 
-            var scrollable = new ScrollableTextFactory(
-                changelogPanel.ContentPanel.transform,
-                changelog,
-                _theme.SizeStandard,
-                _theme.InputPrimary,
-                _theme.BgInput
-            );
-            var rootRect = scrollable.Root.GetComponent<RectTransform>();
-            rootRect.anchorMin = new Vector2(0, 0);
-            rootRect.anchorMax = new Vector2(1, 1);
-            rootRect.offsetMin = new Vector2(6, 6);
-            rootRect.offsetMax = new Vector2(-6, -44);
+            if (hasBoth)
+            {
+                var filterBar = UIFactory.Panel("DocsFilterBar", panel.ContentPanel.transform, Color.clear);
+                var filterRect = filterBar.GetComponent<RectTransform>();
+                filterRect.anchorMin = new Vector2(0, 1);
+                filterRect.anchorMax = new Vector2(1, 1);
+                filterRect.pivot = new Vector2(0.5f, 1);
+                filterRect.sizeDelta = new Vector2(0, 36);
+                filterRect.anchoredPosition = new Vector2(0, -44);
 
-            Canvas.ForceUpdateCanvases();
-            UnityEngine.UI.LayoutRebuilder.ForceRebuildLayoutImmediate(scrollable.ContentRect);
-        }, changelogBtn.onClick);
+                var hLayout = filterBar.AddComponent<HorizontalLayoutGroup>();
+                hLayout.spacing = 16;
+                hLayout.padding = new RectOffset(8, 8, 6, 6);
+                hLayout.childAlignment = TextAnchor.MiddleLeft;
+                hLayout.childForceExpandWidth = false;
+                hLayout.childForceExpandHeight = false;
+                hLayout.childControlWidth = false;
+                hLayout.childControlHeight = true;
+
+                Toggle changelogToggle = null;
+                Toggle readmeToggle = null;
+
+                changelogToggle = UIHelper.CreateLabelledToggle(filterBar.transform, "ChangelogToggle", "Changelog",
+                    showChangelog);
+                readmeToggle =
+                    UIHelper.CreateLabelledToggle(filterBar.transform, "ReadmeToggle", "README", !showChangelog);
+
+                ToggleUtils.AddListener(changelogToggle, val =>
+                {
+                    if (!val) return;
+                    showChangelog = true;
+                    if (readmeToggle.isOn) readmeToggle.isOn = false;
+                    BuildScrollable(changelog, changelogPath);
+                });
+                ToggleUtils.AddListener(readmeToggle, val =>
+                {
+                    if (!val) return;
+                    showChangelog = false;
+                    if (changelogToggle.isOn) changelogToggle.isOn = false;
+                    BuildScrollable(readme, readmePath);
+                });
+            }
+
+            BuildScrollable(showChangelog ? changelog : readme, showChangelog ? changelogPath : readmePath);
+        }, docsBtn.onClick);
     }
     
     private void RenderPreferences(List<MelonPreferences_Category> categories, GameObject card, string modName)

@@ -4,6 +4,8 @@
 - Removed the width limit on slider input field
 - Improved Color Picker by adding RGB sliders and hex input
 - Added a notification badge with number of mods that report errors or dot if there are new/updated mods
+- Changed default category collapse - categories now start collapse if they'd take up too much vertical space
+- Add README to CHANGELOG viewer - together as docs button (if either is found)
 ## 1.2.1
 - Fixed a bug where the phone wasn't closing with Tab, only Esc after using a slider
 - Fixed compatibility bug where LogManager would crash the Melon init on ML 0.7.2
