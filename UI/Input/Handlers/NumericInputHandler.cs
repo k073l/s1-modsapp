@@ -5,6 +5,7 @@ using UnityEngine.UI;
 using System;
 using System.Globalization;
 using MelonLoader.Preferences;
+using ModsApp.Helpers;
 using S1API.Internal.Abstraction;
 
 namespace ModsApp.UI.Input.Handlers;
@@ -112,6 +113,8 @@ public class NumericInputHandler : IPreferenceInputHandler
                     });
 
                 (_, slider, field) = result;
+                var sliderContainerLayout = result.container.GetOrAddComponent<LayoutElement>();
+                sliderContainerLayout.flexibleWidth = 2;
 
                 return;
             }

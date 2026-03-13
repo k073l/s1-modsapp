@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Reflection;
 using MelonLoader;
+using MelonLoader.Preferences;
 using ModsApp.Helpers;
 using ModsApp.Managers;
 using ModsApp.UI;
@@ -46,9 +47,12 @@ public class ModsApp : MelonMod
 
     public static MelonPreferences_Category AccessibilityCategory;
     public static MelonPreferences_Entry<TextSizeProfile> TextSizeProfileEntry;
+    public static MelonPreferences_Entry<bool> InputsOnRightEntry;
+    public static MelonPreferences_Entry<int> EntryVlgSpacingEntry;
 
     public static MelonPreferences_Category ThemesCategory;
     public static MelonPreferences_Entry<ThemeOption> ThemeOptionEntry;
+    public static MelonPreferences_Entry<bool> CopyCurrentToCustom;
     public static MelonPreferences_Entry<Color> BackgroundPrimaryEntry;
     public static MelonPreferences_Entry<Color> BackgroundSecondaryEntry;
     public static MelonPreferences_Entry<Color> BackgroundCardEntry;
@@ -78,12 +82,21 @@ public class ModsApp : MelonMod
         AccessibilityCategory = MelonPreferences.CreateCategory("ModsApp_Accessibility", "Accessibility");
         TextSizeProfileEntry = AccessibilityCategory.CreateEntry("ModsAppTextSize", TextSizeProfile.Normal,
             "Text Size Setting", description: "Text size preset");
+        InputsOnRightEntry = AccessibilityCategory.CreateEntry("ModsAppRightAlignedInputs", true,
+            "Align inputs to the right",
+            description:
+            "If true, entry inputs such as checkboxes, dropdowns, number fields etc. will be aligned to the right side");
+        EntryVlgSpacingEntry = AccessibilityCategory.CreateEntry("ModsAppMelonEntryVLGSpacing", 4,
+            "Spacing between entries", description: "Controls the spacing between each entry line",
+            validator: new ValueRange<int>(1, 20));
 
         ThemesCategory = MelonPreferences.CreateCategory("ModsApp_Themes", "Themes");
         ThemeOptionEntry = ThemesCategory.CreateEntry("ModsAppThemeOption", ThemeOption.Slate,
             "Theme Preset",
             description:
             "Predefined theme presets. Set to Custom to use custom colors defined below - Custom may require game restart to apply fully, but changing presets should apply immediately");
+        CopyCurrentToCustom = ThemesCategory.CreateEntry("ModsAppCopyToCustom", false,
+            "Copy Theme to Custom", description: "Copy the colors of current theme to custom theme's colors");
         var slate = new Slate();
         BackgroundPrimaryEntry = ThemesCategory.CreateEntry("ModsAppBackgroundPrimary", slate.BgPrimary,
             "Background Primary",

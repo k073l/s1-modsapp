@@ -26,7 +26,7 @@ public class ModListPanel
     private RectTransform _listContent;
     private readonly Dictionary<string, GameObject> _modButtons = new();
     private Dictionary<string, Text> _modLabels = new Dictionary<string, Text>();
-    private string _selectedModName;
+    internal string SelectedModName;
     private static Dictionary<MelonMod, Image> WarningIcons = new();
 
     private bool _isUnassignedSelected;
@@ -241,6 +241,8 @@ public class ModListPanel
         var label = UIFactory.Text($"{UIHelper.SanitizeName(internalName)}_Label", displayName, buttonGo.transform,
             _theme.SizeStandard, TextAnchor.MiddleLeft);
         label.color = _theme.TextPrimary;
+        label.horizontalOverflow = HorizontalWrapMode.Wrap;
+        label.verticalOverflow = VerticalWrapMode.Truncate;
         UIHelper.ConfigureButtonText(label.rectTransform, new Vector2(0f, 0f), new Vector2(0.65f, 1f), 16f, -8f, 4f,
             -4f);
 
@@ -251,13 +253,15 @@ public class ModListPanel
             {
                 var isNew = ModVersionTracker.IsNew(mod);
                 var isUpdated = ModVersionTracker.IsUpdated(mod);
+                var warningAnchorX = Mathf.Lerp(0.875f, 0.80f, (int)ModsApp.TextSizeProfileEntry.Value / 4f);
+                var dotAnchorX = Mathf.Lerp(0.815f, 0.73f, (int)ModsApp.TextSizeProfileEntry.Value / 4f);
 
                 if (!WarningIcons.TryGetValue(mod, out var icon))
                 {
                     icon = UIHelper.AddIcon(
                         ModsApp.WarningIconSprite,
                         buttonGo.transform,
-                        new Vector2(0.85f, 0.5f),
+                        new Vector2(warningAnchorX, 0.5f),
                         Vector2.zero,
                         _theme.SizeStandard * 1.2f);
                     icon.color = _theme.ErrorColor;
@@ -277,7 +281,7 @@ public class ModListPanel
                     var dot = UIHelper.AddIcon(
                         UIHelper.GetRoundedSprite(32, 16),
                         buttonGo.transform,
-                        new Vector2(hasWarning ? 0.78f : 0.85f, 0.5f),
+                        new Vector2(hasWarning ? dotAnchorX : warningAnchorX, 0.5f),
                         Vector2.zero,
                         _theme.SizeStandard * 0.6f);
                     dot.color = dotColor;
@@ -298,17 +302,17 @@ public class ModListPanel
 
     private void SelectMod(string modName, bool isUnassigned)
     {
-        _selectedModName = modName;
+        SelectedModName = modName;
         _isUnassignedSelected = isUnassigned;
         UpdateButtonHighlights();
         OnModSelected?.Invoke(isUnassigned ? null : _modManager.GetMod(modName));
     }
 
-    private void UpdateButtonHighlights()
+    internal void UpdateButtonHighlights()
     {
         foreach (var kvp in _modButtons)
         {
-            bool isSelected = kvp.Key == _selectedModName;
+            bool isSelected = kvp.Key == SelectedModName;
 
             var img = kvp.Value.GetComponent<Image>();
             if (img != null)

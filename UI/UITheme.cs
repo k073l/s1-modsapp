@@ -69,4 +69,27 @@ public class UITheme
         SetTextScale(ModsApp.TextSizeProfileEntry.Value);
         SetTheme(ModsApp.ThemeOptionEntry.Value);
     }
+
+    internal void CopyThemeToCustom()
+    {
+        if (ModsApp.ThemeOptionEntry.Value == ThemeOption.Custom) return;
+        if (_theme == null) return;
+        ModsApp.BackgroundPrimaryEntry.Value = _theme.BgPrimary;
+        ModsApp.BackgroundSecondaryEntry.Value = _theme.BgSecondary;
+        ModsApp.BackgroundCardEntry.Value = _theme.BgCard;
+        ModsApp.BackgroundCategoryEntry.Value = _theme.BgCategory;
+        ModsApp.BackgroundInputEntry.Value = _theme.BgInput;
+
+        ModsApp.AccentPrimaryEntry.Value = _theme.AccentPrimary;
+        ModsApp.AccentSecondaryEntry.Value = _theme.AccentSecondary;
+
+        ModsApp.TextPrimaryEntry.Value = _theme.TextPrimary;
+        ModsApp.TextSecondaryEntry.Value = _theme.TextSecondary;
+        ModsApp.InputPrimaryEntry.Value = _theme.InputPrimary;
+        ModsApp.InputSecondaryEntry.Value = _theme.InputSecondary;
+
+        ModsApp.SuccessColorEntry.Value = _theme.SuccessColor;
+        ModsApp.WarningColorEntry.Value = _theme.WarningColor;
+        ModsApp.ErrorColorEntry.Value = _theme.ErrorColor;
+    }
 }

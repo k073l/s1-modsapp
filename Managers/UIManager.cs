@@ -4,6 +4,7 @@ using MelonLoader;
 using ModsApp.Helpers;
 using ModsApp.UI;
 using ModsApp.UI.Panels;
+using ModsApp.UI.Themes;
 using S1API.Internal.Abstraction;
 using S1API.UI;
 using UnityEngine.UI;
@@ -92,15 +93,40 @@ public class UIManager
 
     private void WirePreferences()
     {
-        ModsApp.TextSizeProfileEntry.OnEntryValueChanged.Subscribe((_, newVal) => _theme.SetTextScale(newVal));
+        ModsApp.TextSizeProfileEntry.OnEntryValueChanged.Subscribe((_, newVal) =>
+        {
+            _theme.SetTextScale(newVal);
+            FullRepaint();
+        });
+
         ModsApp.ThemeOptionEntry.OnEntryValueChanged.Subscribe((_, newVal) =>
         {
             _theme.SetTheme(newVal);
-            App.Instance.CloseApp();
-            EventHelper.RemoveListener(_openLogsAction, LogsBtn.onClick);
-            _selectedMod = null;
-            Object.Destroy(MainPanel);
-            Initialize();
+            if (newVal != ThemeOption.Custom && ModsApp.CopyCurrentToCustom.Value)
+                _theme.CopyThemeToCustom();
+            FullRepaint();
         });
+        ModsApp.CopyCurrentToCustom.OnEntryValueChanged.Subscribe((_, newVal) =>
+        {
+            if (!newVal) return;
+            if (ModsApp.ThemeOptionEntry.Value == ThemeOption.Custom) return;
+            _theme.CopyThemeToCustom();
+        });
+    }
+
+    private void FullRepaint()
+    {
+        Melon<ModsApp>.Logger.Msg("Closing app for a full UI refresh...");
+        var openedMod = _selectedMod;
+        App.Instance.CloseApp();
+        EventHelper.RemoveListener(_openLogsAction, LogsBtn.onClick);
+        _selectedMod = null;
+        Object.Destroy(MainPanel);
+        Initialize();
+        App.Instance.OpenApp();
+        if (openedMod == null || _modDetailsPanel == null || _modListPanel == null) return;
+        _modListPanel.SelectedModName = openedMod.Info.Name;
+        _modListPanel.UpdateButtonHighlights();
+        _modDetailsPanel.ShowModDetails(openedMod);
     }
 }

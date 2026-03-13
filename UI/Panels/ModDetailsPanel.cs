@@ -567,7 +567,6 @@ public class ModDetailsPanel
         const float categoryTopBottomPadding = 12f; // vlg.padding top(6) + bottom(6)
         const float categorySpacing = 6f; // spacing between category panels in parent vlg
         var titleHeight = _theme.SizeStandard + 4f; // title text + vlg spacing(4)
-        const float entryTopPadding = 4f; // vLayout.padding top
         const float entrySpacing = 4f; // vLayout.spacing
         var mainRowHeight = _theme.SizeStandard + 4f; // input row
         var descriptionHeight = _theme.SizeSmall + 4f; // if present
@@ -579,14 +578,14 @@ public class ModDetailsPanel
 
             foreach (var entry in cat.Entries ?? [])
             {
-                height += entryTopPadding + mainRowHeight;
+                height += ModsApp.EntryVlgSpacingEntry.Value + mainRowHeight;
                 if (!string.IsNullOrEmpty(entry.Description)) height += descriptionHeight + entrySpacing;
                 if (!string.IsNullOrEmpty(entry.Comment)) height += commentHeight + entrySpacing;
             }
 
-            // vlg.spacing(4) between entries
+            // between entries
             if ((cat.Entries?.Count ?? 0) > 1)
-                height += (cat.Entries!.Count - 1) * 4f;
+                height += (cat.Entries!.Count - 1) * ModsApp.EntryVlgSpacingEntry.Value;
 
             return height + categorySpacing;
         });
@@ -684,7 +683,7 @@ public class ModDetailsPanel
         vLayout.childForceExpandWidth = true;
         vLayout.childControlHeight = true;
 
-        vLayout.padding = new RectOffset(0, 0, 4, 0); // some top padding for spacing between entries
+        vLayout.padding = new RectOffset(0, 0, ModsApp.EntryVlgSpacingEntry.Value, 0); // some top padding for spacing between entries
 
         var containerLayout = entryContainer.GetOrAddComponent<LayoutElement>();
         containerLayout.flexibleWidth = 1;
@@ -717,6 +716,13 @@ public class ModDetailsPanel
         var typeHintLayout = typeHint.gameObject.GetOrAddComponent<LayoutElement>();
         typeHintLayout.minWidth = 50;
         typeHintLayout.flexibleWidth = 0;
+
+        if (ModsApp.InputsOnRightEntry.Value)
+        {
+            var spacer = new GameObject("Spacer");
+            spacer.transform.SetParent(mainRow.transform, false);
+            spacer.GetOrAddComponent<LayoutElement>().flexibleWidth = 0.1f;
+        }
 
         var currentValue = _modifiedPreferences.ContainsKey(entryKey)
             ? _modifiedPreferences[entryKey]
