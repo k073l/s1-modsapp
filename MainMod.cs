@@ -83,11 +83,11 @@ public class ModsApp : MelonMod
         TextSizeProfileEntry = AccessibilityCategory.CreateEntry("ModsAppTextSize", TextSizeProfile.Normal,
             "Text Size Setting", description: "Text size preset");
         InputsOnRightEntry = AccessibilityCategory.CreateEntry("ModsAppRightAlignedInputs", true,
-            "Align inputs to the right",
+            "Right Aligned Inputs",
             description:
             "If true, entry inputs such as checkboxes, dropdowns, number fields etc. will be aligned to the right side");
         EntryVlgSpacingEntry = AccessibilityCategory.CreateEntry("ModsAppMelonEntryVLGSpacing", 4,
-            "Spacing between entries", description: "Controls the spacing between each entry line",
+            "Entry Spacing", description: "Controls the spacing between each entry line",
             validator: new ValueRange<int>(1, 20));
 
         ThemesCategory = MelonPreferences.CreateCategory("ModsApp_Themes", "Themes");
