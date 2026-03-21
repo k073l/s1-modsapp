@@ -378,9 +378,9 @@ public class ModDetailsPanel
             var optionalParts = dependencies.Optional.Select(dep =>
             {
                 var found = _modManager.GetModByAssemblyName(dep);
-                return found != null
-                    ? $"{found.Info.Name} ({found.Info.Version})"
-                    : $"{dep} (not found)";
+                if (found != null)
+                    return $"{found.Info.Name} ({found.Info.Version})";
+                return _modManager.GetAssemblyByAssemblyName(dep) != null ? $"{dep} (found)" : $"{dep} (not found)";
             });
             parts.Add("Optional dependencies: " + string.Join(", ", optionalParts));
         }

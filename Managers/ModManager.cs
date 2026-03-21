@@ -49,6 +49,12 @@ public class ModManager
         return null;
     }
 
+    public Assembly GetAssemblyByAssemblyName(string assemblyName)
+    {
+        var loaded = AppDomain.CurrentDomain.GetAssemblies();
+        return loaded.FirstOrDefault(a => a.GetName().Name.Equals(assemblyName, StringComparison.OrdinalIgnoreCase));
+    }
+
     private void LoadMods()
     {
         foreach (var mod in MelonMod.RegisteredMelons)
