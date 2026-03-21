@@ -42,8 +42,6 @@ public class FallbackInputHandler : IPreferenceInputHandler
         label.color = _theme.TextSecondary;
         label.fontStyle = FontStyle.Italic;
         var labelLayout = label.gameObject.GetOrAddComponent<LayoutElement>();
-        labelLayout.minWidth = label.preferredWidth;
-        labelLayout.preferredWidth = label.preferredWidth;
         labelLayout.flexibleWidth = 0;
 
         string lastValid = initialValue;

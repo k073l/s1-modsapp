@@ -57,7 +57,7 @@ public class ColorInputHandler : IPreferenceInputHandler
         layout.minWidth = 50;
         layout.minHeight = 20;
 
-        colorButtonGO.AddComponent<RectTransform>();
+        colorButtonGO.GetOrAddComponent<RectTransform>();
     }
 
 
