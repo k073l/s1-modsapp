@@ -7,6 +7,7 @@ using MelonLoader.Utils;
 using ModsApp.Helpers;
 using ModsApp.Managers;
 using ModsApp.UI;
+using ModsApp.UI.Input.FieldFactories;
 using ModsApp.UI.Input.Handlers;
 using ModsApp.UI.Panels;
 using S1API.Input;
@@ -72,6 +73,7 @@ public class App : PhoneApp
     protected override void OnPhoneClosed()
     {
         Controls.IsTyping = false;
+        DropdownComponent<object>.CloseAll();
         FloatingPanelComponent.Cleanup();
         base.OnPhoneClosed();
     }

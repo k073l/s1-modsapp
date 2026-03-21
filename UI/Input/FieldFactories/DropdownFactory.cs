@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 using System;
 using System.Collections.Generic;
 using MelonLoader;
@@ -80,6 +81,9 @@ public class DropdownInputComponent<T>
         var containerRT = Container.AddComponent<RectTransform>();
         containerRT.sizeDelta = size;
 
+        var image = Container.AddComponent<Image>();
+        image.color = Color.clear;
+
         var layout = Container.AddComponent<HorizontalLayoutGroup>();
         layout.spacing = 2;
         layout.childControlWidth = false;
@@ -109,7 +113,6 @@ public class DropdownInputComponent<T>
         // fallback: any non-empty input is allowed
         return !string.IsNullOrWhiteSpace(value);
     }
-
 
     private void CreateDropdownButton(string name)
     {
@@ -143,6 +146,9 @@ public class DropdownInputComponent<T>
 
     private void WireUpEvents()
     {
+        var parentScrollRect = Container.GetComponentInParent<ScrollRect>();
+        Dropdown.ParentScrollRect = parentScrollRect;
+
         EventHelper.AddListener(() =>
         {
             if (Dropdown.IsOpen)
@@ -151,7 +157,6 @@ public class DropdownInputComponent<T>
             }
             else
             {
-                // Get filtered items based on current input
                 var items = OnFilterItems?.Invoke(InputField.text) ?? [];
                 Dropdown.PopulateItems(items, _displaySelector);
                 Dropdown.Show(Container.GetComponent<RectTransform>());
@@ -185,9 +190,7 @@ public class DropdownInputComponent<T>
             }
 
             if (!string.IsNullOrEmpty(value) && value != _lastValidValue)
-            {
                 InputField.text = _lastValidValue;
-            }
         }, InputField.onEndEdit);
     }
 
@@ -208,14 +211,22 @@ public class DropdownInputComponent<T>
 
 public class DropdownComponent<T>
 {
+    private static readonly List<Action> _allCloseCallbacks = new();
+
     public GameObject Panel { get; private set; }
     public bool IsOpen { get; private set; }
+    public ScrollRect ParentScrollRect { get; set; }
 
     private readonly Transform _content;
     private readonly RectTransform _panelRT;
     private readonly ScrollRect _scrollRect;
     private readonly int _maxVisibleItems;
+    private Action<BaseEventData> _overlayClickCallback;
+    private Action<BaseEventData> _overlayScrollCallback;
+    private EventTrigger _overlayTrigger;
     private readonly MelonLogger.Instance _logger;
+
+    private GameObject _overlay;
 
     public event Action<T> OnItemSelected;
     public event Action OnDropdownOpened;
@@ -231,6 +242,8 @@ public class DropdownComponent<T>
         _content = Panel.transform.Find("Content");
         _panelRT = Panel.GetComponent<RectTransform>();
         _scrollRect = Panel.GetComponent<ScrollRect>();
+
+        _allCloseCallbacks.Add(Close);
     }
 
     private GameObject CreateDropdownPanel(Transform parent, string name, Vector2 size)
@@ -244,7 +257,7 @@ public class DropdownComponent<T>
         var panelImage = panel.AddComponent<Image>();
         panelImage.color = UIManager._theme.BgInput;
 
-        var mask = panel.AddComponent<Mask>();
+        panel.AddComponent<Mask>();
 
         var content = new GameObject("Content");
         content.transform.SetParent(panel.transform, false);
@@ -265,7 +278,7 @@ public class DropdownComponent<T>
         fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
         var scrollRect = panel.AddComponent<ScrollRect>();
-        if (scrollRect != null) scrollRect.scrollSensitivity = 15f;
+        scrollRect.scrollSensitivity = 15f;
         scrollRect.horizontal = false;
         scrollRect.content = contentRT;
 
@@ -276,19 +289,13 @@ public class DropdownComponent<T>
     public void PopulateItems<TItem>(IEnumerable<TItem> items, Func<TItem, T> valueSelector,
         Func<TItem, string> displaySelector)
     {
-        // Clear existing items
-        for (int i = _content.childCount - 1; i >= 0; i--)
+        for (var i = _content.childCount - 1; i >= 0; i--)
             UnityEngine.Object.DestroyImmediate(_content.GetChild(i).gameObject);
 
         var itemList = new List<TItem>(items);
 
         foreach (var item in itemList)
-        {
-            var value = valueSelector(item);
-            var displayText = displaySelector(item);
-
-            CreateDropdownItem(value, displayText);
-        }
+            CreateDropdownItem(valueSelector(item), displaySelector(item));
 
         UpdatePanelSize(itemList.Count);
         LayoutRebuilder.ForceRebuildLayoutImmediate(_content.GetComponent<RectTransform>());
@@ -310,9 +317,10 @@ public class DropdownComponent<T>
         var layoutElement = item.AddComponent<LayoutElement>();
         layoutElement.preferredHeight = 25;
 
-        var itemButton = item.AddComponent<Button>();
         var itemImage = item.AddComponent<Image>();
         itemImage.color = UIManager._theme.InputSecondary * 0.75f;
+
+        var itemButton = item.AddComponent<Button>();
         itemButton.targetGraphic = itemImage;
 
         var textGO = new GameObject("Text");
@@ -341,20 +349,12 @@ public class DropdownComponent<T>
 
     private void UpdatePanelSize(int itemCount)
     {
-        int itemHeight = 25;
-        int spacing = 1;
-        int padding = 4;
+        const int itemHeight = 25;
+        const int spacing = 1;
+        const int padding = 4;
 
-        int preferredHeight;
-        if (itemCount <= _maxVisibleItems)
-        {
-            preferredHeight = (itemCount * itemHeight) + ((itemCount - 1) * spacing) + padding;
-        }
-        else
-        {
-            preferredHeight = (_maxVisibleItems * itemHeight) + ((_maxVisibleItems - 1) * spacing) + padding;
-        }
-
+        var visibleCount = Mathf.Min(itemCount, _maxVisibleItems);
+        var preferredHeight = (visibleCount * itemHeight) + ((visibleCount - 1) * spacing) + padding;
         _panelRT.sizeDelta = new Vector2(_panelRT.sizeDelta.x, preferredHeight);
     }
 
@@ -362,32 +362,55 @@ public class DropdownComponent<T>
     {
         if (IsOpen) return;
 
-        Panel.SetActive(true);
-        IsOpen = true;
-
-        LayoutRebuilder.ForceRebuildLayoutImmediate(_panelRT);
-
-        Canvas canvas = anchorTransform.GetComponentInParent<Canvas>();
+        var canvas = anchorTransform.GetComponentInParent<Canvas>();
         if (!canvas)
         {
             _logger?.Error("[Dropdown] ERROR: no Canvas found");
             return;
         }
 
+        // Overlay behind the panel catches click/scrolls outside of panel and closes the dropdown
+        _overlay = new GameObject("DropdownOverlay");
+        _overlay.transform.SetParent(canvas.transform, false);
+        var overlayRT = _overlay.AddComponent<RectTransform>();
+        overlayRT.anchorMin = Vector2.zero;
+        overlayRT.anchorMax = Vector2.one;
+        overlayRT.offsetMin = Vector2.zero;
+        overlayRT.offsetMax = Vector2.zero;
+        var overlayImage = _overlay.AddComponent<Image>();
+        overlayImage.color = Color.clear;
+
+        var overlayTrigger = _overlay.AddComponent<EventTrigger>();
+        _overlayTrigger = overlayTrigger;
+
+        _overlayClickCallback = (_) => Close();
+        _overlayScrollCallback = (data) =>
+        {
+            Close();
+            if (data is PointerEventData pointerData)
+                ParentScrollRect?.OnScroll(pointerData);
+        };
+
+        EventHelper.AddEventTrigger(overlayTrigger, EventTriggerType.PointerClick, _overlayClickCallback);
+        EventHelper.AddEventTrigger(overlayTrigger, EventTriggerType.Scroll, _overlayScrollCallback);
+
+        Panel.SetActive(true);
+        IsOpen = true;
         Panel.transform.SetParent(canvas.transform, false);
         Panel.transform.SetAsLastSibling();
 
-        // Position dropdown below the anchor
-        var rect = anchorTransform.rect;
-        Vector3 bottomLeft = anchorTransform.TransformPoint(new Vector3(rect.xMin, rect.yMin, 0f));
+        LayoutRebuilder.ForceRebuildLayoutImmediate(_panelRT);
 
-        RectTransform canvasRT = canvas.GetComponent<RectTransform>();
-        Vector2 localPos;
+        var rect = anchorTransform.rect;
+        var bottomLeft = anchorTransform.TransformPoint(new Vector3(rect.xMin, rect.yMin, 0f));
+
+        var canvasRT = canvas.GetComponent<RectTransform>();
+        var canvasCamera = canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : canvas.worldCamera;
         RectTransformUtility.ScreenPointToLocalPointInRectangle(
             canvasRT,
-            RectTransformUtility.WorldToScreenPoint(null, bottomLeft),
-            null,
-            out localPos
+            RectTransformUtility.WorldToScreenPoint(canvasCamera, bottomLeft),
+            canvasCamera,
+            out var localPos
         );
 
         _panelRT.pivot = new Vector2(0, 1);
@@ -396,14 +419,49 @@ public class DropdownComponent<T>
         OnDropdownOpened?.Invoke();
     }
 
+    private void DestroyOverlay()
+    {
+        if (_overlay == null) return;
+
+        ForgetOverlayListeners();
+
+        _overlayClickCallback = null;
+        _overlayScrollCallback = null;
+        _overlayTrigger = null;
+
+        _overlay.SetActive(false);
+        UnityEngine.Object.Destroy(_overlay);
+        _overlay = null;
+    }
+
+    // il2cpp didn't want to play nice with accessing on _overlayTrigger.triggers,
+    // so we remove manually from the dedup dict
+    private void ForgetOverlayListeners()
+    {
+        if (_overlayClickCallback == null && _overlayScrollCallback == null) return;
+
+        var dict = typeof(EventHelper)
+            .GetField("SubscribedGenericActions", // this will blow up one day i'm sure
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)
+            ?.GetValue(null) as Dictionary<Delegate, Delegate>;
+
+        if (dict == null) return;
+
+        if (_overlayClickCallback != null) dict.Remove(_overlayClickCallback);
+        if (_overlayScrollCallback != null) dict.Remove(_overlayScrollCallback);
+    }
+
     public void Close()
     {
         if (!IsOpen) return;
 
         Panel.SetActive(false);
         IsOpen = false;
+
+        DestroyOverlay();
+
         OnDropdownClosed?.Invoke();
-        Controls.IsTyping = false; // Ensure typing state is reset
+        Controls.IsTyping = false;
     }
 
     public void Toggle(RectTransform anchorTransform, Vector2 offset = default)
@@ -416,7 +474,16 @@ public class DropdownComponent<T>
 
     public void Destroy()
     {
+        _allCloseCallbacks.Remove(Close);
+        DestroyOverlay();
+
         if (Panel != null)
             UnityEngine.Object.DestroyImmediate(Panel);
+    }
+
+    public static void CloseAll()
+    {
+        foreach (var close in _allCloseCallbacks.ToArray())
+            close();
     }
 }

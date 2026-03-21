@@ -5,6 +5,7 @@ using MelonLoader.Preferences;
 using ModsApp.Helpers;
 using ModsApp.Managers;
 using ModsApp.UI;
+using ModsApp.UI.Input.FieldFactories;
 using ModsApp.UI.Input.Handlers;
 using ModsApp.UI.Panels;
 using ModsApp.UI.Themes;
@@ -165,6 +166,7 @@ public class ModsApp : MelonMod
         if (UnityEngine.Input.GetKeyDown(KeyCode.Escape))
         {
             FloatingPanelComponent.Cleanup();
+            DropdownComponent<object>.CloseAll();
             Controls.IsTyping = false;
         }
     }
