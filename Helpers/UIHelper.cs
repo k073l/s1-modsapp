@@ -23,7 +23,7 @@ public static class UIHelper
     {
         var key = (size, radius);
 
-        if (_roundedCache.TryGetValue(key, out var cached))
+        if (_roundedCache.TryGetValue(key, out var cached) && cached != null)
             return cached;
 
         var texture = new Texture2D(size, size, TextureFormat.ARGB32, false);
