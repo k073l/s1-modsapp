@@ -5,6 +5,6 @@
     "description": "Manage your mods settings - from your phone!",
     "dependencies": [
         "LavaGang-MelonLoader-0.7.0",
-        "ifBars-S1API_Forked-2.8.8"
+        "ifBars-S1API_Forked-3.0.1"
     ]
 }

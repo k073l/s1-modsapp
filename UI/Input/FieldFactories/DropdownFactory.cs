@@ -423,7 +423,8 @@ public class DropdownComponent<T>
     {
         if (_overlay == null) return;
 
-        ForgetOverlayListeners();
+        EventHelper.RemoveEventTrigger(_overlayTrigger, EventTriggerType.PointerClick, _overlayClickCallback);
+        EventHelper.RemoveEventTrigger(_overlayTrigger, EventTriggerType.Scroll, _overlayScrollCallback);
 
         _overlayClickCallback = null;
         _overlayScrollCallback = null;
@@ -432,23 +433,6 @@ public class DropdownComponent<T>
         _overlay.SetActive(false);
         UnityEngine.Object.Destroy(_overlay);
         _overlay = null;
-    }
-
-    // il2cpp didn't want to play nice with accessing on _overlayTrigger.triggers,
-    // so we remove manually from the dedup dict
-    private void ForgetOverlayListeners()
-    {
-        if (_overlayClickCallback == null && _overlayScrollCallback == null) return;
-
-        var dict = typeof(EventHelper)
-            .GetField("SubscribedGenericActions", // this will blow up one day i'm sure
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)
-            ?.GetValue(null) as Dictionary<Delegate, Delegate>;
-
-        if (dict == null) return;
-
-        if (_overlayClickCallback != null) dict.Remove(_overlayClickCallback);
-        if (_overlayScrollCallback != null) dict.Remove(_overlayScrollCallback);
     }
 
     public void Close()
