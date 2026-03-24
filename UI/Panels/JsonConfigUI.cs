@@ -33,6 +33,9 @@ public class JsonConfigUI
     private InputField _jsonFileInput;
     private GameObject _editorSectionRoot;
     private Font _consolaFont;
+    
+    private EventTrigger _overlayScrollTrigger;
+    private Action<BaseEventData> _scrollCallback;
 
     // state tracking
     private string _currentJsonContent = "";
@@ -320,8 +323,18 @@ public class JsonConfigUI
         var parentScrollRect = wrapper.GetComponentInParent<ScrollRect>();
         if (parentScrollRect == null) return;
 
-        var forwarder = wrapper.AddComponent<ScrollForwarder>();
-        forwarder.Target = parentScrollRect;
+        var trigger = wrapper.GetOrAddComponent<EventTrigger>();
+
+        if (_scrollCallback != null)
+            EventHelper.RemoveEventTrigger(trigger, EventTriggerType.Scroll, _scrollCallback);
+
+        _scrollCallback = (data) =>
+        {
+            var pointerData = data as PointerEventData ?? new PointerEventData(EventSystem.current)
+                { scrollDelta = UnityEngine.Input.mouseScrollDelta };
+            parentScrollRect.OnScroll(pointerData);
+        };
+        EventHelper.AddEventTrigger(trigger, EventTriggerType.Scroll, _scrollCallback);
     }
 
 
@@ -515,12 +528,7 @@ public class JsonConfigUI
 
         _legacyEditor.text = _currentJsonContent;
 
-        var parentScrollRect = _legacyEditor.GetComponentInParent<ScrollRect>();
-        if (parentScrollRect != null)
-        {
-            var forwarder = _legacyEditor.gameObject.AddComponent<ScrollForwarder>();
-            forwarder.Target = parentScrollRect;
-        }
+        AddScrollPassthrough(_legacyEditor.gameObject);
 
         EventHelper.AddListener<string>(raw =>
         {
@@ -707,35 +715,5 @@ public class JsonConfigUI
         {
             _logger.Warning($"[JsonConfigUI] TMP init threw: {ex.Message}");
         }
-    }
-}
-
-[RegisterTypeInIl2Cpp]
-public class ScrollForwarder : MonoBehaviour
-{
-    public ScrollRect Target;
-
-    private RectTransform _rt;
-
-    private void Awake()
-    {
-        _rt = GetComponent<RectTransform>();
-    }
-
-    private void Update()
-    {
-        if (Target == null || _rt == null) return;
-
-        var delta = UnityEngine.Input.mouseScrollDelta;
-        if (delta == Vector2.zero) return;
-
-        var step = delta.y * Target.scrollSensitivity;
-        var contentH = Target.content != null ? Target.content.rect.height : 0f;
-        var viewportH = Target.viewport != null ? Target.viewport.rect.height : _rt.rect.height;
-        var scrollable = contentH - viewportH;
-        if (scrollable <= 0f) return;
-
-        Target.verticalNormalizedPosition += step / scrollable;
-        Target.verticalNormalizedPosition = Mathf.Clamp01(Target.verticalNormalizedPosition);
     }
 }
