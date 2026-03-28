@@ -160,7 +160,7 @@ public class ModManager
         return false;
     }
 
-    private static bool MatchesModName(string text, string modName)
+    internal static bool MatchesModName(string text, string modName)
     {
         if (string.IsNullOrEmpty(text)) return false;
         return GetModNameVariants(modName).Any(v =>

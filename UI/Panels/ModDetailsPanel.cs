@@ -46,6 +46,8 @@ public class ModDetailsPanel
 
         _jsonConfigManager = new JsonConfigManager(logger);
         _jsonConfigUI = new JsonConfigUI(theme, logger, _jsonConfigManager);
+
+        ModToggleUI.Initialize(_modManager);
     }
 
     public void Initialize()

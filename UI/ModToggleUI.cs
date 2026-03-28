@@ -131,6 +131,10 @@ public static class ModToggleUI
         hint.gameObject.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
         hint.gameObject.AddComponent<ContentSizeFitter>().horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
 
+        var spacer = new GameObject("Spacer");
+        spacer.transform.SetParent(content, false);
+        spacer.AddComponent<LayoutElement>().flexibleHeight = 1;
+
         var btnRow = new GameObject("BtnRow");
         btnRow.transform.SetParent(content, false);
         var btnHLG = btnRow.AddComponent<HorizontalLayoutGroup>();

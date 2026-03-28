@@ -373,6 +373,7 @@ public class ModListPanel
             var isInactive = kvp.Key.Contains(Path.DirectorySeparatorChar) ||
                              kvp.Key.Contains('/') ||
                              kvp.Key.EndsWith(ModToggleManager.InactiveExtension);
+            var isPending = ModToggleManager.HasPendingChangeByName(kvp.Key);
 
             var img = kvp.Value.GetComponent<Image>();
             if (img != null)
@@ -382,10 +383,10 @@ public class ModListPanel
                     // blend accent with the dimmed base
                     case true when isInactive:
                         img.color = new Color(
-                            _theme.AccentPrimary.r * 0.55f,
-                            _theme.AccentPrimary.g * 0.55f,
-                            _theme.AccentPrimary.b * 0.55f,
-                            _theme.AccentPrimary.a);
+                            _theme.AccentPrimary.r * 0.65f,
+                            _theme.AccentPrimary.g * 0.65f,
+                            _theme.AccentPrimary.b * 0.65f,
+                            _theme.AccentPrimary.a * 0.65f);
                         break;
                     case true:
                         img.color = _theme.AccentPrimary;
@@ -397,7 +398,7 @@ public class ModListPanel
                                 _theme.AccentSecondary.r * 0.45f,
                                 _theme.AccentSecondary.g * 0.45f,
                                 _theme.AccentSecondary.b * 0.45f,
-                                _theme.AccentSecondary.a);
+                                _theme.AccentSecondary.a * 0.45f);
                         else
                             img.color = _theme.AccentSecondary;
                         break;
@@ -419,6 +420,17 @@ public class ModListPanel
                 label.color = isInactive
                     ? new Color(_theme.TextPrimary.r, _theme.TextPrimary.g, _theme.TextPrimary.b, 0.45f)
                     : _theme.TextPrimary;
+            }
+
+            if (isPending)
+            {
+                var pendingColor = ModToggleManager.GetDesiredState(kvp.Key)
+                    ? _theme.SuccessColor
+                    : _theme.WarningColor;
+
+                var baseColor = img.color;
+                var pushed = Color.Lerp(baseColor, pendingColor, 0.75f);
+                img.color = Color.Lerp(pushed, baseColor, 0.25f);
             }
         }
     }

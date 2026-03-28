@@ -55,6 +55,13 @@ public static class ModToggleManager
     public static bool HasPendingChange(string dllPath) =>
         _pendingChanges.ContainsKey(NormalizePath(dllPath));
 
+    public static bool HasPendingChangeByName(string modName)
+    {
+        var normalizedModName = modName.Trim().ToLowerInvariant();
+        return _pendingChanges.Keys.Any(path =>
+            ModManager.MatchesModName(Path.GetFileNameWithoutExtension(path).Trim().ToLowerInvariant(), normalizedModName));
+    }
+
     public static void RequestEnable(string dllPath)
     {
         if (IsProtected(dllPath)) return;
