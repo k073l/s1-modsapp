@@ -477,25 +477,40 @@ public class ModDetailsPanel
                 Toggle changelogToggle = null;
                 Toggle readmeToggle = null;
 
-                changelogToggle = UIHelper.CreateLabelledToggle(filterBar.transform, "ChangelogToggle", "Changelog",
-                    showChangelog);
-                readmeToggle =
-                    UIHelper.CreateLabelledToggle(filterBar.transform, "ReadmeToggle", "README", !showChangelog);
-
-                ToggleUtils.AddListener(changelogToggle, val =>
-                {
-                    if (!val) return;
-                    showChangelog = true;
-                    if (readmeToggle.isOn) readmeToggle.isOn = false;
-                    BuildScrollable(changelog, changelogPath);
-                });
-                ToggleUtils.AddListener(readmeToggle, val =>
-                {
-                    if (!val) return;
-                    showChangelog = false;
-                    if (changelogToggle.isOn) changelogToggle.isOn = false;
-                    BuildScrollable(readme, readmePath);
-                });
+                changelogToggle = ToggleFactory.CreateSlidingWithLabel(
+                    filterBar.transform,
+                    "ChangelogToggle",
+                    "Changelog",
+                    showChangelog,
+                    _theme.SuccessColor,
+                    _theme.BgInput,
+                    _theme.BgInput,
+                    _theme.BgPrimary,
+                    val =>
+                    {
+                        if (!val) return;
+                        showChangelog = true;
+                        if (readmeToggle.isOn) readmeToggle.isOn = false;
+                        BuildScrollable(changelog, changelogPath);
+                    }
+                );
+                readmeToggle = ToggleFactory.CreateSlidingWithLabel(
+                    filterBar.transform,
+                    "ReadmeToggle",
+                    "README",
+                    !showChangelog,
+                    _theme.SuccessColor,
+                    _theme.BgInput,
+                    _theme.BgInput,
+                    _theme.BgPrimary,
+                    val =>
+                    {
+                        if (!val) return;
+                        showChangelog = false;
+                        if (changelogToggle.isOn) changelogToggle.isOn = false;
+                        BuildScrollable(readme, readmePath);
+                    }
+                );
             }
 
             BuildScrollable(showChangelog ? changelog : readme, showChangelog ? changelogPath : readmePath);

@@ -13,18 +13,18 @@ namespace ModsApp.UI.Panels;
 public class LogExplorerPanel
 {
     private readonly UITheme _theme;
-    private readonly MelonMod _mod; // null = all mods
+    private readonly MelonMod _mod;
 
     private bool _modOnly;
-    private bool _issuesOnly; // true = warnings+errors only, false = all
+    private bool _issuesOnly;
 
     private ScrollableTextFactory _scrollable;
-    
-    private string _accentSecondaryHex;
-    private string _accentPrimaryHex;
-    private string _errorHex;
-    private string _warningHex;
-    private string _inputHex;
+
+    private readonly string _accentSecondaryHex;
+    private readonly string _accentPrimaryHex;
+    private readonly string _errorHex;
+    private readonly string _warningHex;
+    private readonly string _inputHex;
 
     public LogExplorerPanel(MelonMod mod)
     {
@@ -32,7 +32,7 @@ public class LogExplorerPanel
         _mod = mod;
         _modOnly = mod != null;
         _issuesOnly = true;
-        
+
         _accentSecondaryHex = ColorUtility.ToHtmlStringRGB(_theme.AccentSecondary);
         _accentPrimaryHex = ColorUtility.ToHtmlStringRGB(_theme.AccentPrimary);
         _errorHex = ColorUtility.ToHtmlStringRGB(_theme.ErrorColor);
@@ -52,93 +52,116 @@ public class LogExplorerPanel
     private void BuildFilterBar(Transform parent)
     {
         var filterBar = UIFactory.Panel("LogFilterBar", parent, Color.clear);
-        var filterRect = filterBar.GetComponent<RectTransform>();
-        filterRect.anchorMin = new Vector2(0, 1);
-        filterRect.anchorMax = new Vector2(1, 1);
-        filterRect.pivot = new Vector2(0.5f, 1);
-        filterRect.sizeDelta = new Vector2(0, 36);
-        filterRect.anchoredPosition = Vector2.zero;
 
-        var hLayout = filterBar.AddComponent<HorizontalLayoutGroup>();
-        hLayout.spacing = 16;
-        hLayout.padding = new RectOffset(8, 8, 6, 6);
-        hLayout.childAlignment = TextAnchor.MiddleLeft;
-        hLayout.childForceExpandWidth = false;
-        hLayout.childForceExpandHeight = false;
-        hLayout.childControlWidth = false;
-        hLayout.childControlHeight = true;
-        
+        var rect = filterBar.GetComponent<RectTransform>();
+        rect.anchorMin = new Vector2(0, 1);
+        rect.anchorMax = new Vector2(1, 1);
+        rect.pivot = new Vector2(0.5f, 1);
+        rect.sizeDelta = new Vector2(0, 36);
+        rect.anchoredPosition = Vector2.zero;
+
+        var layout = filterBar.AddComponent<HorizontalLayoutGroup>();
+        layout.spacing = 16;
+        layout.padding = new RectOffset(8, 8, 6, 6);
+        layout.childAlignment = TextAnchor.MiddleLeft;
+        layout.childForceExpandWidth = false;
+        layout.childForceExpandHeight = false;
+        layout.childControlWidth = false;
+        layout.childControlHeight = true;
+
         if (_mod != null)
         {
-            var modOnlyToggle = UIHelper.CreateLabelledToggle(
+            ToggleFactory.CreateSlidingWithLabel(
                 filterBar.transform,
                 "ModOnlyToggle",
                 "Selected mod only",
-                _modOnly
+                _modOnly,
+                _theme.SuccessColor,
+                _theme.BgInput,
+                _theme.BgInput,
+                _theme.BgPrimary,
+                val =>
+                {
+                    _modOnly = val;
+                    RefreshText();
+                }
             );
-            ToggleUtils.AddListener(modOnlyToggle, val =>
-            {
-                _modOnly = val;
-                RefreshText();
-            });
 
-            var sep = UIFactory.Text("FilterSep", "|", filterBar.transform,
-                _theme.SizeSmall, TextAnchor.MiddleCenter);
-            sep.color = _theme.TextSecondary;
-            sep.gameObject.GetOrAddComponent<LayoutElement>().preferredWidth = 12;
+            CreateSeparator(filterBar.transform);
         }
 
-        // radio pair
-        Toggle issuesToggle = null;
-        Toggle allLogsToggle = null;
+        var group = filterBar.AddComponent<ToggleGroup>();
 
-        issuesToggle = UIHelper.CreateLabelledToggle(
+        var issuesToggle = ToggleFactory.CreateSlidingWithLabel(
             filterBar.transform,
             "IssuesOnlyToggle",
             "Warns & Errors",
-            _issuesOnly
+            _issuesOnly,
+            _theme.WarningColor,
+            _theme.BgInput,
+            _theme.BgInput,
+            _theme.BgPrimary,
+            val =>
+            {
+                if (!val) return;
+                _issuesOnly = true;
+                RefreshText();
+            }
         );
+        CreateSpacer(filterBar.transform);
 
-        allLogsToggle = UIHelper.CreateLabelledToggle(
+        var allLogsToggle = ToggleFactory.CreateSlidingWithLabel(
             filterBar.transform,
             "AllLogsToggle",
             "All messages",
-            !_issuesOnly
+            !_issuesOnly,
+            _theme.AccentPrimary,
+            _theme.BgInput,
+            _theme.BgInput,
+            _theme.BgPrimary,
+            val =>
+            {
+                if (!val) return;
+                _issuesOnly = false;
+                RefreshText();
+            }
         );
 
-        ToggleUtils.AddListener(issuesToggle, val =>
-        {
-            if (!val) return; // only act on the one being turned on
-            _issuesOnly = true;
-            if (allLogsToggle.isOn) allLogsToggle.isOn = false;
-            RefreshText();
-        });
+        issuesToggle.group = group;
+        allLogsToggle.group = group;
 
-        ToggleUtils.AddListener(allLogsToggle, val =>
-        {
-            if (!val) return;
-            _issuesOnly = false;
-            if (issuesToggle.isOn) issuesToggle.isOn = false;
-            RefreshText();
-        });
+        CreateSpacer(filterBar.transform);
+    }
 
+    private void CreateSeparator(Transform parent)
+    {
+        var sep = UIFactory.Text("FilterSep", "|", parent,
+            _theme.SizeSmall, TextAnchor.MiddleCenter);
+
+        sep.color = _theme.TextSecondary;
+        sep.gameObject.GetOrAddComponent<LayoutElement>().preferredWidth = 12;
+    }
+
+    private void CreateSpacer(Transform parent)
+    {
         var spacer = new GameObject("FilterSpacer");
-        spacer.transform.SetParent(filterBar.transform, false);
+        spacer.transform.SetParent(parent, false);
         spacer.AddComponent<LayoutElement>().flexibleWidth = 1;
     }
 
     private void BuildLogView(Transform parent)
     {
-        var logContainer = new GameObject("LogContainer");
-        logContainer.transform.SetParent(parent, false);
-        var logRect = logContainer.AddComponent<RectTransform>();
-        logRect.anchorMin = new Vector2(0, 0);
-        logRect.anchorMax = new Vector2(1, 1);
-        logRect.offsetMin = new Vector2(6, 6);
-        logRect.offsetMax = new Vector2(-6, -42);
+        var container = new GameObject("LogContainer");
+        container.transform.SetParent(parent, false);
+
+        var rect = container.AddComponent<RectTransform>();
+        rect.anchorMin = new Vector2(0, 0);
+        rect.anchorMax = new Vector2(1, 1);
+        rect.offsetMin = new Vector2(6, 6);
+        rect.offsetMax = new Vector2(-6, -42);
 
         _scrollable = new ScrollableTextFactory(
-            logContainer.transform,
+            container.transform,
             BuildText(),
             _theme.SizeStandard,
             _theme.TextPrimary,
@@ -167,7 +190,7 @@ public class LogExplorerPanel
         var entries = GetFilteredEntries().ToList();
         if (entries.Count == 0)
             return BuildEmptyText();
-        
+
         var sb = new StringBuilder();
         foreach (var entry in entries)
         {
@@ -179,18 +202,12 @@ public class LogExplorerPanel
                 sb.Append($"<color=#{_accentPrimaryHex}>[{modLabel}]</color> ");
             }
 
-            switch (entry.Level)
+            sb.Append(entry.Level switch
             {
-                case LogLevel.Warning:
-                    sb.Append($"<color=#{_warningHex}>[WARN]</color> ");
-                    break;
-                case LogLevel.Error:
-                    sb.Append($"<color=#{_errorHex}>[ERR]</color> ");
-                    break;
-                case LogLevel.Msg:
-                    sb.Append($"<color=#{_accentSecondaryHex}>[MSG]</color> ");
-                    break;
-            }
+                LogLevel.Warning => $"<color=#{_warningHex}>[WARN]</color> ",
+                LogLevel.Error => $"<color=#{_errorHex}>[ERR]</color> ",
+                _ => $"<color=#{_accentSecondaryHex}>[MSG]</color> "
+            });
 
             sb.AppendLine($"<color=#{_inputHex}>{entry.Message}</color>");
         }
@@ -218,7 +235,7 @@ public class LogExplorerPanel
 
         if (_issuesOnly)
             source = source.Where(e =>
-                e.Level == LogLevel.Warning || e.Level == LogLevel.Error);
+                e.Level is LogLevel.Warning or LogLevel.Error);
 
         return source;
     }

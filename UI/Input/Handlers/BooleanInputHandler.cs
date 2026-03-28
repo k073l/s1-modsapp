@@ -2,6 +2,7 @@
 using MelonLoader;
 using ModsApp;
 using ModsApp.Helpers;
+using ModsApp.UI.Input.FieldFactories;
 using S1API.Internal.Abstraction;
 using S1API.Utils;
 using UnityEngine;
@@ -23,49 +24,32 @@ public class BooleanInputHandler : IPreferenceInputHandler
 
     public bool CanHandle(Type valueType) => valueType == typeof(bool);
 
-    public void CreateInput(MelonPreferences_Entry entry, GameObject parent, string entryKey,
-        object currentValue, Action<string, object> onValueChanged)
+    public void CreateInput(
+        MelonPreferences_Entry entry,
+        GameObject parent,
+        string entryKey,
+        object currentValue,
+        Action<string, object> onValueChanged)
     {
-        var boolValue = (bool)currentValue;
+        var initial = (bool)currentValue;
+        var current = initial;
 
-        var toggleObj = new GameObject($"{entryKey}_Toggle");
-        toggleObj.transform.SetParent(parent.transform, false);
+        var toggle = ToggleFactory.CreateSliding(
+            parent.transform,
+            $"{entryKey}_Toggle",
+            initial,
+            _theme.SuccessColor,
+            _theme.ErrorColor,
+            _theme.BgInput,
+            _theme.BgInput
+        );
 
-        var bg = toggleObj.AddComponent<Image>();
-        bg.color = _theme.BgInput;
-
-        var toggle = toggleObj.AddComponent<Toggle>();
-        toggle.targetGraphic = bg;
-
-        // Square background
-        var rt = toggleObj.GetComponent<RectTransform>();
-        rt.sizeDelta = new Vector2(20, 20);
-
-        // Checkmark child
-        var checkmarkGO = new GameObject("Checkmark");
-        checkmarkGO.transform.SetParent(toggleObj.transform, false);
-        var checkmarkImg = checkmarkGO.AddComponent<Image>();
-        checkmarkImg.color = _theme.BgCard;
-
-        var crt = checkmarkGO.GetComponent<RectTransform>();
-        crt.anchorMin = new Vector2(0.2f, 0.2f);
-        crt.anchorMax = new Vector2(0.8f, 0.8f);
-        crt.offsetMin = crt.offsetMax = Vector2.zero;
-
-        ToggleUtils.SetGraphic(toggle, checkmarkImg);
-        toggle.isOn = boolValue;
-        
         ToggleUtils.AddListener(toggle, value =>
         {
-            if (value == boolValue) return;
+            if (value == current) return;
+            current = value;
             onValueChanged(entryKey, value);
             _logger.Msg($"Modified preference {entryKey}: {value}");
         });
-
-        var layout = toggleObj.GetOrAddComponent<LayoutElement>();
-        layout.minWidth = 20;
-        layout.minHeight = 20;
-        layout.preferredWidth = 20;
-        layout.preferredHeight = 20;
     }
 }
