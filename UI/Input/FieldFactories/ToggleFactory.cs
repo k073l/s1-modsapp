@@ -28,8 +28,7 @@ public static class ToggleFactory
         Color nubOn,
         Color nubOff,
         System.Action<bool> onChanged = null,
-        float animationDuration = AnimationDuration
-    )
+        float animationDuration = AnimationDuration)
     {
         var track = CreateTrack(parent, name, initialValue ? bgOn : bgOff);
         var nub = CreateNub(track.transform, initialValue, initialValue ? nubOn : nubOff);
@@ -37,21 +36,19 @@ public static class ToggleFactory
         var toggle = track.gameObject.AddComponent<Toggle>();
         toggle.targetGraphic = track;
         toggle.isOn = initialValue;
-        toggle.transition = Selectable.Transition.Animation;
+        toggle.transition = Selectable.Transition.None;
 
         ToggleUtils.AddListener(toggle, val =>
         {
-            var targetTrackColor = val ? bgOn : bgOff;
-            var targetNubColor = val ? nubOn : nubOff;
-            var targetNubPos = NubPosition(val);
-
             var nubImg = nub.GetComponent<Image>();
-            var startPos = nub.anchoredPosition;
-            var startTrackColor = track.color;
-            var startNubColor = nubImg != null ? nubImg.color : targetNubColor;
-
-            MelonCoroutines.Start(AnimateToggle(nub, track, startTrackColor, targetTrackColor, nubImg, startNubColor,
-                targetNubColor, startPos, targetNubPos, animationDuration));
+            MelonCoroutines.Start(AnimateToggle(
+                nub, track,
+                track.color, val ? bgOn : bgOff,
+                nubImg,
+                nubImg != null ? nubImg.color : (val ? nubOn : nubOff),
+                val ? nubOn : nubOff,
+                nub.anchoredPosition, NubPosition(val),
+                animationDuration));
 
             onChanged?.Invoke(val);
         });
@@ -118,50 +115,28 @@ public static class ToggleFactory
         float animationDuration = AnimationDuration)
     {
         var theme = UIManager._theme;
-
         var nubColor = theme.BgInput;
 
-        var initialTrackColor = TrackColorFor(initialOn, initialPending);
+        // Build track and nub directly — bypass CreateSliding so we own the only listener
+        var track = CreateTrack(parent, name, TrackColorFor(initialOn, initialPending));
+        var nub = CreateNub(track.transform, initialOn, nubColor);
 
-        var toggle = CreateSliding(
-            parent,
-            name,
-            initialOn,
-            initialTrackColor, // bgOn
-            initialTrackColor, // bgOff (we'll lerp manually later)
-            nubColor,
-            nubColor,
-            val =>
-            {
-                /* noop for now; we'll override in Refresh */
-            },
-            animationDuration
-        );
-
-        var trackImg = toggle.targetGraphic as Image;
-        var nub = toggle.transform.Find("Nub")?.GetComponent<RectTransform>();
-        var nubImg = nub?.GetComponent<Image>();
+        var toggle = track.gameObject.AddComponent<Toggle>();
+        toggle.targetGraphic = track;
+        toggle.isOn = initialOn;
+        toggle.transition = Selectable.Transition.None;
 
         var isPending = initialPending;
 
-        // Override listener to include pending state
         ToggleUtils.AddListener(toggle, val =>
         {
-            if (trackImg != null && nubImg != null && nub != null)
-            {
-                MelonCoroutines.Start(ToggleFactory.AnimateToggle(
-                    nub,
-                    trackImg,
-                    trackImg.color,
-                    TrackColorFor(val, isPending),
-                    nubImg,
-                    nubImg.color,
-                    nubColor,
-                    nub.anchoredPosition,
-                    NubPosition(val),
-                    animationDuration
-                ));
-            }
+            var nubImg = nub.GetComponent<Image>();
+            MelonCoroutines.Start(AnimateToggle(
+                nub, track,
+                track.color, TrackColorFor(val, isPending),
+                nubImg, nubColor, nubColor,
+                nub.anchoredPosition, NubPosition(val),
+                animationDuration));
         });
 
         return (toggle, Refresh);
@@ -169,10 +144,14 @@ public static class ToggleFactory
         void Refresh(bool on, bool pending)
         {
             isPending = pending;
-            if (trackImg == null || nub == null || nubImg == null) return;
-            trackImg.color = TrackColorFor(on, pending);
-            nub.anchoredPosition = NubPosition(on);
-            nubImg.color = nubColor;
+            if (track == null || nub == null) return;
+            var nubImg = nub.GetComponent<Image>();
+            MelonCoroutines.Start(AnimateToggle(
+                nub, track,
+                track.color, TrackColorFor(on, pending),
+                nubImg, nubColor, nubColor,
+                nub.anchoredPosition, NubPosition(on),
+                animationDuration));
         }
 
         Color TrackColorFor(bool on, bool pending) => pending
