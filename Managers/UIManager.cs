@@ -26,6 +26,7 @@ public class UIManager
     public static UITheme _theme;
     
     private MelonMod _selectedMod;
+    private InactiveModInfo _selectedInactiveMod;
 
     public UIManager(GameObject container, ModManager modManager, MelonLogger.Instance logger)
     {
@@ -81,7 +82,14 @@ public class UIManager
         _modListPanel.OnModSelected += mod =>
         {
             _selectedMod = mod;
+            _selectedInactiveMod = null;
             _modDetailsPanel.ShowModDetails(mod);
+        };
+        _modListPanel.OnInactiveModSelected += inactive =>
+        {
+            _selectedInactiveMod = inactive;
+            _selectedMod = null;
+            _modDetailsPanel.ShowInactiveModDetails(inactive);
         };
         _openLogsAction = () =>
         {
@@ -118,12 +126,20 @@ public class UIManager
     {
         Melon<ModsApp>.Logger.Msg("Closing app for a full UI refresh...");
         var openedMod = _selectedMod;
+        var openedInactive = _selectedInactiveMod;
         App.Instance.CloseApp();
         EventHelper.RemoveListener(_openLogsAction, LogsBtn.onClick);
         _selectedMod = null;
         Object.Destroy(MainPanel);
         Initialize();
         App.Instance.OpenApp();
+        if (_selectedInactiveMod != null)
+        {
+            _modListPanel.SelectedModName = openedInactive.FilePath;
+            _modListPanel.UpdateButtonHighlights();
+            _modDetailsPanel.ShowInactiveModDetails(openedInactive);
+            return;
+        }
         if (openedMod == null || _modDetailsPanel == null || _modListPanel == null) return;
         _modListPanel.SelectedModName = openedMod.Info.Name;
         _modListPanel.UpdateButtonHighlights();

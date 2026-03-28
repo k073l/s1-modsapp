@@ -175,5 +175,6 @@ public class ModsApp : MelonMod
     {
         CategoryState.Save();
         ModVersionTracker.Save();
+        ModToggleManager.ApplyPendingChanges(Logger);
     }
 }
