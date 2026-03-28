@@ -38,7 +38,7 @@ public class ColorInputHandler : IPreferenceInputHandler
         buttonImage.color = colorValue;
         var btnOutline = colorButtonGO.AddComponent<Outline>();
         btnOutline.effectColor = _theme.BgInput;
-        btnOutline.effectDistance = new Vector2(1, 1);
+        btnOutline.effectDistance = new Vector2(1.5f, 1.5f);
 
         var button = colorButtonGO.AddComponent<Button>();
         EventHelper.AddListener(() =>
