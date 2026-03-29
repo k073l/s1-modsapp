@@ -389,7 +389,7 @@
             <HintPath>$(S1MonoDir)\Schedule I_Data\Managed\TextMeshPro.dll</HintPath>
         </Reference>
         <Reference Include="S1API">
-            <HintPath>build/S1API.Mono.MelonLoader.dll</HintPath>
+            <HintPath>$(S1MonoDir)\Mods\S1API.Mono.MelonLoader.dll</HintPath>
         </Reference>
     </ItemGroup>
 <!--    <ItemGroup Label="AssembliesMono" Condition="'$(IsMono)' == 'true'">-->

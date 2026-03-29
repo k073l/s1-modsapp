@@ -557,19 +557,19 @@ public class JsonConfigUI
             "SaveJsonButton", "Save JSON", container.transform,
             _theme.AccentPrimary, 100, 30, _theme.SizeStandard, _theme.TextPrimary);
         _saveButton = save;
-        EventHelper.AddListener(SaveJsonFile, save.onClick);
+        EventHelper.AddListener(() => SaveJsonFile(), save.onClick);
 
         var (_, revert, _) = UIFactory.RoundedButtonWithLabel(
             "RevertJsonButton", "Revert", container.transform,
             _theme.WarningColor, 80, 30, _theme.SizeStandard, _theme.TextPrimary);
         _revertButton = revert;
-        EventHelper.AddListener(RevertJsonChanges, revert.onClick);
+        EventHelper.AddListener(() => RevertJsonChanges(), revert.onClick);
 
         var (_, format, _) = UIFactory.RoundedButtonWithLabel(
             "FormatJsonButton", "Format", container.transform,
             _theme.TextSecondary, 80, 30, _theme.SizeStandard, _theme.TextPrimary);
         _formatButton = format;
-        EventHelper.AddListener(FormatJsonContent, format.onClick);
+        EventHelper.AddListener(() => FormatJsonContent(), format.onClick);
 
         UpdateButtonStates();
     }
