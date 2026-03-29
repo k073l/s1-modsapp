@@ -95,6 +95,7 @@ public static class ModToggleManager
 
             try
             {
+                logger.Msg($"[ModToggle] {(shouldEnable ? "Enabling" : "Disabling")} {Path.GetFileName(dllPath)}");
                 if (shouldEnable)
                 {
                     if (File.Exists(inactivePath) && !File.Exists(dllPath))

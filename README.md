@@ -30,7 +30,7 @@ Convenient preferences management for Schedule I mods.
 
 If you're a mod developer, check out the [preferences guide](https://github.com/k073l/s1-modsapp/blob/master/PREFERENCES.md).
 
-**Enabling/Disabling Mods:** This app does not support enabling or disabling mods. This is by design - MelonLoader doesn't support dynamic mod loading/unloading and the restart would be required anyway. I'd recommend using a dedicated, mod platform aware mod manager, like [r2modman](https://thunderstore.io/c/schedule-i/p/ebkr/r2modman/), [Gale](https://thunderstore.io/c/schedule-i/p/Kesomannen/GaleModManager/) or [Vortex](https://www.nexusmods.com/site/mods/1) just to name a few. They can handle loading/unloading mods, updates and some even have mod profile support.
+**Enabling/Disabling Mods:** This app supports enabling or disabling mods from version 1.2.2. The restart is required for the change to apply. Still, I'd recommend using a dedicated, mod platform aware mod manager, like [r2modman](https://thunderstore.io/c/schedule-i/p/ebkr/r2modman/), [Gale](https://thunderstore.io/c/schedule-i/p/Kesomannen/GaleModManager/) or [Vortex](https://www.nexusmods.com/site/mods/1) just to name a few. They can handle loading/unloading mods, updates and some even have mod profile support.
 
 **Backup Your Configs:** Always back up your configuration files before making changes. While the app is designed to be safe, unexpected issues can arise.
 

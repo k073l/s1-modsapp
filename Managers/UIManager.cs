@@ -18,7 +18,7 @@ public class UIManager
     private readonly ModManager _modManager;
     private readonly MelonLogger.Instance _logger;
 
-    private ModListPanel _modListPanel;
+    internal static ModListPanel ModListPanel;
     private ModDetailsPanel _modDetailsPanel;
     private Action _openLogsAction;
     internal static GameObject MainPanel;
@@ -41,7 +41,7 @@ public class UIManager
     {
         CreateMainLayout();
         SetupPanels();
-        _modListPanel.PopulateList();
+        ModListPanel.PopulateList();
         _modDetailsPanel.ShowWelcome();
     }
 
@@ -72,20 +72,20 @@ public class UIManager
     {
         var mainBg = MainPanel.transform;
 
-        _modListPanel = new ModListPanel(mainBg, _modManager, _theme, _logger);
+        ModListPanel = new ModListPanel(mainBg, _modManager, _theme, _logger);
         _modDetailsPanel = new ModDetailsPanel(mainBg, _modManager, _theme, _logger);
 
-        _modListPanel.Initialize();
+        ModListPanel.Initialize();
         _modDetailsPanel.Initialize();
 
         // Connect panels
-        _modListPanel.OnModSelected += mod =>
+        ModListPanel.OnModSelected += mod =>
         {
             _selectedMod = mod;
             _selectedInactiveMod = null;
             _modDetailsPanel.ShowModDetails(mod);
         };
-        _modListPanel.OnInactiveModSelected += inactive =>
+        ModListPanel.OnInactiveModSelected += inactive =>
         {
             _selectedInactiveMod = inactive;
             _selectedMod = null;
@@ -135,14 +135,14 @@ public class UIManager
         App.Instance.OpenApp();
         if (_selectedInactiveMod != null)
         {
-            _modListPanel.SelectedModName = openedInactive.FilePath;
-            _modListPanel.UpdateButtonHighlights();
+            ModListPanel.SelectedModName = openedInactive.FilePath;
+            ModListPanel.UpdateButtonHighlights();
             _modDetailsPanel.ShowInactiveModDetails(openedInactive);
             return;
         }
-        if (openedMod == null || _modDetailsPanel == null || _modListPanel == null) return;
-        _modListPanel.SelectedModName = openedMod.Info.Name;
-        _modListPanel.UpdateButtonHighlights();
+        if (openedMod == null || _modDetailsPanel == null || ModListPanel == null) return;
+        ModListPanel.SelectedModName = openedMod.Info.Name;
+        ModListPanel.UpdateButtonHighlights();
         _modDetailsPanel.ShowModDetails(openedMod);
     }
 }

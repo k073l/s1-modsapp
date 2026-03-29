@@ -39,7 +39,7 @@ public class BooleanInputHandler : IPreferenceInputHandler
             $"{entryKey}_Toggle",
             initial,
             _theme.SuccessColor,
-            _theme.ErrorColor,
+            _theme.TextSecondary,
             _theme.BgInput,
             _theme.BgInput
         );

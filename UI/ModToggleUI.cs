@@ -96,6 +96,7 @@ public static class ModToggleUI
         }
 
         refreshColors(newVal, ModToggleManager.HasPendingChange(dllPath));
+        UIManager.ModListPanel?.UpdateButtonHighlights();
     }
 
     private static void ShowDependencyWarningPanel(
@@ -162,6 +163,7 @@ public static class ModToggleUI
 
             sourceToggle.SetIsOnWithoutNotify(false);
             refreshColors(false, ModToggleManager.HasPendingChange(dllPath));
+            UIManager.ModListPanel?.UpdateButtonHighlights();
             FloatingPanelComponent.Cleanup();
         }, disableAllBtn.onClick);
 
@@ -169,6 +171,11 @@ public static class ModToggleUI
             "CancelBtn", "Cancel", btnRow.transform,
             theme.AccentSecondary, 80, 28, theme.SizeSmall, theme.TextPrimary);
 
-        EventHelper.AddListener(FloatingPanelComponent.Cleanup, cancelBtn.onClick);
+        var empty = "";
+        EventHelper.AddListener(() =>
+        {
+            empty = empty;
+            FloatingPanelComponent.Cleanup();
+        }, cancelBtn.onClick);
     }
 }
