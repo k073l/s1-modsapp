@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using MelonLoader;
 using MelonLoader.Utils;
+using ModsApp.Helpers;
 using Mono.Cecil;
 
 namespace ModsApp.Managers;
@@ -15,6 +16,7 @@ public class ModManager
 
     private static readonly Dictionary<MelonMod, ModDependencyInfo> DependencyCache = new();
     private static readonly Dictionary<MelonMod, Backend> BackendCache = new();
+
     private static FieldInfo _cachedFileField;
     private static PropertyInfo _cachedFileProperty;
     private static FieldInfo _cachedFilePathField;
@@ -22,6 +24,8 @@ public class ModManager
     private static FieldInfo _cachedDirectFilePathField;
     private static PropertyInfo _cachedDirectFilePathProperty;
     private static bool _reflectionCacheInitialized;
+
+    private List<InactiveModInfo> _inactiveModsCache;
 
     public ModManager(MelonLogger.Instance logger)
     {
@@ -34,34 +38,34 @@ public class ModManager
     public IEnumerable<MelonMod> GetAllMods() =>
         _mods.Values.OrderBy(m => m.Info.Name, StringComparer.OrdinalIgnoreCase);
 
-    public MelonMod GetMod(string name) => _mods.ContainsKey(name) ? _mods[name] : null;
+    public MelonMod GetMod(string name) => _mods.TryGetValue(name, out var mod) ? mod : null;
 
-    public MelonMod GetModByAssemblyName(string assemblyName)
+    public MelonMod GetModByAssemblyName(string assemblyName) =>
+        _mods.Values.FirstOrDefault(m =>
+            m.MelonAssembly?.Assembly?.GetName().Name
+                .Equals(assemblyName, StringComparison.OrdinalIgnoreCase) == true);
+
+    public Assembly GetAssemblyByAssemblyName(string assemblyName) =>
+        AppDomain.CurrentDomain.GetAssemblies()
+            .FirstOrDefault(a => a.GetName().Name.Equals(assemblyName, StringComparison.OrdinalIgnoreCase));
+
+    public List<InactiveModInfo> GetInactiveMods()
     {
-        foreach (var key in _mods.Keys)
-        {
-            var mod = _mods[key];
-            if (mod.MelonAssembly?.Assembly?.GetName().Name.Equals(assemblyName, StringComparison.OrdinalIgnoreCase) ==
-                true)
-                return mod;
-        }
-
-        return null;
+        if (_inactiveModsCache != null) return _inactiveModsCache;
+        ModFolderScanner.Scan(out _, out var inactive, out _);
+        _inactiveModsCache = inactive;
+        return _inactiveModsCache;
     }
 
-    public Assembly GetAssemblyByAssemblyName(string assemblyName)
-    {
-        var loaded = AppDomain.CurrentDomain.GetAssemblies();
-        return loaded.FirstOrDefault(a => a.GetName().Name.Equals(assemblyName, StringComparison.OrdinalIgnoreCase));
-    }
+    public void InvalidateScanCache() => _inactiveModsCache = null;
 
     private void LoadMods()
     {
         foreach (var mod in MelonMod.RegisteredMelons)
-        {
             _mods[mod.Info.Name] = mod;
-        }
     }
+
+    #region Preferences
 
     public IEnumerable<MelonPreferences_Category> GetPreferencesForMod(MelonMod mod)
     {
@@ -75,9 +79,7 @@ public class ModManager
                 var category = ExtractCategoryFromObject(catObj);
                 if (category != null &&
                     IsCategoryForMod(category, modName, mod.MelonAssembly?.Assembly?.GetName().Name))
-                {
                     categories.Add(category);
-                }
             }
         }
         catch (Exception ex)
@@ -91,16 +93,12 @@ public class ModManager
     public bool HasUnassignedPreferences()
     {
         var allModNames = _mods.Keys.ToHashSet(StringComparer.OrdinalIgnoreCase);
-
         foreach (var catObj in MelonPreferences.Categories)
         {
             var category = ExtractCategoryFromObject(catObj);
             if (category == null) continue;
-
-            var isAssigned = allModNames.Any(modName =>
-                IsCategoryForMod(category, modName, GetMod(modName)?.MelonAssembly?.Assembly?.GetName().Name));
-
-            if (!isAssigned)
+            if (!allModNames.Any(n =>
+                    IsCategoryForMod(category, n, GetMod(n)?.MelonAssembly?.Assembly?.GetName().Name)))
                 return true;
         }
 
@@ -111,16 +109,12 @@ public class ModManager
     {
         var allModNames = _mods.Keys.ToHashSet(StringComparer.OrdinalIgnoreCase);
         var unassigned = new List<MelonPreferences_Category>();
-
         foreach (var catObj in MelonPreferences.Categories)
         {
             var category = ExtractCategoryFromObject(catObj);
             if (category == null) continue;
-
-            var isAssigned = allModNames.Any(modName =>
-                IsCategoryForMod(category, modName, GetMod(modName)?.MelonAssembly?.Assembly?.GetName().Name));
-
-            if (!isAssigned)
+            if (!allModNames.Any(n =>
+                    IsCategoryForMod(category, n, GetMod(n)?.MelonAssembly?.Assembly?.GetName().Name)))
                 unassigned.Add(category);
         }
 
@@ -131,11 +125,9 @@ public class ModManager
     {
         if (catObj is MelonPreferences_Category direct)
             return direct;
-
         var type = catObj?.GetType();
         if (type?.IsGenericType != true || type.GetGenericTypeDefinition() != typeof(KeyValuePair<,>)) return null;
-        var valueProp = type.GetProperty("Value");
-        return valueProp?.GetValue(catObj) as MelonPreferences_Category;
+        return type.GetProperty("Value")?.GetValue(catObj) as MelonPreferences_Category;
     }
 
     private bool IsCategoryForMod(MelonPreferences_Category category, string modName, string assemblyName = null)
@@ -146,11 +138,8 @@ public class ModManager
 
         foreach (var name in namesToMatch)
         {
-            if (MatchesModName(category.Identifier, name))
-                return true;
-
-            if (MatchesModName(category.DisplayName, name))
-                return true;
+            if (MatchesModName(category.Identifier, name)) return true;
+            if (MatchesModName(category.DisplayName, name)) return true;
         }
 
         EnsureReflectionCacheInitialized();
@@ -159,13 +148,9 @@ public class ModManager
         {
             var filePath = TryGetCategoryFilePath(category);
             if (!string.IsNullOrEmpty(filePath))
-            {
                 foreach (var name in namesToMatch)
-                {
                     if (MatchesModNameInFilePath(filePath, name))
                         return true;
-                }
-            }
         }
         catch (Exception ex)
         {
@@ -175,16 +160,21 @@ public class ModManager
         return false;
     }
 
-
-    private static bool MatchesModName(string text, string modName)
+    internal static bool MatchesModName(string text, string modName)
     {
-        if (string.IsNullOrEmpty(text))
-            return false;
+        if (string.IsNullOrEmpty(text)) return false;
+        return GetModNameVariants(modName).Any(v =>
+            text.IndexOf(v, StringComparison.OrdinalIgnoreCase) >= 0);
+    }
 
-        foreach (var variant in GetModNameVariants(modName))
+    private bool MatchesModNameInFilePath(string filePath, string modName)
+    {
+        if (MatchesModName(Path.GetFileNameWithoutExtension(filePath), modName)) return true;
+        var dir = Path.GetDirectoryName(filePath);
+        while (!string.IsNullOrEmpty(dir))
         {
-            if (text.IndexOf(variant, StringComparison.OrdinalIgnoreCase) >= 0)
-                return true;
+            if (MatchesModName(Path.GetFileName(dir), modName)) return true;
+            dir = Path.GetDirectoryName(dir);
         }
 
         return false;
@@ -192,26 +182,20 @@ public class ModManager
 
     private void EnsureReflectionCacheInitialized()
     {
-        if (_reflectionCacheInitialized)
-            return;
-
+        if (_reflectionCacheInitialized) return;
         try
         {
-            _cachedFileField = typeof(MelonPreferences_Category).GetField(
-                "File", BindingFlags.NonPublic | BindingFlags.Instance);
-
-            _cachedFileProperty = typeof(MelonPreferences_Category).GetProperty(
-                "File", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
-
-            _cachedDirectFilePathField = typeof(MelonPreferences_Category).GetField(
-                "FilePath", BindingFlags.NonPublic | BindingFlags.Instance);
-
-            _cachedDirectFilePathProperty = typeof(MelonPreferences_Category).GetProperty(
-                "FilePath", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
+            _cachedFileField = typeof(MelonPreferences_Category).GetField("File",
+                BindingFlags.NonPublic | BindingFlags.Instance);
+            _cachedFileProperty = typeof(MelonPreferences_Category).GetProperty("File",
+                BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
+            _cachedDirectFilePathField = typeof(MelonPreferences_Category).GetField("FilePath",
+                BindingFlags.NonPublic | BindingFlags.Instance);
+            _cachedDirectFilePathProperty = typeof(MelonPreferences_Category).GetProperty("FilePath",
+                BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
         }
         catch
         {
-            /* Ignore reflection failures */
         }
 
         _reflectionCacheInitialized = true;
@@ -219,87 +203,187 @@ public class ModManager
 
     private string TryGetCategoryFilePath(MelonPreferences_Category category)
     {
-        object fileObj = _cachedFileField?.GetValue(category)
-                         ?? _cachedFileProperty?.GetValue(category);
-
+        var fileObj = _cachedFileField?.GetValue(category) ?? _cachedFileProperty?.GetValue(category);
         if (fileObj != null)
         {
             if (_cachedFilePathField == null && _cachedFilePathProperty == null)
             {
-                _cachedFilePathField = fileObj.GetType().GetField(
-                    "FilePath", BindingFlags.NonPublic | BindingFlags.Instance);
-
-                _cachedFilePathProperty = fileObj.GetType().GetProperty(
-                    "FilePath", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
+                _cachedFilePathField = fileObj.GetType().GetField("FilePath",
+                    BindingFlags.NonPublic | BindingFlags.Instance);
+                _cachedFilePathProperty = fileObj.GetType().GetProperty("FilePath",
+                    BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
             }
 
             var path = _cachedFilePathField?.GetValue(fileObj) as string
                        ?? _cachedFilePathProperty?.GetValue(fileObj) as string;
-
-            if (!string.IsNullOrEmpty(path))
-                return path;
+            if (!string.IsNullOrEmpty(path)) return path;
         }
 
         return _cachedDirectFilePathField?.GetValue(category) as string
                ?? _cachedDirectFilePathProperty?.GetValue(category) as string;
     }
 
-    private bool MatchesModNameInFilePath(string filePath, string modName)
+    internal static IEnumerable<string> GetModNameVariants(string modName)
     {
-        var fileName = Path.GetFileNameWithoutExtension(filePath);
-        if (MatchesModName(fileName, modName))
-            return true;
-
-        var currentDir = Path.GetDirectoryName(filePath);
-        while (!string.IsNullOrEmpty(currentDir))
-        {
-            var directoryName = Path.GetFileName(currentDir);
-            if (MatchesModName(directoryName, modName))
-                return true;
-
-            currentDir = Path.GetDirectoryName(currentDir);
-        }
-
-        return false;
-    }
-
-    // fully qualified type name since UE would crash the runtime when loading it otherwise
-    internal static System.Collections.Generic.IEnumerable<string> GetModNameVariants(string modName)
-    {
-        if (string.IsNullOrWhiteSpace(modName))
-            yield break;
-
+        if (string.IsNullOrWhiteSpace(modName)) yield break;
         yield return modName;
-
-        var noSpaces = modName.Replace(" ", string.Empty);
-        yield return noSpaces;
-
+        yield return modName.Replace(" ", string.Empty);
         yield return modName.Replace(" ", "_");
         yield return modName.Replace(" ", "-");
-
-        // aggressive normalized form
-        var normalized = new string(
-            modName
-                .Where(char.IsLetterOrDigit)
-                .ToArray()
-        );
-
-        if (!string.IsNullOrEmpty(normalized))
-            yield return normalized;
+        var normalized = new string(modName.Where(char.IsLetterOrDigit).ToArray());
+        if (!string.IsNullOrEmpty(normalized)) yield return normalized;
     }
 
-    private static readonly string[] NonEnvironmentFolders =
+    #endregion
+
+    #region Dependencies
+
+    public ModDependencyInfo GetModDependencies(MelonMod mod)
     {
+        if (DependencyCache.TryGetValue(mod, out var cached)) return cached;
+
+        var result = new ModDependencyInfo();
+        if (mod?.MelonAssembly?.Assembly == null) return result;
+
+        var assemblyLocation = mod.MelonAssembly.Assembly.Location;
+        if (string.IsNullOrWhiteSpace(assemblyLocation) || !File.Exists(assemblyLocation))
+            return result;
+
+        var loadedAssemblyNames = AppDomain.CurrentDomain.GetAssemblies()
+            .Where(a => a != null).Select(a => a.GetName().Name)
+            .Where(n => !string.IsNullOrWhiteSpace(n))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        var environmentAssemblies = GetEnvironmentAssemblies();
+        var refs = ReadAssemblyReferences(assemblyLocation);
+        var required = refs.Where(r => !environmentAssemblies.Contains(r)).ToList();
+
+        result.Required = required;
+        result.Missing = required.Where(r => !loadedAssemblyNames.Contains(r)).ToList();
+        result.Optional = mod.OptionalDependencies?.AssemblyNames?
+            .Where(x => !string.IsNullOrWhiteSpace(x)).ToList() ?? [];
+
+        DependencyCache[mod] = result;
+        return result;
+    }
+
+    public List<MelonMod> GetDependants(string dllPath)
+    {
+        var targetName = ReadAssemblyName(dllPath);
+        var result = new List<MelonMod>();
+        var visited = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        var loadedByName = BuildLoadedByNameMap();
+        var refMap = BuildReferenceMap(loadedByName);
+
+        CollectDependants(targetName, loadedByName, refMap, result, visited);
+        return result;
+    }
+
+    public List<MelonMod> GetCascadingDependants(IEnumerable<string> dllPaths)
+    {
+        var disabling = dllPaths.Select(ReadAssemblyName).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var result = new List<MelonMod>();
+        var visited = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var loadedByName = BuildLoadedByNameMap();
+        var refMap = BuildReferenceMap(loadedByName);
+
+        foreach (var target in disabling)
+            CollectDependants(target, loadedByName, refMap, result, visited);
+
+        return result
+            .Where(m => !disabling.Contains(ReadAssemblyName(m.MelonAssembly.Assembly.Location)))
+            .Distinct().ToList();
+    }
+
+    private Dictionary<string, MelonMod> BuildLoadedByNameMap() =>
+        MelonMod.RegisteredMelons
+            .Where(m => m?.MelonAssembly?.Assembly?.Location != null)
+            .ToDictionary(
+                m => ReadAssemblyName(m.MelonAssembly.Assembly.Location),
+                m => m,
+                StringComparer.OrdinalIgnoreCase);
+
+    private Dictionary<string, HashSet<string>> BuildReferenceMap(Dictionary<string, MelonMod> loadedByName)
+    {
+        var map = new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase);
+        foreach (var kv in loadedByName)
+        {
+            var loc = kv.Value.MelonAssembly.Assembly.Location;
+            // Use DependencyCache refs if available to avoid Cecil re-reads
+            if (DependencyCache.TryGetValue(kv.Value, out var cached))
+            {
+                map[kv.Key] = cached.Required.ToHashSet(StringComparer.OrdinalIgnoreCase);
+            }
+            else
+            {
+                map[kv.Key] = ReadAssemblyReferences(loc);
+            }
+        }
+
+        return map;
+    }
+
+    private static void CollectDependants(
+        string targetName,
+        Dictionary<string, MelonMod> loadedByName,
+        Dictionary<string, HashSet<string>> refMap,
+        List<MelonMod> result,
+        HashSet<string> visited)
+    {
+        if (!visited.Add(targetName)) return;
+        foreach (var kv in refMap)
+        {
+            if (!kv.Value.Contains(targetName)) continue;
+            if (!loadedByName.TryGetValue(kv.Key, out var dependant)) continue;
+            if (result.Contains(dependant)) continue;
+            result.Add(dependant);
+            CollectDependants(kv.Key, loadedByName, refMap, result, visited);
+        }
+    }
+
+    private static HashSet<string> ReadAssemblyReferences(string filePath)
+    {
+        try
+        {
+            var def = AssemblyDefinition.ReadAssembly(filePath, new ReaderParameters { ReadWrite = false });
+            return def.MainModule.AssemblyReferences
+                .Select(r => r.Name).Where(n => !string.IsNullOrWhiteSpace(n))
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        }
+        catch
+        {
+            return [];
+        }
+    }
+
+    private static string ReadAssemblyName(string filePath)
+    {
+        try
+        {
+            var def = AssemblyDefinition.ReadAssembly(filePath, new ReaderParameters { ReadWrite = false });
+            return def.Name.Name;
+        }
+        catch
+        {
+            return Path.GetFileNameWithoutExtension(filePath.Replace(ModToggleManager.InactiveExtension, ""));
+        }
+    }
+
+    #endregion
+
+    #region Environment / Backend
+
+    private static readonly string[] NonEnvironmentFolders =
+    [
         MelonEnvironment.UserLibsDirectory,
         MelonEnvironment.PluginsDirectory,
         MelonEnvironment.ModsDirectory
-    };
+    ];
 
     private static bool IsEnvironmentAssembly(Assembly asm, HashSet<Assembly> modAssemblies)
     {
-        if (asm == null || modAssemblies.Contains(asm))
-            return false;
-
+        if (asm == null || modAssemblies.Contains(asm)) return false;
         string location;
         try
         {
@@ -307,126 +391,57 @@ public class ModManager
         }
         catch (NotSupportedException)
         {
-            // dynamic assemblies, IL2CPP modules, etc.
-            return true; // treat as environment
+            return true;
         }
 
-        if (string.IsNullOrWhiteSpace(location))
-            return true; // also treat as environment
-
-        return !NonEnvironmentFolders.Any(f =>
-            location.StartsWith(f, StringComparison.OrdinalIgnoreCase));
+        if (string.IsNullOrWhiteSpace(location)) return true;
+        return !NonEnvironmentFolders.Any(f => location.StartsWith(f, StringComparison.OrdinalIgnoreCase));
     }
 
     private static HashSet<string> GetEnvironmentAssemblies()
     {
         var modAssemblies = MelonMod.RegisteredMelons
             .Where(m => m?.MelonAssembly?.Assembly != null)
-            .Select(m => m.MelonAssembly.Assembly)
-            .ToHashSet();
+            .Select(m => m.MelonAssembly.Assembly).ToHashSet();
 
         return AppDomain.CurrentDomain.GetAssemblies()
             .Where(a => IsEnvironmentAssembly(a, modAssemblies))
-            .Select(a => a.GetName().Name)
-            .Where(n => !string.IsNullOrWhiteSpace(n))
+            .Select(a => a.GetName().Name).Where(n => !string.IsNullOrWhiteSpace(n))
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
-    }
-
-    public ModDependencyInfo GetModDependencies(MelonMod mod)
-    {
-        if (DependencyCache.TryGetValue(mod, out var cached))
-            return cached;
-        var result = new ModDependencyInfo();
-
-        if (mod?.MelonAssembly?.Assembly == null)
-            return result;
-
-        var loadedAssemblyNames = AppDomain.CurrentDomain.GetAssemblies()
-            .Where(a => a != null)
-            .Select(a => a.GetName().Name)
-            .Where(n => !string.IsNullOrWhiteSpace(n))
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-        var environmentAssemblies = GetEnvironmentAssemblies();
-
-        var assemblyLocation = mod.MelonAssembly.Assembly.Location;
-        if (string.IsNullOrWhiteSpace(assemblyLocation) || !File.Exists(assemblyLocation))
-            return result;
-
-        var assemblyDef = AssemblyDefinition.ReadAssembly(assemblyLocation);
-
-        var referencedAssemblies = assemblyDef.MainModule.AssemblyReferences
-            .Select(r => r?.Name)
-            .Where(n => !string.IsNullOrWhiteSpace(n))
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-        // referenced assemblies not environment
-        var required = referencedAssemblies
-            .Where(r => !environmentAssemblies.Contains(r))
-            .ToList();
-
-        result.Required = required;
-
-        // required assemblies not loaded in memory
-        result.Missing = required
-            .Where(r => !loadedAssemblyNames.Contains(r))
-            .ToList();
-
-        // optional from metadata
-        result.Optional = mod.OptionalDependencies?.AssemblyNames?
-                              .Where(x => !string.IsNullOrWhiteSpace(x))
-                              .ToList()
-                          ?? [];
-
-        DependencyCache[mod] = result;
-        return result;
     }
 
     private Backend DetermineBackend(MelonMod mod)
     {
-        if (BackendCache.TryGetValue(mod, out var cached))
-            return cached;
-        var assemblyPath = mod.MelonAssembly.Assembly.Location;
-        var assemblyDef = AssemblyDefinition.ReadAssembly(assemblyPath);
+        if (BackendCache.TryGetValue(mod, out var cached)) return cached;
 
+        var assemblyDef = AssemblyDefinition.ReadAssembly(mod.MelonAssembly.Assembly.Location);
         var hasIL2CPP = false;
         var hasMono = false;
         var hasS1API = false;
 
         foreach (var module in assemblyDef.Modules)
         {
-            // Check defined types
             foreach (var type in module.Types)
             {
-                if (!hasIL2CPP && type.FullName.StartsWith("Il2Cpp"))
-                    hasIL2CPP = true;
-
-                if (!hasMono && type.FullName.Contains("ScheduleOne"))
-                    hasMono = true;
+                if (!hasIL2CPP && type.FullName.StartsWith("Il2Cpp")) hasIL2CPP = true;
+                if (!hasMono && type.FullName.Contains("ScheduleOne")) hasMono = true;
             }
 
-            // Check referenced types
             foreach (var typeRef in module.GetTypeReferences())
             {
-                if (!hasS1API && typeRef.Namespace.StartsWith("S1API"))
-                    hasS1API = true;
-
-                if (!hasIL2CPP && typeRef.Namespace.StartsWith("Il2Cpp"))
-                    hasIL2CPP = true;
-
-                if (!hasMono && typeRef.Namespace.Contains("ScheduleOne"))
-                    hasMono = true;
+                if (!hasS1API && typeRef.Namespace.StartsWith("S1API")) hasS1API = true;
+                if (!hasIL2CPP && typeRef.Namespace.StartsWith("Il2Cpp")) hasIL2CPP = true;
+                if (!hasMono && typeRef.Namespace.Contains("ScheduleOne")) hasMono = true;
             }
 
-            if (hasIL2CPP || hasMono)
-                break;
+            if (hasIL2CPP || hasMono) break;
         }
 
-        if (hasIL2CPP)
-            return Backend.IL2CPP;
-        if (hasMono)
-            return Backend.Mono;
-        var result = hasS1API ? Backend.S1API : Backend.Unknown;
+        var result = hasIL2CPP ? Backend.IL2CPP
+            : hasMono ? Backend.Mono
+            : hasS1API ? Backend.S1API
+            : Backend.Unknown;
+
         BackendCache[mod] = result;
         return result;
     }
@@ -435,39 +450,25 @@ public class ModManager
     {
         var modBackend = DetermineBackend(mod);
         backend = modBackend.ToString();
-
-        if (modBackend == Backend.Unknown)
-            return false;
-
-        var isGameIL2CPP = MelonUtils.IsGameIl2Cpp();
-
-        if (modBackend == Backend.IL2CPP && isGameIL2CPP)
-            return true;
-        if (modBackend == Backend.Mono && !isGameIL2CPP)
-            return true;
-        if (modBackend == Backend.S1API)
-            return true;
-
-        return false;
+        if (modBackend == Backend.Unknown) return false;
+        var isIL2CPP = MelonUtils.IsGameIl2Cpp();
+        return modBackend == Backend.S1API
+               || (modBackend == Backend.IL2CPP && isIL2CPP)
+               || (modBackend == Backend.Mono && !isIL2CPP);
     }
+
+    #endregion
+
+    #region Docs
 
     public string GetChangelog(MelonMod mod, out string filepath)
     {
         filepath = null;
         if (mod?.MelonAssembly?.Assembly == null || string.IsNullOrWhiteSpace(mod.MelonAssembly.Assembly.Location))
             return null;
-        var dirLocation = Directory.GetParent(mod.MelonAssembly.Assembly.Location);
-        if (dirLocation == null) return null;
-        if (dirLocation.Name == MelonEnvironment.ModsDirectory || !dirLocation.Exists)
-            return null; // don't look in the root mods folder since it would be a mess
-        var extensions = new[] { ".txt", ".md", ".rst" };
-        var changelogFile = Directory
-            .EnumerateFiles(dirLocation.FullName)
-            .FirstOrDefault(f => extensions.Contains(Path.GetExtension(f).ToLower())
-                                 && Path.GetFileNameWithoutExtension(f)
-                                     .Equals("CHANGELOG", StringComparison.OrdinalIgnoreCase));
-        filepath = changelogFile;
-        return changelogFile == null ? null : File.ReadAllText(changelogFile);
+        var dir = Directory.GetParent(mod.MelonAssembly.Assembly.Location);
+        if (dir == null || dir.Name == MelonEnvironment.ModsDirectory || !dir.Exists) return null;
+        return FindDocFile(dir.FullName, "CHANGELOG", out filepath);
     }
 
     public string GetReadme(MelonMod mod, out string filepath)
@@ -475,18 +476,23 @@ public class ModManager
         filepath = null;
         if (mod?.MelonAssembly?.Assembly == null || string.IsNullOrWhiteSpace(mod.MelonAssembly.Assembly.Location))
             return null;
-        var dirLocation = Directory.GetParent(mod.MelonAssembly.Assembly.Location);
-        if (dirLocation == null || dirLocation.Name == MelonEnvironment.ModsDirectory || !dirLocation.Exists)
-            return null;
+        var dir = Directory.GetParent(mod.MelonAssembly.Assembly.Location);
+        if (dir == null || dir.Name == MelonEnvironment.ModsDirectory || !dir.Exists) return null;
+        return FindDocFile(dir.FullName, "README", out filepath);
+    }
+
+    private static string FindDocFile(string dirPath, string fileName, out string filepath)
+    {
         var extensions = new[] { ".txt", ".md", ".rst" };
-        var readmeFile = Directory
-            .EnumerateFiles(dirLocation.FullName)
+        var file = Directory.EnumerateFiles(dirPath)
             .FirstOrDefault(f => extensions.Contains(Path.GetExtension(f).ToLower())
                                  && Path.GetFileNameWithoutExtension(f)
-                                     .Equals("README", StringComparison.OrdinalIgnoreCase));
-        filepath = readmeFile;
-        return readmeFile == null ? null : File.ReadAllText(readmeFile);
+                                     .Equals(fileName, StringComparison.OrdinalIgnoreCase));
+        filepath = file;
+        return file == null ? null : File.ReadAllText(file);
     }
+
+    #endregion
 }
 
 internal enum Backend
@@ -499,7 +505,7 @@ internal enum Backend
 
 public class ModDependencyInfo
 {
-    public List<string> Required { get; set; } = new();
-    public List<string> Missing { get; set; } = new();
-    public List<string> Optional { get; set; } = new();
+    public List<string> Required { get; set; } = [];
+    public List<string> Missing { get; set; } = [];
+    public List<string> Optional { get; set; } = [];
 }

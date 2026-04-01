@@ -284,54 +284,6 @@ public static class UIHelper
 
         return image;
     }
-
-    public static Toggle CreateLabelledToggle(Transform parent, string name, string labelText, bool initialValue)
-    {
-        var container = new GameObject(name);
-        container.transform.SetParent(parent, false);
-
-        var hLayout = container.AddComponent<HorizontalLayoutGroup>();
-        hLayout.spacing = 6;
-        hLayout.childAlignment = TextAnchor.MiddleLeft;
-        hLayout.childForceExpandWidth = false;
-        hLayout.childForceExpandHeight = false;
-        hLayout.childControlWidth = false;
-        hLayout.childControlHeight = true;
-        container.AddComponent<LayoutElement>().preferredHeight = 24;
-
-        var toggleObj = new GameObject($"{name}_Box");
-        toggleObj.transform.SetParent(container.transform, false);
-        var bg = toggleObj.AddComponent<Image>();
-        bg.color = UIManager._theme.BgInput;
-        var toggle = toggleObj.AddComponent<Toggle>();
-        toggle.targetGraphic = bg;
-        var rt = toggleObj.GetComponent<RectTransform>();
-        rt.sizeDelta = new Vector2(20, 20);
-        var toggleLayout = toggleObj.AddComponent<LayoutElement>();
-        toggleLayout.minWidth = 20;
-        toggleLayout.minHeight = 20;
-        toggleLayout.preferredWidth = 20;
-        toggleLayout.preferredHeight = 20;
-
-        var checkmarkGO = new GameObject("Checkmark");
-        checkmarkGO.transform.SetParent(toggleObj.transform, false);
-        var checkmarkImg = checkmarkGO.AddComponent<Image>();
-        checkmarkImg.color = UIManager._theme.BgCard;
-        var crt = checkmarkGO.GetComponent<RectTransform>();
-        crt.anchorMin = new Vector2(0.2f, 0.2f);
-        crt.anchorMax = new Vector2(0.8f, 0.8f);
-        crt.offsetMin = crt.offsetMax = Vector2.zero;
-
-        ToggleUtils.SetGraphic(toggle, checkmarkImg);
-        toggle.isOn = initialValue;
-
-        var label = UIFactory.Text($"{name}_Label", labelText, container.transform,
-            UIManager._theme.SizeSmall, TextAnchor.MiddleLeft);
-        label.color = UIManager._theme.TextPrimary;
-        label.gameObject.AddComponent<LayoutElement>().preferredWidth = label.preferredWidth;
-
-        return toggle;
-    }
 }
 
 public static class GameObjectExtensions
@@ -451,6 +403,7 @@ public static class ModVersionTracker
 {
     private static Dictionary<MelonMod, string> _versions = new();
     private static Dictionary<MelonMod, string> _thisSession = new();
+    private static Dictionary<string, string> _unmatched = new();
 
     private static string _savePath =
         Path.Combine(MelonEnvironment.UserDataDirectory, "ModsApp", "VersionTracker.json");
@@ -487,23 +440,15 @@ public static class ModVersionTracker
         var fallback = () => _versions = MelonMod.RegisteredMelons
             .Where(m => m?.Info?.Name != null)
             .ToDictionary(m => m, m => m.Info.Version);
-
-        if (!File.Exists(_savePath))
-        {
-            fallback();
-            return;
-        }
-
+ 
+        if (!File.Exists(_savePath)) { fallback(); return; }
+ 
         try
         {
             var json = File.ReadAllText(_savePath);
-            var dto = JsonConvert.DeserializeObject<Dictionary<string, string>>(json);
-            if (dto == null)
-            {
-                fallback();
-                return;
-            }
-
+            var dto  = JsonConvert.DeserializeObject<Dictionary<string, string>>(json);
+            if (dto == null) { fallback(); return; }
+ 
             _versions = dto
                 .Select(kv => new
                 {
@@ -512,18 +457,32 @@ public static class ModVersionTracker
                 })
                 .Where(x => x.Mod != null)
                 .ToDictionary(x => x.Mod!, x => x.Value);
+ 
+            // Capture entries that didn't match any loaded mod
+            // These are either disabled mods or deleted mods - we'll filter on Save()
+            _unmatched = dto
+                .Where(kv => MelonMod.RegisteredMelons.All(m => m.Info.Name != kv.Key))
+                .ToDictionary(kv => kv.Key, kv => kv.Value);
         }
-        catch
-        {
-            fallback();
-        }
+        catch { fallback(); }
     }
 
     public static void Save()
     {
+        ModFolderScanner.Scan(out _, out var inactiveMods, out _);
+        var inactiveNames = inactiveMods
+            .Select(m => m.Name)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+ 
         var merged = _versions.ToDictionary(kv => kv.Key.Info.Name, kv => kv.Value);
         foreach (var kv in _thisSession)
             merged[kv.Key.Info.Name] = kv.Value;
+ 
+        // preserve unmatched entries ONLY if they correspond to a currently disabled mod
+        foreach (var kv in _unmatched)
+            if (inactiveNames.Contains(kv.Key))
+                merged.TryAdd(kv.Key, kv.Value);
+ 
         var json = JsonConvert.SerializeObject(merged, Formatting.Indented);
         Directory.CreateDirectory(Path.GetDirectoryName(_savePath) ?? string.Empty);
         File.WriteAllText(_savePath, json);

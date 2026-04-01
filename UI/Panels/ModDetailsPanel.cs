@@ -46,6 +46,8 @@ public class ModDetailsPanel
 
         _jsonConfigManager = new JsonConfigManager(logger);
         _jsonConfigUI = new JsonConfigUI(theme, logger, _jsonConfigManager);
+
+        ModToggleUI.Initialize(_modManager);
     }
 
     private GameObject _actionButtonContainer;
@@ -240,6 +242,20 @@ public class ModDetailsPanel
         UIHelper.RefreshLayout(_detailsContent);
     }
 
+    public void ShowInactiveModDetails(InactiveModInfo inactive)
+    {
+        if (_detailsContent == null) return;
+
+        UIFactory.ClearChildren(_detailsContent);
+        _modifiedPreferences.Clear();
+        _jsonConfigUI.ResetState();
+
+        var headerCard = CreateInfoCard($"{UIHelper.SanitizeName(inactive.Name)}_HeaderCard");
+        CreateInactiveModHeader(inactive, headerCard);
+
+        UIHelper.RefreshLayout(_detailsContent);
+    }
+
     private GameObject CreateInfoCard(string name, Transform parent = null)
     {
         var parentTransform = parent ?? _detailsContent;
@@ -311,28 +327,20 @@ public class ModDetailsPanel
             FontStyle.Bold);
         title.color = _theme.TextPrimary;
 
-        string backendName = "";
-        bool compatible = _modManager.isCompatible(mod, ref backendName);
-
-        var (badgeObj, badgeBtn, badgeText) = UIFactory.RoundedButtonWithLabel(
-            "BackendBadge",
-            backendName,
-            headerContainer.transform,
+        var backendName = "";
+        var compatible = _modManager.isCompatible(mod, ref backendName);
+        var (_, badgeBtn, badgeText) = UIFactory.RoundedButtonWithLabel(
+            "BackendBadge", backendName, headerContainer.transform,
             compatible ? _theme.SuccessColor : _theme.WarningColor,
-            70, // width
-            22, // height
-            _theme.SizeSmall, // font size
-            _theme.TextPrimary
-        );
-
+            70, 22, _theme.SizeSmall, _theme.TextPrimary);
         badgeBtn.transition = Selectable.Transition.None;
-        badgeBtn.interactable = true;
         badgeBtn.enabled = false;
-
         badgeText.fontStyle = FontStyle.Bold;
         badgeText.alignment = TextAnchor.MiddleCenter;
-        
+
         CheckAndCreateDocsButton(mod, headerContainer.transform);
+        
+        ModToggleUI.CreateToggleForActive(mod, headerContainer.transform, _theme, RefreshLabel);
 
         var spacer = new GameObject("Spacer");
         spacer.transform.SetParent(headerContainer.transform, false);
@@ -341,17 +349,11 @@ public class ModDetailsPanel
         spacerLayout.flexibleHeight = 0;
         spacerLayout.minWidth = 10;
 
-        _modifiedLabel = UIFactory.Text("ModifiedLabel", "", headerContainer.transform, _theme.SizeSmall,
-            TextAnchor.MiddleRight,
-            FontStyle.Italic);
+        _modifiedLabel = UIFactory.Text("ModifiedLabel", "", headerContainer.transform,
+            _theme.SizeSmall, TextAnchor.MiddleRight, FontStyle.Italic);
         _modifiedLabel.color = _theme.WarningColor;
-        if (_modifiedMods.Contains(mod.Info.Name))
-        {
-            _modifiedLabel.text = "Changes applied, restart may be required";
-            _modifiedLabel.gameObject.SetActive(true);
-        }
-        else
-            _modifiedLabel.gameObject.SetActive(false);
+
+        RefreshLabel();
 
         var author = UIFactory.Text("ModAuthor", $"by: {mod.Info.Author}", card.transform, _theme.SizeStandard);
         author.color = _theme.TextSecondary;
@@ -376,17 +378,103 @@ public class ModDetailsPanel
         var dependenciesText = CheckAndFormatDependencies(mod);
         if (!string.IsNullOrEmpty(dependenciesText))
         {
-            var dependencies = UIFactory.Text("ModDependencies", dependenciesText, card.transform,
-                _theme.SizeSmall);
+            var dependencies = UIFactory.Text("ModDependencies", dependenciesText, card.transform, _theme.SizeSmall);
             dependencies.color = _theme.TextSecondary;
             dependencies.supportRichText = true;
         }
 
         if (LogManager.Instance.HasErrorsForMod(mod.Info.Name))
         {
-            var errors = UIFactory.Text("ModErrors", "This mod has logged errors - click the Logs button for details",
+            var errors = UIFactory.Text("ModErrors",
+                "This mod has logged errors - click the Logs button for details",
                 card.transform, _theme.SizeSmall);
             errors.color = _theme.ErrorColor;
+        }
+
+        return;
+
+        void RefreshLabel()
+        {
+            var dllPath = mod.MelonAssembly?.Assembly?.Location ?? "";
+            var hasPending = ModToggleManager.HasPendingChange(dllPath);
+            if (hasPending)
+            {
+                _modifiedLabel.text = "Restart required to apply";
+                _modifiedLabel.gameObject.SetActive(true);
+            }
+            else if (_modifiedMods.Contains(mod.Info.Name))
+            {
+                _modifiedLabel.text = "Changes applied, restart may be required";
+                _modifiedLabel.gameObject.SetActive(true);
+            }
+            else
+            {
+                _modifiedLabel.gameObject.SetActive(false);
+            }
+        }
+    }
+
+    private void CreateInactiveModHeader(InactiveModInfo inactive, GameObject card)
+    {
+        var headerContainer = UIFactory.Panel("HeaderContainer", card.transform, Color.clear);
+        headerContainer.GetComponent<Image>()?.MakeRounded();
+
+        var headerLayout = headerContainer.GetOrAddComponent<LayoutElement>();
+        headerLayout.preferredHeight = 28;
+        headerLayout.flexibleHeight = 0;
+
+        var hLayout = headerContainer.AddComponent<HorizontalLayoutGroup>();
+        hLayout.spacing = 8;
+        hLayout.childAlignment = TextAnchor.MiddleLeft;
+        hLayout.childForceExpandWidth = false;
+        hLayout.childForceExpandHeight = false;
+        hLayout.childControlWidth = true;
+        hLayout.childControlHeight = true;
+
+        var title = UIFactory.Text("ModTitle", inactive.Name, headerContainer.transform,
+            _theme.SizeLarge, TextAnchor.MiddleLeft, FontStyle.Bold);
+        title.color = new Color(_theme.TextPrimary.r, _theme.TextPrimary.g, _theme.TextPrimary.b, 0.55f);
+
+        var (_, disabledBadge, disabledText) = UIFactory.RoundedButtonWithLabel(
+            "DisabledBadge", "Disabled", headerContainer.transform,
+            new Color(_theme.TextSecondary.r, _theme.TextSecondary.g, _theme.TextSecondary.b, 0.3f),
+            70, 22, _theme.SizeSmall, _theme.TextPrimary);
+        disabledBadge.transition = Selectable.Transition.None;
+        disabledBadge.enabled = false;
+        disabledText.fontStyle = FontStyle.Italic;
+        disabledText.alignment = TextAnchor.MiddleCenter;
+        
+        Text pendingLabel = null;
+        ModToggleUI.CreateToggleForInactive(inactive, headerContainer.transform, _theme, RefreshLabel);
+
+        var spacer = new GameObject("Spacer");
+        spacer.transform.SetParent(headerContainer.transform, false);
+        spacer.AddComponent<LayoutElement>().flexibleWidth = 1;
+
+        pendingLabel = UIFactory.Text("PendingLabel", "", headerContainer.transform,
+            _theme.SizeSmall, TextAnchor.MiddleRight, FontStyle.Italic);
+        pendingLabel.color = _theme.WarningColor;
+
+        RefreshLabel();
+
+        var author = UIFactory.Text("ModAuthor", $"by: {inactive.Author}", card.transform, _theme.SizeStandard);
+        author.color = new Color(_theme.TextSecondary.r, _theme.TextSecondary.g, _theme.TextSecondary.b, 0.6f);
+
+        var version = UIFactory.Text("ModVersion", $"v. {inactive.Version}", card.transform, _theme.SizeStandard);
+        version.color = new Color(_theme.TextSecondary.r, _theme.TextSecondary.g, _theme.TextSecondary.b, 0.6f);
+
+        var disabledNote = UIFactory.Text("DisabledNote",
+            "This mod is disabled and will not load until re-enabled. Preferences are unavailable.",
+            card.transform, _theme.SizeSmall, TextAnchor.UpperLeft, FontStyle.Italic);
+        disabledNote.color = new Color(_theme.TextSecondary.r, _theme.TextSecondary.g, _theme.TextSecondary.b, 0.55f);
+        return;
+
+        void RefreshLabel()
+        {
+            if (pendingLabel == null) return;
+            var hasPending = ModToggleManager.HasPendingChange(inactive.ActivePath);
+            pendingLabel.text = hasPending ? "Restart required to apply" : "";
+            pendingLabel.gameObject.SetActive(hasPending);
         }
     }
 
@@ -419,8 +507,18 @@ public class ModDetailsPanel
         // Missing dependencies
         if (dependencies.Missing.Count != 0)
         {
-            var missingParts = dependencies.Missing
-                .Select(dep => $"<color=#{errorColor}>{dep} (missing)</color>");
+            var missingParts = dependencies.Missing.Select(dep =>
+            {
+                var disabled = _modManager.GetInactiveMods()
+                    .FirstOrDefault(m => string.Equals(
+                                             Path.GetFileNameWithoutExtension(m.ActivePath), dep,
+                                             StringComparison.OrdinalIgnoreCase)
+                                         || string.Equals(m.Name, dep, StringComparison.OrdinalIgnoreCase));
+
+                return disabled != null
+                    ? $"<color=#{errorColor}>{disabled.Name} (disabled)</color>"
+                    : $"<color=#{errorColor}>{dep} (missing)</color>";
+            });
             parts.Add(string.Join(", ", missingParts));
         }
 
@@ -529,31 +627,46 @@ public class ModDetailsPanel
                 Toggle changelogToggle = null;
                 Toggle readmeToggle = null;
 
-                changelogToggle = UIHelper.CreateLabelledToggle(filterBar.transform, "ChangelogToggle", "Changelog",
-                    showChangelog);
-                readmeToggle =
-                    UIHelper.CreateLabelledToggle(filterBar.transform, "ReadmeToggle", "README", !showChangelog);
-
-                ToggleUtils.AddListener(changelogToggle, val =>
-                {
-                    if (!val) return;
-                    showChangelog = true;
-                    if (readmeToggle.isOn) readmeToggle.isOn = false;
-                    BuildScrollable(changelog, changelogPath);
-                });
-                ToggleUtils.AddListener(readmeToggle, val =>
-                {
-                    if (!val) return;
-                    showChangelog = false;
-                    if (changelogToggle.isOn) changelogToggle.isOn = false;
-                    BuildScrollable(readme, readmePath);
-                });
+                changelogToggle = ToggleFactory.CreateSlidingWithLabel(
+                    filterBar.transform,
+                    "ChangelogToggle",
+                    "Changelog",
+                    showChangelog,
+                    _theme.SuccessColor,
+                    _theme.BgInput,
+                    _theme.BgInput,
+                    _theme.BgPrimary,
+                    val =>
+                    {
+                        if (!val) return;
+                        showChangelog = true;
+                        if (readmeToggle.isOn) readmeToggle.isOn = false;
+                        BuildScrollable(changelog, changelogPath);
+                    }
+                );
+                readmeToggle = ToggleFactory.CreateSlidingWithLabel(
+                    filterBar.transform,
+                    "ReadmeToggle",
+                    "README",
+                    !showChangelog,
+                    _theme.SuccessColor,
+                    _theme.BgInput,
+                    _theme.BgInput,
+                    _theme.BgPrimary,
+                    val =>
+                    {
+                        if (!val) return;
+                        showChangelog = false;
+                        if (changelogToggle.isOn) changelogToggle.isOn = false;
+                        BuildScrollable(readme, readmePath);
+                    }
+                );
             }
 
             BuildScrollable(showChangelog ? changelog : readme, showChangelog ? changelogPath : readmePath);
         }, docsBtn.onClick);
     }
-    
+
     private void RenderPreferences(List<MelonPreferences_Category> categories, GameObject card, string modName)
     {
         var header = UIFactory.Text("PrefsHeader", "Preferences", card.transform, _theme.SizeMedium,
@@ -735,7 +848,8 @@ public class ModDetailsPanel
         vLayout.childForceExpandWidth = true;
         vLayout.childControlHeight = true;
 
-        vLayout.padding = new RectOffset(0, 0, ModsApp.EntryVlgSpacingEntry.Value, 0); // some top padding for spacing between entries
+        vLayout.padding =
+            new RectOffset(0, 0, ModsApp.EntryVlgSpacingEntry.Value, 0); // some top padding for spacing between entries
 
         var containerLayout = entryContainer.GetOrAddComponent<LayoutElement>();
         containerLayout.flexibleWidth = 1;

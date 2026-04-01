@@ -134,6 +134,7 @@ public class ModsApp : MelonMod
         CategoryState.Load();
         ReflectionHelper.TryInitTMP();
         ModVersionTracker.Load();
+        MelonEvents.OnApplicationDefiniteQuit.Subscribe(() => ModToggleManager.ApplyPendingChanges(Logger));
     }
 
     private static Sprite LoadEmbeddedPNG(string resourceName)

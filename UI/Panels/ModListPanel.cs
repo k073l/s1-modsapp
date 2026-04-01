@@ -17,6 +17,7 @@ namespace ModsApp.UI.Panels;
 public class ModListPanel
 {
     public event Action<MelonMod> OnModSelected;
+    public event Action<InactiveModInfo> OnInactiveModSelected;
 
     private readonly Transform _parent;
     private readonly ModManager _modManager;
@@ -169,20 +170,11 @@ public class ModListPanel
 
     private static void ProcessTextInChildren(Transform root, Action<Text> action)
     {
-        if (root == null)
-            return;
-
-        if (root.TryGetComponent<Text>(out var text))
-        {
-            action(text);
-        }
-
-        for (int i = 0; i < root.childCount; i++)
-        {
+        if (root == null) return;
+        if (root.TryGetComponent<Text>(out var text)) action(text);
+        for (var i = 0; i < root.childCount; i++)
             ProcessTextInChildren(root.GetChild(i), action);
-        }
     }
-
 
     public void PopulateList()
     {
@@ -196,17 +188,24 @@ public class ModListPanel
         WarningIcons.Clear();
 
         if (_modManager.HasUnassignedPreferences())
-        {
             CreateModButton(UnassignedButtonName, "Unassigned", "0.0", isUnassigned: true);
-        }
 
-        var modsToShow = FilterMods(_searchQuery);
+        var modsToShow = FilterMods(_searchQuery).ToList();
         foreach (var mod in modsToShow)
-        {
             CreateModButton(mod.Info.Name, mod.Info.Name, $"v{mod.Info.Version}", isUnassigned: false);
-        }
 
-        if (!modsToShow.Any())
+        // Inactive (disabled) mods — scanned from disk
+        ModFolderScanner.Scan(out _, out var inactiveMods, out _);
+        var filteredInactive = string.IsNullOrWhiteSpace(_searchQuery)
+            ? inactiveMods
+            : inactiveMods.Where(m =>
+                m.Name.IndexOf(_searchQuery, StringComparison.OrdinalIgnoreCase) >= 0 ||
+                m.Author.IndexOf(_searchQuery, StringComparison.OrdinalIgnoreCase) >= 0).ToList();
+
+        foreach (var inactive in filteredInactive)
+            CreateInactiveModButton(inactive);
+
+        if (!modsToShow.Any() && !filteredInactive.Any())
         {
             var noResults = UIFactory.Text("NoSearchResults", "No mods found",
                 _listContent, _theme.SizeSmall, TextAnchor.MiddleCenter);
@@ -289,7 +288,6 @@ public class ModListPanel
             }
         }
 
-        // Version label
         var versionText = UIFactory.Text($"{UIHelper.SanitizeName(internalName)}_Version", version,
             buttonGo.transform, _theme.SizeTiny, TextAnchor.MiddleRight);
         versionText.color = _theme.TextSecondary;
@@ -300,6 +298,55 @@ public class ModListPanel
         _modLabels[internalName] = label;
     }
 
+    private void CreateInactiveModButton(InactiveModInfo inactive)
+    {
+        var safeName = UIHelper.SanitizeName(inactive.Name) + "_Inactive";
+        var buttonKey = inactive.FilePath; // path as key
+
+        var buttonGo = UIFactory.Panel($"{safeName}_Button", _listContent, _theme.AccentSecondary);
+        buttonGo.GetComponent<Image>()?.MakeRounded(4, 16);
+
+        // dim items to signal disabled state
+        var bg = buttonGo.GetComponent<Image>();
+        if (bg != null)
+            bg.color = new Color(
+                _theme.AccentSecondary.r * 0.65f,
+                _theme.AccentSecondary.g * 0.65f,
+                _theme.AccentSecondary.b * 0.65f,
+                _theme.AccentSecondary.a);
+
+        var button = buttonGo.GetOrAddComponent<Button>();
+        UIHelper.SetupButton(button, _theme, () => SelectInactiveMod(inactive));
+        UIHelper.ConfigureButtonLayout(buttonGo.GetComponent<RectTransform>(), 48f);
+
+        var label = UIFactory.Text($"{safeName}_Label", inactive.Name, buttonGo.transform,
+            _theme.SizeStandard, TextAnchor.MiddleLeft);
+        label.color = new Color(_theme.TextPrimary.r, _theme.TextPrimary.g, _theme.TextPrimary.b, 0.45f);
+        label.horizontalOverflow = HorizontalWrapMode.Wrap;
+        label.verticalOverflow = VerticalWrapMode.Truncate;
+        UIHelper.ConfigureButtonText(label.rectTransform, new Vector2(0f, 0f), new Vector2(0.65f, 1f), 16f, -8f, 4f,
+            -4f);
+
+        // "disabled" tag - or pending re-enable indicator
+        var hasPending = ModToggleManager.HasPendingChange(inactive.ActivePath);
+        var pendingEnable = hasPending && ModToggleManager.GetDesiredState(inactive.ActivePath);
+
+        var tagText = pendingEnable ? "→ enable" : "disabled";
+        var tagColor = pendingEnable
+            ? new Color(_theme.SuccessColor.r, _theme.SuccessColor.g, _theme.SuccessColor.b, 0.7f)
+            : new Color(_theme.TextSecondary.r, _theme.TextSecondary.g, _theme.TextSecondary.b, 0.5f);
+
+        var disabledTag = UIFactory.Text($"{safeName}_Tag", tagText,
+            buttonGo.transform, _theme.SizeTiny, TextAnchor.MiddleRight);
+        disabledTag.color = tagColor;
+        disabledTag.fontStyle = FontStyle.Italic;
+        UIHelper.ConfigureButtonText(disabledTag.rectTransform, new Vector2(0.7f, 0f), new Vector2(1f, 1f), 4f, -12f,
+            4f, -4f);
+
+        _modButtons[buttonKey] = buttonGo;
+        _modLabels[buttonKey] = label;
+    }
+
     private void SelectMod(string modName, bool isUnassigned)
     {
         SelectedModName = modName;
@@ -308,20 +355,82 @@ public class ModListPanel
         OnModSelected?.Invoke(isUnassigned ? null : _modManager.GetMod(modName));
     }
 
+    private void SelectInactiveMod(InactiveModInfo inactive)
+    {
+        SelectedModName = inactive.FilePath;
+        _isUnassignedSelected = false;
+        UpdateButtonHighlights();
+        OnInactiveModSelected?.Invoke(inactive);
+    }
+
     internal void UpdateButtonHighlights()
     {
         foreach (var kvp in _modButtons)
         {
-            bool isSelected = kvp.Key == SelectedModName;
+            var isSelected = kvp.Key == SelectedModName;
+
+            // Inactive mods are keyed by file path (contains path separator or .inactive)
+            var isInactive = kvp.Key.Contains(Path.DirectorySeparatorChar) ||
+                             kvp.Key.Contains('/') ||
+                             kvp.Key.EndsWith(ModToggleManager.InactiveExtension);
+            var isPending = ModToggleManager.HasPendingChangeByName(kvp.Key);
 
             var img = kvp.Value.GetComponent<Image>();
             if (img != null)
-                img.color = isSelected ? _theme.AccentPrimary : _theme.AccentSecondary;
-
-            if (_modLabels.TryGetValue(kvp.Key, out var label))
             {
-                label.fontStyle = isSelected ? FontStyle.Bold : FontStyle.Normal;
-                label.color = isSelected ? _theme.TextPrimary + new Color(0.05f, 0.05f, 0.05f, 1f) : _theme.TextPrimary;
+                switch (isSelected)
+                {
+                    // blend accent with the dimmed base
+                    case true when isInactive:
+                        img.color = new Color(
+                            _theme.AccentPrimary.r * 0.65f,
+                            _theme.AccentPrimary.g * 0.65f,
+                            _theme.AccentPrimary.b * 0.65f,
+                            _theme.AccentPrimary.a * 0.65f);
+                        break;
+                    case true:
+                        img.color = _theme.AccentPrimary;
+                        break;
+                    default:
+                    {
+                        if (isInactive)
+                            img.color = new Color(
+                                _theme.AccentSecondary.r * 0.45f,
+                                _theme.AccentSecondary.g * 0.45f,
+                                _theme.AccentSecondary.b * 0.45f,
+                                _theme.AccentSecondary.a * 0.45f);
+                        else
+                            img.color = _theme.AccentSecondary;
+                        break;
+                    }
+                }
+            }
+
+            if (!_modLabels.TryGetValue(kvp.Key, out var label)) continue;
+            if (isSelected)
+            {
+                label.fontStyle = FontStyle.Bold;
+                label.color = isInactive
+                    ? new Color(_theme.TextPrimary.r, _theme.TextPrimary.g, _theme.TextPrimary.b, 0.7f)
+                    : _theme.TextPrimary + new Color(0.05f, 0.05f, 0.05f, 1f);
+            }
+            else
+            {
+                label.fontStyle = FontStyle.Normal;
+                label.color = isInactive
+                    ? new Color(_theme.TextPrimary.r, _theme.TextPrimary.g, _theme.TextPrimary.b, 0.45f)
+                    : _theme.TextPrimary;
+            }
+
+            if (isPending)
+            {
+                var pendingColor = ModToggleManager.GetDesiredState(kvp.Key)
+                    ? _theme.SuccessColor
+                    : _theme.WarningColor;
+
+                var baseColor = img.color;
+                var pushed = Color.Lerp(baseColor, pendingColor, 0.75f);
+                img.color = Color.Lerp(pushed, baseColor, 0.25f);
             }
         }
     }

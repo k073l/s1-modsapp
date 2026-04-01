@@ -8,6 +8,8 @@
 - Add README to CHANGELOG viewer - together as docs button (if either is found)
 - Added options for input field alignment, entry spacing and copy to custom theme
 - Fixed an issue with dropdowns where they didn't close on mod switch/scroll
+- Added mod toggle support (enable/disable mods) (requires restart)
+- Changed bool entries to use toggles instead of checkboxes
 ## 1.2.1
 - Fixed a bug where the phone wasn't closing with Tab, only Esc after using a slider
 - Fixed compatibility bug where LogManager would crash the Melon init on ML 0.7.2
