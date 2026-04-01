@@ -12,6 +12,7 @@ public static class ModToggleManager
 
     private static readonly Dictionary<string, bool> _pendingChanges = new();
     private static HashSet<string> _protectedPaths;
+    private static HashSet<string> _confirmedOverwrites = new(StringComparer.OrdinalIgnoreCase);
 
     public static void RegisterProtectedAssembly(string dllPath) =>
         GetProtectedPaths().Add(NormalizePath(dllPath));
@@ -47,7 +48,7 @@ public static class ModToggleManager
         var key = NormalizePath(dllPath);
         if (_pendingChanges.TryGetValue(key, out var desired))
             return desired;
-        return File.Exists(dllPath) && !File.Exists(dllPath + InactiveExtension);
+        return File.Exists(dllPath);
     }
 
     public static bool HasPendingChanges => _pendingChanges.Count > 0;
@@ -61,6 +62,15 @@ public static class ModToggleManager
         return _pendingChanges.Keys.Any(path =>
             ModManager.MatchesModName(Path.GetFileNameWithoutExtension(path).Trim().ToLowerInvariant(), normalizedModName));
     }
+
+    public static bool HasBothFiles(string dllPath) =>
+        File.Exists(dllPath) && File.Exists(dllPath + InactiveExtension);
+
+    public static bool HasConfirmedOverwrite(string dllPath) =>
+        _confirmedOverwrites.Contains(NormalizePath(dllPath));
+
+    public static void ConfirmOverwrite(string dllPath) =>
+        _confirmedOverwrites.Add(NormalizePath(dllPath));
 
     public static void RequestEnable(string dllPath)
     {
@@ -98,18 +108,35 @@ public static class ModToggleManager
                 logger.Msg($"[ModToggle] {(shouldEnable ? "Enabling" : "Disabling")} {Path.GetFileName(dllPath)}");
                 if (shouldEnable)
                 {
-                    if (File.Exists(inactivePath) && !File.Exists(dllPath))
+                    if (File.Exists(inactivePath))
+                    {
+                        if (File.Exists(dllPath))
+                        {
+                            logger.Warning($"[ModToggle] Overwriting existing .dll: {Path.GetFileName(dllPath)}");
+                            File.Delete(dllPath);
+                        }
                         File.Move(inactivePath, dllPath);
-                    else if (File.Exists(dllPath))
-                        logger.Warning($"[ModToggle] Skipped enable for {Path.GetFileName(dllPath)} - already active");
+                    }
+                    else if (!File.Exists(dllPath))
+                    {
+                        logger.Warning($"[ModToggle] Nothing to enable - neither dll nor .inactive exist");
+                    }
                 }
                 else
                 {
-                    if (File.Exists(dllPath) && !File.Exists(inactivePath))
+                    if (File.Exists(dllPath))
+                    {
+                        if (File.Exists(inactivePath))
+                        {
+                            logger.Warning($"[ModToggle] Overwriting existing .inactive: {Path.GetFileName(inactivePath)}");
+                            File.Delete(inactivePath);
+                        }
                         File.Move(dllPath, inactivePath);
-                    else if (File.Exists(dllPath) && File.Exists(inactivePath))
-                        logger.Warning(
-                            $"[ModToggle] Both {Path.GetFileName(dllPath)} and {InactiveExtension} exist - delete one manually");
+                    }
+                    else if (!File.Exists(inactivePath))
+                    {
+                        logger.Warning($"[ModToggle] Nothing to disable - neither dll nor .inactive exist");
+                    }
                 }
             }
             catch (Exception ex)

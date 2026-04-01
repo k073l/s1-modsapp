@@ -61,7 +61,26 @@ public static class ModToggleUI
     {
         var shiftHeld = UnityEngine.Input.GetKey(KeyCode.LeftShift) ||
                         UnityEngine.Input.GetKey(KeyCode.RightShift);
+        var hasConflict = ModToggleManager.HasBothFiles(dllPath) &&
+                          !ModToggleManager.HasConfirmedOverwrite(dllPath);
 
+        if (hasConflict)
+        {
+            ShowOverwriteConflictPanel(dllPath, newVal, toggle, refreshColors, theme, shiftHeld);
+            return;
+        }
+
+        ProcessToggle(dllPath, newVal, toggle, refreshColors, theme, shiftHeld);
+    }
+
+    private static void ProcessToggle(
+        string dllPath,
+        bool newVal,
+        Toggle toggle,
+        Action<bool, bool> refreshColors,
+        UITheme theme,
+        bool shiftHeld)
+    {
         if (!newVal)
         {
             var dependants = _modManager?.GetDependants(dllPath) ?? new List<MelonMod>();
@@ -97,6 +116,74 @@ public static class ModToggleUI
 
         refreshColors(newVal, ModToggleManager.HasPendingChange(dllPath));
         UIManager.ModListPanel?.UpdateButtonHighlights();
+    }
+
+    private static void ShowOverwriteConflictPanel(
+        string dllPath, bool isEnabling, Toggle sourceToggle,
+        Action<bool, bool> refreshColors, UITheme theme, bool shiftHeld)
+    {
+        var panel = new FloatingPanelComponent(480, 300, "File Conflict");
+        var content = panel.ContentPanel.transform;
+
+        // show actual state
+        var actualState = ModToggleManager.GetDesiredState(dllPath);
+        sourceToggle.SetIsOnWithoutNotify(actualState);
+        refreshColors(actualState, ModToggleManager.HasPendingChange(dllPath));
+
+        var vlg = panel.ContentPanel.AddComponent<VerticalLayoutGroup>();
+        vlg.spacing = 8;
+        vlg.padding = new RectOffset(12, 12, 10, 10);
+        vlg.childControlWidth = true;
+        vlg.childForceExpandWidth = true;
+        vlg.childForceExpandHeight = false;
+        vlg.childControlHeight = true;
+
+        var message = isEnabling
+            ? "Both .dll and .inactive files exist for this mod.\n\nEnabling will overwrite the .dll file. Continue?"
+            : "Both .dll and .inactive files exist for this mod.\n\nDisabling will overwrite the .inactive file. Continue?";
+
+        var warn = UIFactory.Text("ConflictText", message, content, theme.SizeStandard, TextAnchor.UpperLeft);
+        warn.color = theme.TextPrimary;
+        warn.gameObject.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+        warn.gameObject.AddComponent<ContentSizeFitter>().horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+        warn.gameObject.GetOrAddComponent<LayoutElement>().flexibleWidth = 1;
+
+        var spacer = new GameObject("Spacer");
+        spacer.transform.SetParent(content, false);
+        spacer.AddComponent<LayoutElement>().flexibleHeight = 1;
+
+        var btnRow = new GameObject("BtnRow");
+        btnRow.transform.SetParent(content, false);
+        var btnHLG = btnRow.AddComponent<HorizontalLayoutGroup>();
+        btnHLG.spacing = 8;
+        btnHLG.childAlignment = TextAnchor.MiddleCenter;
+        btnHLG.childForceExpandWidth = false;
+        btnHLG.childForceExpandHeight = false;
+        btnHLG.childControlWidth = true;
+        btnHLG.childControlHeight = true;
+        btnRow.AddComponent<LayoutElement>().preferredHeight = 30;
+
+        var (_, overwriteBtn, _) = UIFactory.RoundedButtonWithLabel(
+            "OverwriteBtn", "Overwrite", btnRow.transform,
+            theme.AccentPrimary, 100, 28, theme.SizeSmall, theme.TextPrimary);
+
+        EventHelper.AddListener(() =>
+        {
+            ModToggleManager.ConfirmOverwrite(dllPath);
+            ProcessToggle(dllPath, isEnabling, sourceToggle, refreshColors, theme, shiftHeld);
+            FloatingPanelComponent.Cleanup();
+        }, overwriteBtn.onClick);
+
+        var (_, cancelBtn, _) = UIFactory.RoundedButtonWithLabel(
+            "CancelBtn", "Cancel", btnRow.transform,
+            theme.AccentSecondary, 80, 28, theme.SizeSmall, theme.TextPrimary);
+
+        var no = "";
+        EventHelper.AddListener(() =>
+        {
+            no = no;
+            FloatingPanelComponent.Cleanup();
+        }, cancelBtn.onClick);
     }
 
     private static void ShowDependencyWarningPanel(
