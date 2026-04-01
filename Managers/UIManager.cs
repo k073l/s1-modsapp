@@ -99,6 +99,8 @@ public class UIManager
             FullRepaint();
         });
 
+        ModsApp.TextSizeProfileEntry.OnEntryValueChanged.Subscribe((_, newVal) => _theme.SetTextScale(newVal));
+        ModsApp.UseNewJsonEditor.OnEntryValueChanged.Subscribe((_, _) => ReflectionHelper.TryInitTMP());
         ModsApp.ThemeOptionEntry.OnEntryValueChanged.Subscribe((_, newVal) =>
         {
             _theme.SetTheme(newVal);

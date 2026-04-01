@@ -18,4 +18,10 @@ public class Custom : ITheme
     public Color SuccessColor => ModsApp.SuccessColorEntry.Value;
     public Color WarningColor => ModsApp.WarningColorEntry.Value;
     public Color ErrorColor => ModsApp.ErrorColorEntry.Value;
+    public Color JsonKeyColor => ModsApp.JsonKeyColor.Value;
+    public Color JsonStringColor => ModsApp.JsonStringColor.Value;
+    public Color JsonNumberColor => ModsApp.JsonNumberColor.Value;
+    public Color JsonLiteralColor => ModsApp.JsonLiteralColor.Value;
+    public Color JsonBracketColor => ModsApp.JsonBracketColor.Value;
+    public Color JsonPunctuationColor => ModsApp.JsonPunctuationColor.Value;
 }

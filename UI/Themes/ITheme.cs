@@ -18,4 +18,10 @@ public interface ITheme
     Color SuccessColor { get; }
     Color WarningColor { get; }
     Color ErrorColor { get; }
+    Color JsonKeyColor { get; }
+    Color JsonStringColor { get; }
+    Color JsonNumberColor { get; }
+    Color JsonLiteralColor { get; }
+    Color JsonBracketColor { get; }
+    Color JsonPunctuationColor { get; }
 }

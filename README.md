@@ -80,6 +80,12 @@ Changes are applied to the file on save (if valid JSON).
 4. Place the dll file into the `Mods` directory
 5. Launch the game
 
+## Transparency
+ModsApp uses reflection to access and load `TMPro` (TextMesh Pro), a Unity library used to create high-quality text with many formatting options.
+In this mod, it is used to create a JSON editor with syntax highlighting. Loading it dynamically was necessary to ensure one DLL is used for both branches of the game.
+As such, it may trigger some mod scanning solutions, such as MLVScan (as of writing, 5 high - dynamic assembly loading, reflection invocation).
+You are encouraged to verify the code yourself by checking it on the [GitHub](https://github.com/k073l/s1-modsapp) and/or decompiling the DLL using software like [ILSpy](https://github.com/icsharpcode/ILSpy).
+
 ## Credits
 - Bars for forking S1API, continuing its development and providing support. Also for helping with making this mod compatible with IL2CPP.
 - All the open source projects that made this possible (MelonLoader, S1API and many more).
