@@ -48,6 +48,8 @@ public class ModDetailsPanel
         _jsonConfigUI = new JsonConfigUI(theme, logger, _jsonConfigManager);
     }
 
+    private GameObject _actionButtonContainer;
+
     public void Initialize()
     {
         var rightPanel = UIFactory.Panel("ModDetailsPanel", _parent, _theme.BgCard,
@@ -59,22 +61,54 @@ public class ModDetailsPanel
 
         UIHelper.AddBorderEffect(rightPanel, _theme.AccentPrimary);
 
-        _detailsContent = UIFactory.ScrollableVerticalList("ModDetailsContent", rightPanel.transform, out var scrollRect);
+        // outer VLG: scroll content fills available space, action buttons pinned at bottom
+        var outerVlg = rightPanel.AddComponent<VerticalLayoutGroup>();
+        outerVlg.spacing = 6;
+        outerVlg.childControlWidth = true;
+        outerVlg.childForceExpandWidth = true;
+        outerVlg.childControlHeight = true;
+        outerVlg.childForceExpandHeight = false;
+        outerVlg.padding = new RectOffset(12, 12, 8, 8);
+
+        var scrollWrapper = new GameObject("ScrollWrapper");
+        scrollWrapper.transform.SetParent(rightPanel.transform, false);
+        scrollWrapper.AddComponent<RectTransform>();
+        scrollWrapper.AddComponent<LayoutElement>().flexibleHeight = 1;
+
+        _detailsContent =
+            UIFactory.ScrollableVerticalList("ModDetailsContent", scrollWrapper.transform, out var scrollRect);
+        // modify the mask
+        var viewport = scrollRect.viewport;
+        viewport.GetComponent<Image>()?.MakeRounded();
         if (scrollRect != null) scrollRect.scrollSensitivity = 15f;
         UIHelper.ForceRectToAnchors(_detailsContent, Vector2.zero, Vector2.one,
             Vector2.zero, Vector2.zero, new Vector2(0.5f, 1f));
-        UIHelper.SetupLayoutGroup(_detailsContent.gameObject, 6, true, new RectOffset(12, 12, 12, 12));
+        UIHelper.SetupLayoutGroup(_detailsContent.gameObject, 6, true, new RectOffset(0, 0, 0, 0)); // controlled by outervlg
 
         var layout = _detailsContent.GetComponent<VerticalLayoutGroup>();
         if (layout != null)
         {
             layout.spacing = 6;
-            layout.padding = new RectOffset(12, 12, 12, 12);
+            layout.padding = new RectOffset(0, 0, 0, 0); // controlled by outervlg
             layout.childControlWidth = true;
             layout.childForceExpandHeight = false;
         }
 
         UIFactory.FitContentHeight(_detailsContent);
+
+        // Force scroll wrapper to fill its layout slot
+        var swRT = scrollWrapper.GetComponent<RectTransform>();
+        swRT.anchorMin = Vector2.zero;
+        swRT.anchorMax = Vector2.one;
+        swRT.offsetMin = swRT.offsetMax = Vector2.zero;
+
+        // Action button container — pinned below scroll, hidden until a mod with prefs is selected
+        _actionButtonContainer = CreateInfoCard("ActionButtonContainer", rightPanel.transform);
+        var actionLE = _actionButtonContainer.GetOrAddComponent<LayoutElement>();
+        actionLE.preferredHeight = 52;
+        actionLE.flexibleHeight = 0;
+        actionLE.flexibleWidth = 1;
+        _actionButtonContainer.SetActive(false);
 
         UIHelper.DumpRect("ModDetailsPanel", rightPanel.GetComponent<RectTransform>());
         UIHelper.DumpRect("ModDetailsContent", _detailsContent);
@@ -85,6 +119,7 @@ public class ModDetailsPanel
         if (_detailsContent == null) return;
 
         UIFactory.ClearChildren(_detailsContent);
+        _actionButtonContainer?.SetActive(false);
 
         var welcomeCard = CreateInfoCard("WelcomeCard");
         CreateWelcomeContent(welcomeCard);
@@ -121,12 +156,14 @@ public class ModDetailsPanel
             var prefsCard = CreateInfoCard($"{UIHelper.SanitizeName(mod.Info.Name)}_PrefsCard");
             CreatePreferencesSection(mod, prefsCard);
 
-            var actionsCard = CreateInfoCard($"{UIHelper.SanitizeName(mod.Info.Name)}_ActionsCard");
-            CreateActionButtons(mod, actionsCard);
+            UIFactory.ClearChildren(_actionButtonContainer.transform);
+            CreateActionButtons(mod, _actionButtonContainer);
+            _actionButtonContainer.SetActive(true);
         }
         else
         {
             // No MelonPreferences - show JSON fallback
+            _actionButtonContainer?.SetActive(false);
             var jsonCard = CreateInfoCard($"{UIHelper.SanitizeName(mod.Info.Name)}_JsonCard");
             _jsonConfigUI.CreateJsonConfigSection(mod, jsonCard, () => UIHelper.RefreshLayout(_detailsContent), () =>
             {
@@ -175,11 +212,13 @@ public class ModDetailsPanel
             var prefsCard = CreateInfoCard("UnassignedPrefsCard");
             RenderPreferences(categories, prefsCard, UnassignedModName);
 
-            var actionsCard = CreateInfoCard("UnassignedActionsCard");
-            CreateActionButtons(UnassignedModName, actionsCard.transform);
+            UIFactory.ClearChildren(_actionButtonContainer.transform);
+            CreateActionButtons(UnassignedModName, _actionButtonContainer.transform);
+            _actionButtonContainer.SetActive(true);
         }
         else
         {
+            _actionButtonContainer?.SetActive(false);
             var noPrefsCard = CreateInfoCard("NoUnassignedPrefsCard");
             var noPrefs = UIFactory.Text("NoUnassignedPrefs", "No unassigned preferences found",
                 noPrefsCard.transform, _theme.SizeSmall, TextAnchor.UpperLeft, FontStyle.Italic);
@@ -189,9 +228,10 @@ public class ModDetailsPanel
         UIHelper.RefreshLayout(_detailsContent);
     }
 
-    private GameObject CreateInfoCard(string name)
+    private GameObject CreateInfoCard(string name, Transform parent = null)
     {
-        var card = UIFactory.Panel(name, _detailsContent, _theme.BgSecondary);
+        var parentTransform = parent ?? _detailsContent;
+        var card = UIFactory.Panel(name, parentTransform, _theme.BgSecondary);
         card.GetComponent<Image>()?.MakeRounded();
 
         var vlg = card.GetOrAddComponent<VerticalLayoutGroup>();
@@ -766,8 +806,8 @@ public class ModDetailsPanel
         UpdateButtonStates();
     }
 
-    private void CreateActionButtons(MelonMod mod, GameObject card) =>
-        CreateActionButtons(mod.Info.Name, card.transform);
+    private void CreateActionButtons(MelonMod mod, GameObject container) =>
+        CreateActionButtons(mod.Info.Name, container.transform);
 
     private void CreateActionButtons(string modName, Transform parent)
     {
