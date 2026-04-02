@@ -1,18 +1,11 @@
-using System.Collections;
-using System.Reflection;
 using MelonLoader;
 using MelonLoader.Preferences;
 using ModsApp.Helpers;
 using ModsApp.Managers;
 using ModsApp.UI;
-using ModsApp.UI.Input.FieldFactories;
-using ModsApp.UI.Input.Handlers;
 using ModsApp.UI.Panels;
 using ModsApp.UI.Themes;
-using S1API.Input;
 using UnityEngine;
-using S1API.PhoneApp;
-using S1API.Utils;
 
 [assembly: MelonInfo(
     typeof(ModsApp.ModsApp),
@@ -38,9 +31,9 @@ public class ModsApp : MelonMod
 {
     private static MelonLogger.Instance Logger;
 
-    public static Sprite AppIconSprite => GetIcon(ref _appIconSprite, "ModsApp.assets.appicon.png");
-    public static Sprite WarningIconSprite => GetIcon(ref _warningIconSprite, "ModsApp.assets.triangle-alert.png");
-    public static Sprite ScrollIconSprite => GetIcon(ref _scrollIconSprite, "ModsApp.assets.scroll-text.png");
+    public static Sprite AppIconSprite => InitHelper.GetIcon(ref _appIconSprite, "ModsApp.assets.appicon.png");
+    public static Sprite WarningIconSprite => InitHelper.GetIcon(ref _warningIconSprite, "ModsApp.assets.triangle-alert.png");
+    public static Sprite ScrollIconSprite => InitHelper.GetIcon(ref _scrollIconSprite, "ModsApp.assets.scroll-text.png");
 
     private static Sprite _appIconSprite;
     private static Sprite _warningIconSprite;
@@ -77,6 +70,8 @@ public class ModsApp : MelonMod
     public static MelonPreferences_Entry<Color> JsonBracketColor;
     public static MelonPreferences_Entry<Color> JsonPunctuationColor;
 
+    private bool _shouldUpdate = true;
+
     public override void OnInitializeMelon()
     {
         LogManager.Instance.WireEvents();
@@ -84,9 +79,16 @@ public class ModsApp : MelonMod
         Logger = LoggerInstance;
         Logger.Msg("ModsApp initialized");
         // prefetch
-        _ = AppIconSprite;
-        _ = WarningIconSprite;
-        _ = ScrollIconSprite;
+        try
+        {
+            _ = AppIconSprite;
+            _ = WarningIconSprite;
+            _ = ScrollIconSprite;
+        }
+        catch (Exception e)
+        {
+            // ignored
+        }
 
         AccessibilityCategory = MelonPreferences.CreateCategory("ModsApp_Accessibility", "Accessibility");
         TextSizeProfileEntry = AccessibilityCategory.CreateEntry("ModsAppTextSize", TextSizeProfile.Normal,
@@ -137,40 +139,37 @@ public class ModsApp : MelonMod
         MelonEvents.OnApplicationDefiniteQuit.Subscribe(() => ModToggleManager.ApplyPendingChanges(Logger));
     }
 
-    private static Sprite LoadEmbeddedPNG(string resourceName)
-    {
-        Assembly asm = Assembly.GetExecutingAssembly();
-
-        using Stream stream = asm.GetManifestResourceStream(resourceName);
-        if (stream == null) return null;
-
-        var data = new byte[stream.Length];
-        stream.Read(data, 0, data.Length);
-        var sprite = ImageUtils.LoadImageRaw(data);
-        if (sprite != null) sprite.name = resourceName;
-        return sprite;
-    }
-
-    private static Sprite GetIcon(ref Sprite spriteField, string resourceName)
-    {
-        if (spriteField == null)
-        {
-            spriteField = LoadEmbeddedPNG(resourceName);
-        }
-
-        return spriteField;
-    }
-
     public override void OnUpdate()
     {
-        // Failsafe to exit typing mode when Escape is pressed
-        if (App.Instance == null || !App.Instance.IsOpen()) return;
-        if (UnityEngine.Input.GetKeyDown(KeyCode.Escape))
+        if (!_shouldUpdate) return;
+        try
         {
-            FloatingPanelComponent.Cleanup();
-            DropdownComponent<object>.CloseAll();
-            Controls.IsTyping = false;
+            InitHelper.CloseAppAndPanels();
         }
+        catch (Exception e)
+        {
+            // prevent update from spamming the console
+            _shouldUpdate = false;
+            Logger.Error($"Update loop error. This can happen if S1API is not installed.\nException: {e}");
+        }
+    }
+
+    public override void OnSceneWasLoaded(int buildIndex, string sceneName)
+    {
+        switch (sceneName)
+        {
+            case "Menu":
+                MissingDepsPanel.CheckAndShow();
+                break;
+            default:
+                MissingDepsPanel.Hide();
+                break;
+        }
+    }
+
+    public override void OnGUI()
+    {
+        MissingDepsPanel.OnGUI();
     }
 
     public override void OnApplicationQuit()
