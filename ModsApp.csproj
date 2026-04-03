@@ -46,6 +46,10 @@
         </PackageReference>
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="assets\screenshots\" />
+    </ItemGroup>
+
     <!-- MelonLoader References -->
     <Import Project="build\references\MelonMono.targets"/>
 

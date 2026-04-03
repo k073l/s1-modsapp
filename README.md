@@ -36,23 +36,25 @@ If you're a mod developer, check out the [preferences guide](https://github.com/
 
 ## Screenshots
 
-![ModsApp preferences, collapsible categories and customization](https://raw.githubusercontent.com/k073l/s1-modsapp/refs/heads/master/assets/categories_customization.png)
+![Mod with preferences, various input tupes](https://raw.githubusercontent.com/k073l/s1-modsapp/refs/heads/master/assets/screenshots/melonpref-1.png)
 
-![Mod with preferences, various types of input types](https://raw.githubusercontent.com/k073l/s1-modsapp/refs/heads/master/assets/controls.png)
+![Mod with preferences, various input types](https://raw.githubusercontent.com/k073l/s1-modsapp/refs/heads/master/assets/screenshots/melonpref-2.png)
 
-![Unassigned preferences, numeric input type fallback](https://raw.githubusercontent.com/k073l/s1-modsapp/refs/heads/master/assets/unassigned.png)
+![Unassigned preferences, numeric input type fallback](https://raw.githubusercontent.com/k073l/s1-modsapp/refs/heads/master/assets/screenshots/unassigned.png)
 
-![Mod with JSON preferences, alerts for missing dependecies and errors in log](https://raw.githubusercontent.com/k073l/s1-modsapp/refs/heads/master/assets/json_alerts.png)
+![Mod with JSON preferences, alerts for missing dependecies and errors in log](https://raw.githubusercontent.com/k073l/s1-modsapp/refs/heads/master/assets/screenshots/json-deps.png)
 
-![Pop-up panel for mod's changelog](https://raw.githubusercontent.com/k073l/s1-modsapp/refs/heads/master/assets/changelog.png)
+![Pop-up panel for mod's changelog and readme](https://raw.githubusercontent.com/k073l/s1-modsapp/refs/heads/master/assets/screenshots/docs-panel.png)
 
-![In-app log explorer showing mod logs and errors](https://raw.githubusercontent.com/k073l/s1-modsapp/refs/heads/master/assets/logexplorer.png)
+![In-app log explorer showing mod logs and errors](https://raw.githubusercontent.com/k073l/s1-modsapp/refs/heads/master/assets/screenshots/logs-panel.png)
+
+![Phone view with notifications badge](https://raw.githubusercontent.com/k073l/s1-modsapp/refs/heads/master/assets/screenshots/phone.png)
 
 Select different themes:
 
-![Different theming options - Forest theme](https://raw.githubusercontent.com/k073l/s1-modsapp/refs/heads/master/assets/forest_theme.png)
+![Different theming options - Forest theme](https://raw.githubusercontent.com/k073l/s1-modsapp/refs/heads/master/assets/screenshots/theme-2.png)
 
-![Different themind options - Twilight theme](https://raw.githubusercontent.com/k073l/s1-modsapp/refs/heads/master/assets/twilight_theme.png)
+![Different themind options - Twilight theme](https://raw.githubusercontent.com/k073l/s1-modsapp/refs/heads/master/assets/screenshots/theme-1.png)
 
 ## Preferences Types Supported
 #### MelonPreferences
