@@ -6,7 +6,7 @@ Convenient preferences management for Schedule I mods.
 
 ## Features
 - New "Mods" app in the phone for easy access
-- See all loaded mods, including their name, version, author and compatibility status (S1API/Mono/IL2CPP)
+- See all loaded mods, including their name, version, author, compatibility status (S1API/Mono/IL2CPP) and if they're enabled or not
 - Search through the mod list
 - Comprehensive preference management:
     - Support for multiple data types (boolean, integer, enum, vector3, string, float, keycode, color)
@@ -20,9 +20,10 @@ Convenient preferences management for Schedule I mods.
   - Text size scaling options for accessibility
   - Collapsible categories for better organization
   - Theme presets and custom theming options for personalization
-- Mod changelog viewer for easy access to update information
+- Mod changelog/readme viewer for easy access to information
 - Dependency tracking to see which mods require others to function properly
 - In-app log explorer to view mod logs and errors without leaving the app
+  - Issues are visible at-a-glance with a notification badge on the app icon
 - Open source (MIT License)
 
 ### Important Notes
@@ -30,7 +31,7 @@ Convenient preferences management for Schedule I mods.
 
 If you're a mod developer, check out the [preferences guide](https://github.com/k073l/s1-modsapp/blob/master/PREFERENCES.md).
 
-**Enabling/Disabling Mods:** This app supports enabling or disabling mods from version 1.2.2. The restart is required for the change to apply. Still, I'd recommend using a dedicated, mod platform aware mod manager, like [r2modman](https://thunderstore.io/c/schedule-i/p/ebkr/r2modman/), [Gale](https://thunderstore.io/c/schedule-i/p/Kesomannen/GaleModManager/) or [Vortex](https://www.nexusmods.com/site/mods/1) just to name a few. They can handle loading/unloading mods, updates and some even have mod profile support.
+**Enabling/Disabling Mods:** This app supports enabling or disabling mods from version 1.2.2. The restart is required for the change to apply. Still, I'd recommend using a dedicated, mod platform aware mod manager, like [Schedule I Mod Manager (SIMM)](https://www.nexusmods.com/schedule1/mods/1750), [r2modman](https://thunderstore.io/c/schedule-i/p/ebkr/r2modman/), [Gale](https://thunderstore.io/c/schedule-i/p/Kesomannen/GaleModManager/) or [Vortex](https://www.nexusmods.com/site/mods/1) just to name a few. They can handle loading/unloading mods, updates and some even have mod profile support.
 
 **Backup Your Configs:** Always back up your configuration files before making changes. While the app is designed to be safe, unexpected issues can arise.
 
@@ -58,7 +59,7 @@ Select different themes:
 
 ## Preferences Types Supported
 #### MelonPreferences
-- Boolean - checkbox
+- Boolean - toggle switch
 - Integer/Float - number input, with optional slider if the entry uses a [Validator with a specified range](https://github.com/LavaGang/MelonLoader/blob/master/MelonLoader/Preferences/ValueValidator.cs)
 - String - text input
 - Enum - dropdown
@@ -77,7 +78,7 @@ Changes are applied to the file on save (if valid JSON).
 
 ## Installation
 1. Install MelonLoader
-2. Install Bars' fork of S1API (>=v2.8.8).
+2. Install Bars' fork of S1API (>=v3.0.1).
 3. Extract the zip file
 4. Place the dll file into the `Mods` directory
 5. Launch the game
