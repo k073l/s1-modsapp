@@ -73,7 +73,9 @@ public static class MissingDepsPanel
         if (_missing?.Count == 0) return;
 
         BuildSkinIfNeeded();
-        _windowRect = GUI.Window(0xD3F5, _windowRect, DrawWindow, string.Empty, _skin.window);
+        GUI.Box(_windowRect, string.Empty, _skin.window);
+        DrawWindowContents();
+        GUI.DragWindow(new Rect(_windowRect.x, _windowRect.y, _windowRect.width, TopBarHeight));
     }
 
     private static List<ModsAppDependencyInfo> GetMissingDependencies()
@@ -86,7 +88,7 @@ public static class MissingDepsPanel
         return missing;
     }
 
-    private static void DrawWindow(int id)
+    private static void DrawWindowContents()
     {
         var old = GUI.skin;
         GUI.skin = _skin;
@@ -94,18 +96,14 @@ public static class MissingDepsPanel
         var w = _windowRect.width;
         var h = _windowRect.height;
 
-        // Top bar
-        var topBarRect = new Rect(0, 0, w, TopBarHeight);
-        GUI.Box(topBarRect, string.Empty, _skin.window);
-
         // Title
         const float titleTopPad = 6f;
-        GUI.Label(new Rect(16, titleTopPad, w - 80, TopBarHeight - titleTopPad * 2), "ModsApp - Missing Dependencies",
+        GUI.Label(new Rect(_windowRect.x + 16, _windowRect.y + titleTopPad, w - 80, TopBarHeight - titleTopPad * 2), "ModsApp - Missing Dependencies",
             _skin.GetStyle("Title"));
 
         // Close button
         const float closeBtnSize = 36f;
-        var closeBtnRect = new Rect(w - closeBtnSize - 12, (TopBarHeight - closeBtnSize) / 2f, closeBtnSize,
+        var closeBtnRect = new Rect(_windowRect.x + w - closeBtnSize - 12, _windowRect.y + (TopBarHeight - closeBtnSize) / 2f, closeBtnSize,
             closeBtnSize);
         if (GUI.Button(closeBtnRect, "X", _skin.GetStyle("CloseButton")))
             _show = false;
@@ -118,22 +116,22 @@ public static class MissingDepsPanel
         var linkY = bodyY + 48f;
         foreach (var dep in _missing)
         {
-            GUI.Label(new Rect(bodyX, bodyY, bodyW, 40),
+            GUI.Label(new Rect(_windowRect.x + bodyX, _windowRect.y + bodyY, bodyW, 40),
                 "The following required assemblies could not be found.\nModsApp will not function until they are installed.",
                 _skin.GetStyle("Body"));
 
-            GUI.Label(new Rect(bodyX, linkY, bodyW, 24),
+            GUI.Label(new Rect(_windowRect.x + bodyX, _windowRect.y + linkY, bodyW, 24),
                 $"  - {dep.DependencyName}, version >= {dep.DependencyVersion}", _skin.GetStyle("Missing"));
 
             linkY += 28f;
-            GUI.Label(new Rect(bodyX, linkY, bodyW, 24), "     Suggested sources:", _skin.GetStyle("Body"));
+            GUI.Label(new Rect(_windowRect.x + bodyX, _windowRect.y + linkY, bodyW, 24), "     Suggested sources:", _skin.GetStyle("Body"));
 
             linkY += 28f;
             foreach (var url in dep.DependencySuggestedUrls)
             {
                 var linkStyle = _skin.GetStyle("Link");
                 var linkSize = linkStyle.CalcSize(new GUIContent(url.DisplayName));
-                var linkRect = new Rect(bodyX + 24f, linkY, linkSize.x + 16f, linkSize.y + 4f);
+                var linkRect = new Rect(_windowRect.x + bodyX + 24f, _windowRect.y + linkY, linkSize.x + 16f, linkSize.y + 4f);
                 if (GUI.Button(linkRect, url.DisplayName, linkStyle))
                     Application.OpenURL(url.Url);
                 linkY += 28f;
@@ -142,7 +140,7 @@ public static class MissingDepsPanel
             linkY += 12f;
         }
 
-        GUI.Label(new Rect(bodyX, h - 80f, bodyW, 24),
+        GUI.Label(new Rect(_windowRect.x + bodyX, _windowRect.y + h - 80f, bodyW, 24),
             "Install the missing dependencies and restart the game.", _skin.GetStyle("Body"));
 
         // Footer
@@ -150,11 +148,10 @@ public static class MissingDepsPanel
         const float btnWidth = 100f;
         const float btnHeight = 28f;
         var btnX = (w - btnWidth) / 2f;
-        if (GUI.Button(new Rect(btnX, footerY, btnWidth, btnHeight), "Dismiss", _skin.button))
+        if (GUI.Button(new Rect(_windowRect.x + btnX, _windowRect.y + footerY, btnWidth, btnHeight), "Dismiss", _skin.button))
             _show = false;
 
         GUI.skin = old;
-        GUI.DragWindow(new Rect(0, 0, w, TopBarHeight));
     }
 
     private static void BuildSkinIfNeeded()
