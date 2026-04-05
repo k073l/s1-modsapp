@@ -21,6 +21,10 @@
         <PackageReference Include="LavaGang.MelonLoader" Version="0.7.0" />
         <PackageReference Include="Lib.Harmony" Version="2.4.1" />
         <PackageReference Include="Mono.Cecil" Version="0.11.6" />
+        <PackageReference Include="RefGen.Schedule-I.Mono" Version="0.4.5-f1" />
+        <Reference Include="S1API"> <!-- 3.0.1 isn't available on NuGet yet, so -->
+            <HintPath>build/S1API.Mono.MelonLoader.dll</HintPath>
+        </Reference>
         <PackageReference Include="Samboy063.Tomlet" Version="6.1.0" />
         <EmbeddedResource Include="assets\appicon.png" />
         <EmbeddedResource Include="assets\triangle-alert.png" />
@@ -45,13 +49,6 @@
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
     </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="assets\screenshots\" />
-    </ItemGroup>
-
-    <!-- MelonLoader References -->
-    <Import Project="build\references\MelonMono.targets"/>
 
     <!-- Events -->
     <Import Project="build\events\preBuild.targets"/>
