@@ -159,17 +159,12 @@ public class ModsApp : MelonMod
         switch (sceneName)
         {
             case "Menu":
-                MissingDepsPanel.CheckAndShow();
+                MissingDepsPanelComponent.CheckAndShow();
                 break;
             default:
-                MissingDepsPanel.Hide();
+                MissingDepsPanelComponent.Hide();
                 break;
         }
-    }
-
-    public override void OnGUI()
-    {
-        MissingDepsPanel.OnGUI();
     }
 
     public override void OnApplicationQuit()
