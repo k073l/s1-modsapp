@@ -47,7 +47,7 @@ jobs:
     strategy:
       matrix:
         include:
-          - configuration: Release Mono
+          - configuration: Mono
             framework: netstandard2.1
     steps:
       - name: Checkout code
@@ -82,7 +82,7 @@ jobs:
           path: artifacts/
 
   mlvscan_mono:
-    needs: [ prepare, build ]
+    needs: [prepare, build]
     uses: ./.github/workflows/mlvscan.yml
     with:
       dll_artifact: ${{ needs.prepare.outputs.project_name }}
@@ -93,7 +93,7 @@ jobs:
       MLVSCAN_KEY: ${{ secrets.MLVSCAN_KEY }}
 
   update_readme:
-    needs: [ prepare, mlvscan_mono ]
+    needs: [prepare, mlvscan_mono]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout default branch
@@ -154,7 +154,7 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
   nexus_readme:
-    needs: [ prepare, update_readme ]
+    needs: [prepare, update_readme]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout default branch
@@ -184,7 +184,7 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
   package:
-    needs: [ prepare, build, update_readme ]
+    needs: [prepare, build, update_readme]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout default branch
@@ -196,7 +196,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ${{ needs.prepare.outputs.project_name }}
-          path: bin/Release Mono/netstandard2.1/
+          path: bin/Mono/netstandard2.1/
 
       - name: Install uv
         uses: astral-sh/setup-uv@v5
@@ -211,7 +211,7 @@ jobs:
           path: dist/${{ needs.prepare.outputs.project_name }}.zip
 
   attest_github:
-    needs: [ prepare, package ]
+    needs: [prepare, package]
     runs-on: ubuntu-latest
     outputs:
       attestation_url: ${{ steps.attest.outputs.attestation-url }}
@@ -229,7 +229,7 @@ jobs:
           subject-path: dist/${{ needs.prepare.outputs.project_name }}.zip
 
   release:
-    needs: [ prepare, package, attest_github, mlvscan_mono, update_readme, nexus_readme ]
+    needs: [prepare, package, attest_github, mlvscan_mono, update_readme, nexus_readme]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code

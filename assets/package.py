@@ -15,7 +15,7 @@ import zipfile
 from lxml import etree as ET
 
 MOD_NAME = "ModsApp"  # Will be replaced by template
-MONO_BUILD = "Release Mono"
+MONO_BUILD = "Mono"
 IL2CPP_BUILD = "IL2CPP" # Unused in ModsApp
 
 parent_dir = Path(__file__).resolve().parent.parent

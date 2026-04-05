@@ -14,7 +14,7 @@
 
         <RootNamespace>ModsApp</RootNamespace>
 
-        <Configurations>Debug Mono;Release Mono;Debug IL2CPP</Configurations>
+        <Configurations>Mono;Release Mono;Debug IL2CPP</Configurations>
     </PropertyGroup>
 
     <ItemGroup>
@@ -31,8 +31,8 @@
         <EmbeddedResource Include="assets\scroll-text.png" />
     </ItemGroup>
     
-    <PropertyGroup Condition="'$(Configuration)' == 'Debug Mono'">
-        <DefineConstants>$(DefineConstants);MONO</DefineConstants>
+    <PropertyGroup Condition="'$(Configuration)' == 'Mono'">
+        <DefineConstants>$(DefineConstants);MONO;RELEASE</DefineConstants>
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(Configuration)' == 'Release Mono'">
