@@ -1,4 +1,5 @@
-﻿using ModsApp.UI.Themes;
+﻿using ModsApp.Helpers.Registries;
+using ModsApp.UI.Themes;
 using UnityEngine;
 
 namespace ModsApp.UI;
@@ -72,30 +73,30 @@ public class UITheme
 
     public UITheme()
     {
-        SetTextScale(ModsApp.TextSizeProfileEntry.Value);
-        SetTheme(ModsApp.ThemeOptionEntry.Value);
+        SetTextScale(SettingsRegistry.TextSizeProfileEntry.Value);
+        SetTheme(SettingsRegistry.ThemeOptionEntry.Value);
     }
 
     internal void CopyThemeToCustom()
     {
-        if (ModsApp.ThemeOptionEntry.Value == ThemeOption.Custom) return;
+        if (SettingsRegistry.ThemeOptionEntry.Value == ThemeOption.Custom) return;
         if (_theme == null) return;
-        ModsApp.BackgroundPrimaryEntry.Value = _theme.BgPrimary;
-        ModsApp.BackgroundSecondaryEntry.Value = _theme.BgSecondary;
-        ModsApp.BackgroundCardEntry.Value = _theme.BgCard;
-        ModsApp.BackgroundCategoryEntry.Value = _theme.BgCategory;
-        ModsApp.BackgroundInputEntry.Value = _theme.BgInput;
+        SettingsRegistry.BackgroundPrimaryEntry.Value = _theme.BgPrimary;
+        SettingsRegistry.BackgroundSecondaryEntry.Value = _theme.BgSecondary;
+        SettingsRegistry.BackgroundCardEntry.Value = _theme.BgCard;
+        SettingsRegistry.BackgroundCategoryEntry.Value = _theme.BgCategory;
+        SettingsRegistry.BackgroundInputEntry.Value = _theme.BgInput;
 
-        ModsApp.AccentPrimaryEntry.Value = _theme.AccentPrimary;
-        ModsApp.AccentSecondaryEntry.Value = _theme.AccentSecondary;
+        SettingsRegistry.AccentPrimaryEntry.Value = _theme.AccentPrimary;
+        SettingsRegistry.AccentSecondaryEntry.Value = _theme.AccentSecondary;
 
-        ModsApp.TextPrimaryEntry.Value = _theme.TextPrimary;
-        ModsApp.TextSecondaryEntry.Value = _theme.TextSecondary;
-        ModsApp.InputPrimaryEntry.Value = _theme.InputPrimary;
-        ModsApp.InputSecondaryEntry.Value = _theme.InputSecondary;
+        SettingsRegistry.TextPrimaryEntry.Value = _theme.TextPrimary;
+        SettingsRegistry.TextSecondaryEntry.Value = _theme.TextSecondary;
+        SettingsRegistry.InputPrimaryEntry.Value = _theme.InputPrimary;
+        SettingsRegistry.InputSecondaryEntry.Value = _theme.InputSecondary;
 
-        ModsApp.SuccessColorEntry.Value = _theme.SuccessColor;
-        ModsApp.WarningColorEntry.Value = _theme.WarningColor;
-        ModsApp.ErrorColorEntry.Value = _theme.ErrorColor;
+        SettingsRegistry.SuccessColorEntry.Value = _theme.SuccessColor;
+        SettingsRegistry.WarningColorEntry.Value = _theme.WarningColor;
+        SettingsRegistry.ErrorColorEntry.Value = _theme.ErrorColor;
     }
 }

@@ -2,6 +2,7 @@
 using UnityEngine;
 using MelonLoader;
 using ModsApp.Helpers;
+using ModsApp.Helpers.Registries;
 using ModsApp.UI;
 using ModsApp.UI.Panels;
 using ModsApp.UI.Themes;
@@ -53,7 +54,7 @@ public class UIManager
         MainPanel = mainBg;
         var topBar = UIFactory.TopBar("ModsTopBar", mainBg.transform, "Mods", 0.95f, 75, 75, 85, 35);
 
-        var (_, maximizeBtn, _) = UIHelper.RoundedButtonWithIcon("MaximizeBtn", ModsApp.MaximizeIconSprite, topBar.transform, _theme.AccentSecondary, 40, 40, _theme.SizeMedium);
+        var (_, maximizeBtn, _) = UIHelper.RoundedButtonWithIcon("MaximizeBtn", IconRegistry.MaximizeIconSprite, topBar.transform, _theme.AccentSecondary, 40, 40, _theme.SizeMedium);
         var (_, logsBtn, _) = UIFactory.RoundedButtonWithLabel("LogsBtn", "Logs", topBar.transform, _theme.AccentPrimary, 80, 40, _theme.SizeMedium, _theme.TextPrimary);
         var hLayout = topBar.GetComponent<HorizontalLayoutGroup>();
         if (hLayout != null)
@@ -115,25 +116,25 @@ public class UIManager
 
     private void WirePreferences()
     {
-        ModsApp.TextSizeProfileEntry.OnEntryValueChanged.Subscribe((_, newVal) =>
+        SettingsRegistry.TextSizeProfileEntry.OnEntryValueChanged.Subscribe((_, newVal) =>
         {
             _theme.SetTextScale(newVal);
             FullRepaint();
         });
 
-        ModsApp.TextSizeProfileEntry.OnEntryValueChanged.Subscribe((_, newVal) => _theme.SetTextScale(newVal));
-        ModsApp.UseNewJsonEditor.OnEntryValueChanged.Subscribe((_, _) => ReflectionHelper.TryInitTMP());
-        ModsApp.ThemeOptionEntry.OnEntryValueChanged.Subscribe((_, newVal) =>
+        SettingsRegistry.TextSizeProfileEntry.OnEntryValueChanged.Subscribe((_, newVal) => _theme.SetTextScale(newVal));
+        SettingsRegistry.UseNewJsonEditor.OnEntryValueChanged.Subscribe((_, _) => ReflectionHelper.TryInitTMP());
+        SettingsRegistry.ThemeOptionEntry.OnEntryValueChanged.Subscribe((_, newVal) =>
         {
             _theme.SetTheme(newVal);
-            if (newVal != ThemeOption.Custom && ModsApp.CopyCurrentToCustom.Value)
+            if (newVal != ThemeOption.Custom && SettingsRegistry.CopyCurrentToCustom.Value)
                 _theme.CopyThemeToCustom();
             FullRepaint();
         });
-        ModsApp.CopyCurrentToCustom.OnEntryValueChanged.Subscribe((_, newVal) =>
+        SettingsRegistry.CopyCurrentToCustom.OnEntryValueChanged.Subscribe((_, newVal) =>
         {
             if (!newVal) return;
-            if (ModsApp.ThemeOptionEntry.Value == ThemeOption.Custom) return;
+            if (SettingsRegistry.ThemeOptionEntry.Value == ThemeOption.Custom) return;
             _theme.CopyThemeToCustom();
         });
     }

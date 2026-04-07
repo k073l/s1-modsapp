@@ -6,6 +6,7 @@ using MelonLoader;
 using UnityEngine.UI;
 using System.Collections.Generic;
 using ModsApp.Helpers;
+using ModsApp.Helpers.Registries;
 using ModsApp.Managers;
 using ModsApp.UI.Input;
 using ModsApp.UI.Input.FieldFactories;
@@ -550,7 +551,7 @@ public class ModDetailsPanel
 
         var (_, docsBtn, docsIcon) = UIHelper.RoundedButtonWithIcon(
             "DocsButton",
-            ModsApp.ScrollIconSprite,
+            IconRegistry.ScrollIconSprite,
             headerContainer,
             _theme.AccentSecondary,
             25, 25,
@@ -746,14 +747,14 @@ public class ModDetailsPanel
 
             foreach (var entry in cat.Entries ?? [])
             {
-                height += ModsApp.EntryVlgSpacingEntry.Value + mainRowHeight;
+                height += SettingsRegistry.EntryVlgSpacingEntry.Value + mainRowHeight;
                 if (!string.IsNullOrEmpty(entry.Description)) height += descriptionHeight + entrySpacing;
                 if (!string.IsNullOrEmpty(entry.Comment)) height += commentHeight + entrySpacing;
             }
 
             // between entries
             if ((cat.Entries?.Count ?? 0) > 1)
-                height += (cat.Entries!.Count - 1) * ModsApp.EntryVlgSpacingEntry.Value;
+                height += (cat.Entries!.Count - 1) * SettingsRegistry.EntryVlgSpacingEntry.Value;
 
             return height + categorySpacing;
         });
@@ -852,7 +853,7 @@ public class ModDetailsPanel
         vLayout.childControlHeight = true;
 
         vLayout.padding =
-            new RectOffset(0, 0, ModsApp.EntryVlgSpacingEntry.Value, 0); // some top padding for spacing between entries
+            new RectOffset(0, 0, SettingsRegistry.EntryVlgSpacingEntry.Value, 0); // some top padding for spacing between entries
 
         var containerLayout = entryContainer.GetOrAddComponent<LayoutElement>();
         containerLayout.flexibleWidth = 1;
@@ -907,7 +908,7 @@ public class ModDetailsPanel
         typeHintLayout.preferredWidth = hintWidth;
         typeHintLayout.flexibleWidth = 0;
 
-        if (ModsApp.InputsOnRightEntry.Value)
+        if (SettingsRegistry.InputsOnRightEntry.Value)
         {
             var spacer = new GameObject("Spacer");
             spacer.transform.SetParent(mainRow.transform, false);
@@ -919,7 +920,7 @@ public class ModDetailsPanel
         {
             var (undoMaskGo, undoBtn, undoImg) = UIHelper.RoundedButtonWithIcon(
                 $"{UIHelper.SanitizeName(categoryId)}_{UIHelper.SanitizeName(entryName)}_UndoButton",
-                ModsApp.UndoIconSprite, mainRow.transform, _theme.BgCategory, 24, 24, _theme.SizeStandard);
+                IconRegistry.UndoIconSprite, mainRow.transform, _theme.BgCategory, 24, 24, _theme.SizeStandard);
             if (undoMaskGo?.GetComponent<Mask>() != null)  // remove rounded mask, the button is transparent anyway
                 undoMaskGo.GetComponent<Mask>().showMaskGraphic = false;
             undoImg.color = _theme.WarningColor;

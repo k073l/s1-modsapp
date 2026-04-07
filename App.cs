@@ -5,6 +5,7 @@ using System.Reflection;
 using MelonLoader;
 using MelonLoader.Utils;
 using ModsApp.Helpers;
+using ModsApp.Helpers.Registries;
 using ModsApp.Managers;
 using ModsApp.UI;
 using ModsApp.UI.Input.FieldFactories;
@@ -32,7 +33,7 @@ public class App : PhoneApp
 
     protected override void OnCreated()
     {
-        if (!SetIconSprite(ModsApp.AppIconSprite))
+        if (!SetIconSprite(IconRegistry.AppIconSprite))
             _logger.Error("[Pre-base] Failed to set app icon sprite");
         
         base.OnCreated();

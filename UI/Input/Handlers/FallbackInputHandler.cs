@@ -1,6 +1,7 @@
 ﻿using System;
 using MelonLoader;
 using ModsApp.Helpers;
+using ModsApp.Helpers.Registries;
 using ModsApp.UI.Input.FieldFactories;
 using S1API.Internal.Abstraction;
 using S1API.UI;
@@ -56,7 +57,7 @@ public class FallbackInputHandler : IPreferenceInputHandler
         var labelLayout = _label.gameObject.GetOrAddComponent<LayoutElement>();
         labelLayout.flexibleWidth = 0;
 
-        if (ModsApp.InputsOnRightEntry.Value)
+        if (SettingsRegistry.InputsOnRightEntry.Value)
         {
             _input.transform.SetSiblingIndex(_label.transform.GetSiblingIndex() + 1);
         }

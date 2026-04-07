@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Reflection;
 using MelonLoader;
+using ModsApp.Helpers.Registries;
 using UnityEngine;
 
 namespace ModsApp.Helpers;
@@ -117,7 +118,7 @@ public static class ReflectionHelper
             TMPAvailable = MIfText != null
                            && MIfTextComponent != null
                            && MTText != null
-                           && ModsApp.UseNewJsonEditor.Value;
+                           && SettingsRegistry.UseNewJsonEditor.Value;
         }
         catch (Exception ex)
         {

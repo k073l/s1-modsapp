@@ -5,6 +5,7 @@ using UnityEngine.UI;
 using S1API.UI;
 using MelonLoader;
 using ModsApp.Helpers;
+using ModsApp.Helpers.Registries;
 using ModsApp.Managers;
 using ModsApp.UI.Input.FieldFactories;
 using S1API.Input;
@@ -252,13 +253,13 @@ public class ModListPanel
             {
                 var isNew = ModVersionTracker.IsNew(mod);
                 var isUpdated = ModVersionTracker.IsUpdated(mod);
-                var warningAnchorX = Mathf.Lerp(0.875f, 0.80f, (int)ModsApp.TextSizeProfileEntry.Value / 4f);
-                var dotAnchorX = Mathf.Lerp(0.815f, 0.73f, (int)ModsApp.TextSizeProfileEntry.Value / 4f);
+                var warningAnchorX = Mathf.Lerp(0.875f, 0.80f, (int)SettingsRegistry.TextSizeProfileEntry.Value / 4f);
+                var dotAnchorX = Mathf.Lerp(0.815f, 0.73f, (int)SettingsRegistry.TextSizeProfileEntry.Value / 4f);
 
                 if (!WarningIcons.TryGetValue(mod, out var icon))
                 {
                     icon = UIHelper.AddIcon(
-                        ModsApp.WarningIconSprite,
+                        IconRegistry.WarningIconSprite,
                         buttonGo.transform,
                         new Vector2(warningAnchorX, 0.5f),
                         Vector2.zero,

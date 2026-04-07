@@ -20,28 +20,4 @@ internal static class InitHelper
         PhoneSizeManager.Instance.Collapse();
         Controls.IsTyping = false;
     }
-
-    private static Sprite LoadEmbeddedPNG(string resourceName)
-    {
-        var asm = Assembly.GetExecutingAssembly();
-
-        using var stream = asm.GetManifestResourceStream(resourceName);
-        if (stream == null) return null;
-
-        var data = new byte[stream.Length];
-        stream.Read(data, 0, data.Length);
-        var sprite = ImageUtils.LoadImageRaw(data);
-        if (sprite != null) sprite.name = resourceName;
-        return sprite;
-    }
-
-    internal static Sprite GetIcon(ref Sprite spriteField, string resourceName)
-    {
-        if (spriteField == null)
-        {
-            spriteField = LoadEmbeddedPNG(resourceName);
-        }
-
-        return spriteField;
-    }
 }

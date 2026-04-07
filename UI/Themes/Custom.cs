@@ -1,27 +1,28 @@
-﻿using UnityEngine;
+﻿using ModsApp.Helpers.Registries;
+using UnityEngine;
 
 namespace ModsApp.UI.Themes;
 
 public class Custom : ITheme
 {
-    public Color BgPrimary => ModsApp.BackgroundPrimaryEntry.Value;
-    public Color BgSecondary => ModsApp.BackgroundSecondaryEntry.Value;
-    public Color BgCard => ModsApp.BackgroundCardEntry.Value;
-    public Color BgCategory => ModsApp.BackgroundCategoryEntry.Value;
-    public Color BgInput => ModsApp.BackgroundInputEntry.Value;
-    public Color AccentPrimary => ModsApp.AccentPrimaryEntry.Value;
-    public Color AccentSecondary => ModsApp.AccentSecondaryEntry.Value;
-    public Color TextPrimary => ModsApp.TextPrimaryEntry.Value;
-    public Color TextSecondary => ModsApp.TextSecondaryEntry.Value;
-    public Color InputPrimary => ModsApp.InputPrimaryEntry.Value;
-    public Color InputSecondary => ModsApp.InputSecondaryEntry.Value;
-    public Color SuccessColor => ModsApp.SuccessColorEntry.Value;
-    public Color WarningColor => ModsApp.WarningColorEntry.Value;
-    public Color ErrorColor => ModsApp.ErrorColorEntry.Value;
-    public Color JsonKeyColor => ModsApp.JsonKeyColor.Value;
-    public Color JsonStringColor => ModsApp.JsonStringColor.Value;
-    public Color JsonNumberColor => ModsApp.JsonNumberColor.Value;
-    public Color JsonLiteralColor => ModsApp.JsonLiteralColor.Value;
-    public Color JsonBracketColor => ModsApp.JsonBracketColor.Value;
-    public Color JsonPunctuationColor => ModsApp.JsonPunctuationColor.Value;
+    public Color BgPrimary => SettingsRegistry.BackgroundPrimaryEntry.Value;
+    public Color BgSecondary => SettingsRegistry.BackgroundSecondaryEntry.Value;
+    public Color BgCard => SettingsRegistry.BackgroundCardEntry.Value;
+    public Color BgCategory => SettingsRegistry.BackgroundCategoryEntry.Value;
+    public Color BgInput => SettingsRegistry.BackgroundInputEntry.Value;
+    public Color AccentPrimary => SettingsRegistry.AccentPrimaryEntry.Value;
+    public Color AccentSecondary => SettingsRegistry.AccentSecondaryEntry.Value;
+    public Color TextPrimary => SettingsRegistry.TextPrimaryEntry.Value;
+    public Color TextSecondary => SettingsRegistry.TextSecondaryEntry.Value;
+    public Color InputPrimary => SettingsRegistry.InputPrimaryEntry.Value;
+    public Color InputSecondary => SettingsRegistry.InputSecondaryEntry.Value;
+    public Color SuccessColor => SettingsRegistry.SuccessColorEntry.Value;
+    public Color WarningColor => SettingsRegistry.WarningColorEntry.Value;
+    public Color ErrorColor => SettingsRegistry.ErrorColorEntry.Value;
+    public Color JsonKeyColor => SettingsRegistry.JsonKeyColor.Value;
+    public Color JsonStringColor => SettingsRegistry.JsonStringColor.Value;
+    public Color JsonNumberColor => SettingsRegistry.JsonNumberColor.Value;
+    public Color JsonLiteralColor => SettingsRegistry.JsonLiteralColor.Value;
+    public Color JsonBracketColor => SettingsRegistry.JsonBracketColor.Value;
+    public Color JsonPunctuationColor => SettingsRegistry.JsonPunctuationColor.Value;
 }
