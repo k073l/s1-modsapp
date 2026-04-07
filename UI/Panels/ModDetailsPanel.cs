@@ -85,7 +85,8 @@ public class ModDetailsPanel
         if (scrollRect != null) scrollRect.scrollSensitivity = 15f;
         UIHelper.ForceRectToAnchors(_detailsContent, Vector2.zero, Vector2.one,
             Vector2.zero, Vector2.zero, new Vector2(0.5f, 1f));
-        UIHelper.SetupLayoutGroup(_detailsContent.gameObject, 6, true, new RectOffset(0, 0, 0, 0)); // controlled by outervlg
+        UIHelper.SetupLayoutGroup(_detailsContent.gameObject, 6, true,
+            new RectOffset(0, 0, 0, 0)); // controlled by outervlg
 
         var layout = _detailsContent.GetComponent<VerticalLayoutGroup>();
         if (layout != null)
@@ -179,8 +180,9 @@ public class ModDetailsPanel
             }
             catch (Exception e)
             {
-                Melon<ModsApp>.Logger.Error($"JsonConfigUI crashed. Set the JSON UI config option to false, restart the game. " +
-                                            $"Report this message on ModsApp Nexus page or in modding discord. {e}");
+                Melon<ModsApp>.Logger.Error(
+                    $"JsonConfigUI crashed. Set the JSON UI config option to false, restart the game. " +
+                    $"Report this message on ModsApp Nexus page or in modding discord. {e}");
                 var crashText = UIFactory.Text("CrashInfo", "JSON Editor unavailable. See logs for more info.",
                     jsonCard.transform, _theme.SizeStandard, TextAnchor.MiddleLeft, FontStyle.Bold);
                 crashText.color = _theme.TextPrimary;
@@ -339,7 +341,7 @@ public class ModDetailsPanel
         badgeText.alignment = TextAnchor.MiddleCenter;
 
         CheckAndCreateDocsButton(mod, headerContainer.transform);
-        
+
         ModToggleUI.CreateToggleForActive(mod, headerContainer.transform, _theme, RefreshLabel);
 
         var spacer = new GameObject("Spacer");
@@ -443,7 +445,7 @@ public class ModDetailsPanel
         disabledBadge.enabled = false;
         disabledText.fontStyle = FontStyle.Italic;
         disabledText.alignment = TextAnchor.MiddleCenter;
-        
+
         Text pendingLabel = null;
         ModToggleUI.CreateToggleForInactive(inactive, headerContainer.transform, _theme, RefreshLabel);
 
@@ -881,6 +883,27 @@ public class ModDetailsPanel
         typeHint.color = _theme.TextSecondary;
         var typeHintLayout = typeHint.gameObject.GetOrAddComponent<LayoutElement>();
         typeHintLayout.minWidth = 50;
+        typeHintLayout.flexibleWidth = 0;
+
+        const float maxTotalWidth = 320f;
+        var spacing = hLayout.spacing;
+        var labelPreferred = LayoutUtility.GetPreferredWidth(label.rectTransform);
+        var hintPreferred = LayoutUtility.GetPreferredWidth(typeHint.rectTransform);
+        var totalPreferred = labelPreferred + hintPreferred + spacing;
+        var labelWidth = labelPreferred;
+        var hintWidth = hintPreferred;
+
+        if (totalPreferred > maxTotalWidth)
+        {
+            hintWidth = Mathf.Min(hintPreferred, 140f);
+            var remaining = maxTotalWidth - hintWidth - spacing;
+            labelWidth = Mathf.Max(remaining, 80f);
+        }
+
+        labelLayout.preferredWidth = labelWidth;
+        labelLayout.flexibleWidth = 0;
+
+        typeHintLayout.preferredWidth = hintWidth;
         typeHintLayout.flexibleWidth = 0;
 
         if (ModsApp.InputsOnRightEntry.Value)

@@ -115,6 +115,8 @@ public class NumericInputHandler : IPreferenceInputHandler
                 (_, slider, field) = result;
                 var sliderContainerLayout = result.container.GetOrAddComponent<LayoutElement>();
                 sliderContainerLayout.flexibleWidth = 2;
+                sliderContainerLayout.preferredHeight = 20;
+                sliderContainerLayout.flexibleHeight = 0;
 
                 return;
             }
