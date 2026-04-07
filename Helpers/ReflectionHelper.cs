@@ -42,6 +42,21 @@ public static class ReflectionHelper
     internal static MemberInfo MTOverflow;
     internal static MemberInfo MTAutoSize;
     internal static MemberInfo MTAlignment;
+    
+    // S1 reflection data
+    internal static bool S1TypesAvailable;
+    internal static Type S1SettingsType;
+    internal static Type S1DisplaySettingsType;
+    internal static Type S1PhoneType;
+    
+    // S1 Settings members
+    internal static MemberInfo MSettingsInstance;
+    internal static MemberInfo MSettingsDisplaySettings;
+    internal static MemberInfo MDisplaySettingsUIScale;
+
+    // S1 Phone Instance
+    internal static MemberInfo MPhoneInstance;
+
 
     public static void TryInitTMP()
     {
@@ -110,6 +125,42 @@ public static class ReflectionHelper
         }
     }
 
+    public static void TryInitGameTypes()
+    {
+        try
+        {
+            var asm = TryLoadAssembly("Assembly-CSharp");
+            
+            if (asm == null)
+            {
+                Melon<ModsApp>.Logger.Warning("[Maximize] ScheduleOne assembly not found (how?)");
+                return;
+            }
+            
+            var ns = MelonUtils.IsGameIl2Cpp() ? "Il2CppScheduleOne" : "ScheduleOne";
+            
+            S1SettingsType ??= asm.GetType($"{ns}.DevUtilities.Settings");
+            S1DisplaySettingsType ??= asm.GetType($"{ns}.DevUtilities.DisplaySettings");
+            S1PhoneType ??= asm.GetType($"{ns}.UI.Phone.Phone");
+
+            if (S1SettingsType == null || S1DisplaySettingsType == null || S1PhoneType == null) return;
+
+            MSettingsInstance ??= GetMember(S1SettingsType, "Instance", BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy);
+            MSettingsDisplaySettings ??= GetMember(S1SettingsType, "DisplaySettings", BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic);
+            MDisplaySettingsUIScale ??= GetMember(S1DisplaySettingsType, "UIScale", BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic);
+            MPhoneInstance ??= GetMember(S1PhoneType, "Instance", BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy);
+            
+            S1TypesAvailable = MSettingsInstance != null
+                            && MSettingsDisplaySettings != null
+                            && MDisplaySettingsUIScale != null
+                            && MPhoneInstance != null;
+        }
+        catch (Exception ex)
+        {
+            Melon<ModsApp>.Logger.Warning($"[Maximize] GameTypes init threw: {ex.Message}");
+        }
+    }
+
     public static MemberInfo GetMember(Type type, string name,
         BindingFlags flags = BindingFlags.Public | BindingFlags.Instance)
     {
@@ -125,7 +176,7 @@ public static class ReflectionHelper
     // gets property or field
     public static object GetValue(MemberInfo member, object instance)
     {
-        if (member == null || instance == null) return null;
+        if (member == null) return null;
         try
         {
             return member switch

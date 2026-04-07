@@ -21,8 +21,10 @@ public class UIManager
     internal static ModListPanel ModListPanel;
     private ModDetailsPanel _modDetailsPanel;
     private Action _openLogsAction;
+    private Action _maximizeAppAction;
     internal static GameObject MainPanel;
     internal static Button LogsBtn;
+    internal static Button MaximizeBtn;
     public static UITheme _theme;
     
     private MelonMod _selectedMod;
@@ -51,12 +53,14 @@ public class UIManager
         MainPanel = mainBg;
         var topBar = UIFactory.TopBar("ModsTopBar", mainBg.transform, "Mods", 0.95f, 75, 75, 85, 35);
 
+        var (_, maximizeBtn, _) = UIHelper.RoundedButtonWithIcon("MaximizeBtn", ModsApp.MaximizeIconSprite, topBar.transform, _theme.AccentSecondary, 40, 40, _theme.SizeMedium);
         var (_, logsBtn, _) = UIFactory.RoundedButtonWithLabel("LogsBtn", "Logs", topBar.transform, _theme.AccentPrimary, 80, 40, _theme.SizeMedium, _theme.TextPrimary);
         var hLayout = topBar.GetComponent<HorizontalLayoutGroup>();
         if (hLayout != null)
         {
             hLayout.childControlHeight = false;
         }
+        MaximizeBtn = maximizeBtn;
         LogsBtn = logsBtn;
 
         // Apply theme to top bar
@@ -95,8 +99,18 @@ public class UIManager
         {
             _ = new LogExplorerPanel(_selectedMod);
         };
+        _maximizeAppAction = () =>
+        {
+            if (!PhoneSizeManager.Instance.Available)
+            {
+                _logger.Warning("Changing phone size is not available. Report this issue.");
+                return;
+            }
+            PhoneSizeManager.Instance.Toggle();
+        };
 
         EventHelper.AddListener(_openLogsAction, LogsBtn.onClick);
+        EventHelper.AddListener(_maximizeAppAction, MaximizeBtn.onClick);
     }
 
     private void WirePreferences()
@@ -131,6 +145,7 @@ public class UIManager
         var openedInactive = _selectedInactiveMod;
         App.Instance.CloseApp();
         EventHelper.RemoveListener(_openLogsAction, LogsBtn.onClick);
+        EventHelper.RemoveListener(_maximizeAppAction, MaximizeBtn.onClick);
         _selectedMod = null;
         Object.Destroy(MainPanel);
         Initialize();

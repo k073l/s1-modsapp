@@ -30,6 +30,7 @@
         <EmbeddedResource Include="assets\triangle-alert.png" />
         <EmbeddedResource Include="assets\scroll-text.png" />
         <EmbeddedResource Include="assets\undo.png" />
+        <EmbeddedResource Include="assets\maximize.png" />
     </ItemGroup>
     
     <PropertyGroup Condition="'$(Configuration)' == 'Mono'">

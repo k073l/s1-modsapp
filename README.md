@@ -88,4 +88,4 @@ Changes are applied to the file on save (if valid JSON).
 - Bars for forking S1API, continuing its development and providing support. Also for helping with making this mod compatible with IL2CPP.
 - All the open source projects that made this possible (MelonLoader, S1API and many more).
 - Original wrench icon from [FontAwesome](https://fontawesome.com/icons/wrench?s=solid)
-- Original [warning](https://lucide.dev/icons/triangle-alert), [scroll](https://lucide.dev/icons/scroll-text) and [undo](https://lucide.dev/icons/undo-2) icon from [Lucide](https://lucide.dev/license), ISC License
+- Original [warning](https://lucide.dev/icons/triangle-alert), [scroll](https://lucide.dev/icons/scroll-text), [maximize](https://lucide.dev/icons/maximize-2) and [undo](https://lucide.dev/icons/undo-2) icon from [Lucide](https://lucide.dev/license), ISC License

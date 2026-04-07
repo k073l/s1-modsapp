@@ -75,6 +75,7 @@ public class App : PhoneApp
         Controls.IsTyping = false;
         DropdownComponent<object>.CloseAll();
         FloatingPanelComponent.Cleanup();
+        PhoneSizeManager.Instance.Collapse();
         base.OnPhoneClosed();
     }
 

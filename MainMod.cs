@@ -35,11 +35,13 @@ public class ModsApp : MelonMod
     public static Sprite WarningIconSprite => InitHelper.GetIcon(ref _warningIconSprite, "ModsApp.assets.triangle-alert.png");
     public static Sprite ScrollIconSprite => InitHelper.GetIcon(ref _scrollIconSprite, "ModsApp.assets.scroll-text.png");
     public static Sprite UndoIconSprite => InitHelper.GetIcon(ref _undoIconSprite, "ModsApp.assets.undo.png");
+    public static Sprite MaximizeIconSprite => InitHelper.GetIcon(ref _maximizeIconSprite, "ModsApp.assets.maximize.png");
 
     private static Sprite _appIconSprite;
     private static Sprite _warningIconSprite;
     private static Sprite _scrollIconSprite;
     private static Sprite _undoIconSprite;
+    private static Sprite _maximizeIconSprite;
 
     public static MelonPreferences_Category AccessibilityCategory;
     public static MelonPreferences_Entry<TextSizeProfile> TextSizeProfileEntry;
@@ -137,6 +139,7 @@ public class ModsApp : MelonMod
 
         CategoryState.Load();
         ReflectionHelper.TryInitTMP();
+        ReflectionHelper.TryInitGameTypes();
         ModVersionTracker.Load();
         MelonEvents.OnApplicationDefiniteQuit.Subscribe(() => ModToggleManager.ApplyPendingChanges(Logger));
     }

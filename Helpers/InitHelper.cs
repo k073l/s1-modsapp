@@ -1,4 +1,5 @@
 ﻿using System.Reflection;
+using ModsApp.Managers;
 using ModsApp.UI.Input.FieldFactories;
 using ModsApp.UI.Panels;
 using S1API.Input;
@@ -16,6 +17,7 @@ internal static class InitHelper
         if (!Input.GetKeyDown(KeyCode.Escape)) return;
         FloatingPanelComponent.Cleanup();
         DropdownComponent<object>.CloseAll();
+        PhoneSizeManager.Instance.Collapse();
         Controls.IsTyping = false;
     }
 
