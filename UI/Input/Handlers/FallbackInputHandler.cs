@@ -62,7 +62,9 @@ public class FallbackInputHandler : IPreferenceInputHandler
         }
         else
         {
-            _input.transform.SetSiblingIndex(_label.transform.GetSiblingIndex());
+            var labelIndex = _label.transform.GetSiblingIndex();
+            _input.transform.SetSiblingIndex(labelIndex);
+            _label.transform.SetSiblingIndex(labelIndex + 1);
         }
 
         string lastValid = initialValue;
