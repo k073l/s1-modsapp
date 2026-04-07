@@ -15,6 +15,12 @@ public class KeyCodeInputHandler : IPreferenceInputHandler
     private readonly MelonLogger.Instance _logger;
     private static KeyCodeRebindManager _rebindManager;
 
+    private GameObject _parent;
+    private string _entryKey;
+    private MelonPreferences_Entry _entry;
+    private Action<string, object> _onValueChanged;
+    private KeyCodeRebindInput _rebindInput;
+
     public KeyCodeInputHandler(UITheme theme, MelonLogger.Instance logger)
     {
         _theme = theme;
@@ -31,12 +37,23 @@ public class KeyCodeInputHandler : IPreferenceInputHandler
     public void CreateInput(MelonPreferences_Entry entry, GameObject parent,
         string entryKey, object currentValue, Action<string, object> onValueChanged)
     {
+        _parent = parent;
+        _entryKey = entryKey;
+        _onValueChanged = onValueChanged;
+        _entry = entry;
+
         var keyCodeValue = (KeyCode)currentValue;
         
-        var rebindInput = new KeyCodeRebindInput(parent, entryKey, keyCodeValue, _theme, _logger, _rebindManager);
-        rebindInput.OnValueChanged += (newKeyCode) => { onValueChanged(entryKey, newKeyCode); };
+        _rebindInput = new KeyCodeRebindInput(parent, entryKey, keyCodeValue, _theme, _logger, _rebindManager);
+        _rebindInput.OnValueChanged += (newKeyCode) => { onValueChanged(entryKey, newKeyCode); };
 
         MelonDebug.Msg($"[{entryKey}] KeyCode rebind input created");
+    }
+
+    public void Recreate(object currentValue)
+    {
+        _rebindInput?.Destroy();
+        CreateInput(_entry, _parent, _entryKey, currentValue, _onValueChanged);
     }
 }
 
@@ -235,6 +252,13 @@ public class KeyCodeRebindInput
     private void RefreshDisplay()
     {
         _labelText.text = _currentValue.ToString();
+    }
+
+    public void Destroy()
+    {
+        CancelRebind();
+        if (_container != null)
+            UnityEngine.Object.DestroyImmediate(_container);
     }
 }
 

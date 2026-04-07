@@ -18,6 +18,12 @@ public class ColorInputHandler : IPreferenceInputHandler
     private readonly UITheme _theme;
     private readonly MelonLogger.Instance _logger;
 
+    private GameObject _parent;
+    private string _entryKey;
+    private MelonPreferences_Entry _entry;
+    private Action<string, object> _onValueChanged;
+    private GameObject _colorButtonGO;
+
     public ColorInputHandler(UITheme theme, MelonLogger.Instance logger)
     {
         _theme = theme;
@@ -29,18 +35,23 @@ public class ColorInputHandler : IPreferenceInputHandler
     public void CreateInput(MelonPreferences_Entry entry, GameObject parent, string entryKey,
         object currentValue, Action<string, object> onValueChanged)
     {
+        _parent = parent;
+        _entryKey = entryKey;
+        _onValueChanged = onValueChanged;
+        _entry = entry;
+
         var colorValue = currentValue is Color c ? c : Color.white;
 
-        var colorButtonGO = new GameObject($"{entryKey}_ColorButton");
-        colorButtonGO.transform.SetParent(parent.transform, false);
+        _colorButtonGO = new GameObject($"{entryKey}_ColorButton");
+        _colorButtonGO.transform.SetParent(parent.transform, false);
 
-        var buttonImage = colorButtonGO.AddComponent<Image>();
+        var buttonImage = _colorButtonGO.AddComponent<Image>();
         buttonImage.color = colorValue;
-        var btnOutline = colorButtonGO.AddComponent<Outline>();
+        var btnOutline = _colorButtonGO.AddComponent<Outline>();
         btnOutline.effectColor = _theme.BgInput;
         btnOutline.effectDistance = new Vector2(1.5f, 1.5f);
 
-        var button = colorButtonGO.AddComponent<Button>();
+        var button = _colorButtonGO.AddComponent<Button>();
         EventHelper.AddListener(() =>
         {
             ShowColorPicker(colorValue, newColor =>
@@ -53,11 +64,20 @@ public class ColorInputHandler : IPreferenceInputHandler
             });
         }, button.onClick);
 
-        var layout = colorButtonGO.AddComponent<LayoutElement>();
+        var layout = _colorButtonGO.AddComponent<LayoutElement>();
         layout.minWidth = 50;
         layout.minHeight = 20;
 
-        colorButtonGO.GetOrAddComponent<RectTransform>();
+        _colorButtonGO.GetOrAddComponent<RectTransform>();
+    }
+
+    public void Recreate(object currentValue)
+    {
+        FloatingPanelComponent.Cleanup();
+        if (_colorButtonGO != null)
+            UnityEngine.Object.DestroyImmediate(_colorButtonGO);
+
+        CreateInput(_entry, _parent, _entryKey, currentValue, _onValueChanged);
     }
 
 

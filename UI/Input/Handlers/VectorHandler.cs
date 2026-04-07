@@ -15,6 +15,12 @@ public class VectorHandler : IPreferenceInputHandler
     private readonly UITheme _theme;
     private readonly MelonLogger.Instance _logger;
 
+    private GameObject _parent;
+    private string _entryKey;
+    private MelonPreferences_Entry _entry;
+    private Action<string, object> _onValueChanged;
+    private GameObject _container;
+
     public VectorHandler(UITheme theme, MelonLogger.Instance logger)
     {
         _theme = theme;
@@ -41,21 +47,26 @@ public class VectorHandler : IPreferenceInputHandler
     {
         if (currentValue == null) return;
 
-        Type structType = currentValue.GetType();
+        _parent = parent;
+        _entryKey = entryKey;
+        _onValueChanged = onValueChanged;
+        _entry = entry;
+
+        var structType = currentValue.GetType();
         var fields = structType.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
         var originalValues = new List<string>();
 
-        var container = new GameObject($"{entryKey}_VectorContainer");
-        container.transform.SetParent(parent.transform, false);
+        _container = new GameObject($"{entryKey}_VectorContainer");
+        _container.transform.SetParent(parent.transform, false);
 
-        var gridLayout = container.AddComponent<GridLayoutGroup>();
+        var gridLayout = _container.AddComponent<GridLayoutGroup>();
         gridLayout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-        gridLayout.constraintCount = 6; // 3 pairs
+        gridLayout.constraintCount = 6;
         gridLayout.spacing = new Vector2(2, 2);
         gridLayout.cellSize = new Vector2(60, 25);
         gridLayout.childAlignment = TextAnchor.MiddleLeft;
 
-        var contentSize = container.AddComponent<ContentSizeFitter>();
+        var contentSize = _container.AddComponent<ContentSizeFitter>();
         contentSize.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
         for (int i = 0; i < fields.Length; i++)
@@ -65,10 +76,10 @@ public class VectorHandler : IPreferenceInputHandler
             string fieldValue = field.GetValue(currentValue)?.ToString() ?? "0";
             originalValues.Add(fieldValue);
 
-            var label = UIFactory.Text($"Label_{fieldName}", fieldName, container.transform, fontSize: _theme.SizeStandard,
+            var label = UIFactory.Text($"Label_{fieldName}", fieldName, _container.transform, fontSize: _theme.SizeStandard,
                 anchor: TextAnchor.MiddleRight);
 
-            var input = InputFieldFactory.CreateInputField(container, $"Input_{fieldName}", fieldValue,
+            var input = InputFieldFactory.CreateInputField(_container, $"Input_{fieldName}", fieldValue,
                 InputField.ContentType.DecimalNumber, minWidth: 60);
 
             int fieldIndex = i;
@@ -87,9 +98,17 @@ public class VectorHandler : IPreferenceInputHandler
                 }
                 else
                 {
-                    input.text = originalValues[fieldIndex]; // revert
+                    input.text = originalValues[fieldIndex];
                 }
             }, input.onEndEdit);
         }
+    }
+
+    public void Recreate(object currentValue)
+    {
+        if (_container != null)
+            UnityEngine.Object.DestroyImmediate(_container);
+
+        CreateInput(_entry, _parent, _entryKey, currentValue, _onValueChanged);
     }
 }

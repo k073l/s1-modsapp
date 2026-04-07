@@ -5,7 +5,7 @@ using MelonLoader;
 
 namespace ModsApp.Helpers;
 
-public static class MelonLoggerExtensions
+public static class MelonExtensions
 {
     /// <summary>
     /// Logs a debug message to the console.
@@ -85,5 +85,36 @@ public static class MelonLoggerExtensions
         }
 
         return "unknown";
+    }
+}
+
+internal static class MelonPreferencesExtensions
+{
+    public static object GetDefaultValue(this MelonPreferences_Entry entry)
+    {
+        var current = entry.BoxedValue;
+        entry.ResetToDefault();
+        var defaultValue = entry.BoxedValue;
+        entry.BoxedValue = current;
+        return defaultValue;
+    }
+    
+    public static object ConvertToMatching(this MelonPreferences_Entry entry, object value)
+    {
+        var type = entry.GetReflectedType();
+        // if it's not of the type, try to convert
+        if (value.GetType() == type)
+            return value;
+        if (type.IsEnum)
+            return Enum.Parse(type, value.ToString());
+        try
+        {
+            return Convert.ChangeType(value, type);
+        }
+        catch (Exception e)
+        {
+            Melon<ModsApp>.Logger.Error($"Failed to convert value '{value}' to type {type}: {e}");
+            throw;
+        }
     }
 }

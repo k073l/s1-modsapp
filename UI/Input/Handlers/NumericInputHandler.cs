@@ -30,6 +30,13 @@ public class NumericInputHandler : IPreferenceInputHandler
         typeof(decimal),
     };
 
+    private GameObject _parent;
+    private string _entryKey;
+    private Action<string, object> _onValueChanged;
+    private MelonPreferences_Entry _entry;
+    private GameObject _sliderContainer;
+    private InputField _input;
+
     public NumericInputHandler(UITheme theme, MelonLogger.Instance logger)
     {
         _theme = theme;
@@ -41,6 +48,11 @@ public class NumericInputHandler : IPreferenceInputHandler
     public void CreateInput(MelonPreferences_Entry entry, GameObject parent, string entryKey,
         object currentValue, Action<string, object> onValueChanged)
     {
+        _parent = parent;
+        _entryKey = entryKey;
+        _onValueChanged = onValueChanged;
+        _entry = entry;
+
         var type = currentValue.GetType();
         var stringValue = Convert.ToString(currentValue, CultureInfo.InvariantCulture);
 
@@ -73,9 +85,6 @@ public class NumericInputHandler : IPreferenceInputHandler
                 var max = Convert.ToSingle(range.MaxValue);
                 var value = Convert.ToSingle(currentValue);
 
-                Slider slider = null;
-                InputField field = null;
-
                 var result = SliderFactory.CreateSlider(
                     parent,
                     $"{entryKey}_Slider",
@@ -96,24 +105,19 @@ public class NumericInputHandler : IPreferenceInputHandler
 
                             if (!converted.Equals(currentValue))
                             {
-                                if (Time.frameCount % 20 == 0) // This can be very spammy, so limit log frequency
+                                if (Time.frameCount % 20 == 0)
                                     _logger.Msg($"Modified preference {entryKey}: {converted}");
                                 onValueChanged(entryKey, converted);
                             }
                         }
                         catch
                         {
-                            // rollback UI
-                            if (slider != null)
-                                slider.SetValueWithoutNotify(
-                                    Convert.ToSingle(currentValue));
-                            if (field != null)
-                                field.text = stringValue;
                         }
                     });
 
-                (_, slider, field) = result;
-                var sliderContainerLayout = result.container.GetOrAddComponent<LayoutElement>();
+                (_, _, _input) = result;
+                _sliderContainer = result.container;
+                var sliderContainerLayout = _sliderContainer.GetOrAddComponent<LayoutElement>();
                 sliderContainerLayout.flexibleWidth = 2;
                 sliderContainerLayout.preferredHeight = 20;
                 sliderContainerLayout.flexibleHeight = 0;
@@ -122,11 +126,10 @@ public class NumericInputHandler : IPreferenceInputHandler
             }
             catch (Exception e)
             {
-                /* use fallback */
             }
         }
 
-        var input = InputFieldFactory.CreateInputField(
+        _input = InputFieldFactory.CreateInputField(
             parent,
             $"{entryKey}_Input",
             stringValue,
@@ -148,9 +151,18 @@ public class NumericInputHandler : IPreferenceInputHandler
             }
             catch
             {
-                // Reset to previous valid value
-                input.text = stringValue;
+                _input.text = stringValue;
             }
-        }, input.onEndEdit);
+        }, _input.onEndEdit);
+    }
+
+    public void Recreate(object currentValue)
+    {
+        if (_sliderContainer != null)
+            UnityEngine.Object.DestroyImmediate(_sliderContainer);
+        if (_input != null)
+            UnityEngine.Object.DestroyImmediate(_input.gameObject);
+
+        CreateInput(_entry, _parent, _entryKey, currentValue, _onValueChanged);
     }
 }

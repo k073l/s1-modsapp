@@ -29,6 +29,7 @@
         <EmbeddedResource Include="assets\appicon.png" />
         <EmbeddedResource Include="assets\triangle-alert.png" />
         <EmbeddedResource Include="assets\scroll-text.png" />
+        <EmbeddedResource Include="assets\undo.png" />
     </ItemGroup>
     
     <PropertyGroup Condition="'$(Configuration)' == 'Mono'">
@@ -37,6 +38,10 @@
 
     <PropertyGroup Condition="'$(Configuration)' == 'Release Mono'">
         <DefineConstants>$(DefineConstants);MONO;RELEASE</DefineConstants>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(Configuration)' == 'Debug IL2CPP'">
+        <DefineConstants>$(DefineConstants);RELEASE</DefineConstants>
     </PropertyGroup>
 
     <!-- Here we always use Mono, since it's S1API (IL2CPP config is for copying result only) -->

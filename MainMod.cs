@@ -34,10 +34,12 @@ public class ModsApp : MelonMod
     public static Sprite AppIconSprite => InitHelper.GetIcon(ref _appIconSprite, "ModsApp.assets.appicon.png");
     public static Sprite WarningIconSprite => InitHelper.GetIcon(ref _warningIconSprite, "ModsApp.assets.triangle-alert.png");
     public static Sprite ScrollIconSprite => InitHelper.GetIcon(ref _scrollIconSprite, "ModsApp.assets.scroll-text.png");
+    public static Sprite UndoIconSprite => InitHelper.GetIcon(ref _undoIconSprite, "ModsApp.assets.undo.png");
 
     private static Sprite _appIconSprite;
     private static Sprite _warningIconSprite;
     private static Sprite _scrollIconSprite;
+    private static Sprite _undoIconSprite;
 
     public static MelonPreferences_Category AccessibilityCategory;
     public static MelonPreferences_Entry<TextSizeProfile> TextSizeProfileEntry;

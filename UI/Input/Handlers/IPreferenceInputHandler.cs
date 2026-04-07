@@ -9,4 +9,6 @@ public interface IPreferenceInputHandler
 
     void CreateInput(MelonPreferences_Entry entry, GameObject parent, string entryKey,
         object currentValue, Action<string, object> onValueChanged);
+
+    void Recreate(object currentValue);
 }

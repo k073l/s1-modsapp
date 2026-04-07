@@ -9,6 +9,7 @@ using ModsApp.Helpers;
 using ModsApp.Managers;
 using ModsApp.UI.Input;
 using ModsApp.UI.Input.FieldFactories;
+using ModsApp.UI.Input.Handlers;
 using S1API.Input;
 using S1API.Internal.Abstraction;
 using S1API.Utils;
@@ -913,10 +914,34 @@ public class ModDetailsPanel
             spacer.GetOrAddComponent<LayoutElement>().flexibleWidth = 0.1f;
         }
 
+        IPreferenceInputHandler handler = null;
+        if (entry.GetDefaultValueAsString() != entry.BoxedValue.ToString())
+        {
+            var (undoMaskGo, undoBtn, undoImg) = UIHelper.RoundedButtonWithIcon(
+                $"{UIHelper.SanitizeName(categoryId)}_{UIHelper.SanitizeName(entryName)}_UndoButton",
+                ModsApp.UndoIconSprite, mainRow.transform, _theme.BgCategory, 24, 24, _theme.SizeStandard);
+            if (undoMaskGo?.GetComponent<Mask>() != null)  // remove rounded mask, the button is transparent anyway
+                undoMaskGo.GetComponent<Mask>().showMaskGraphic = false;
+            undoImg.color = _theme.WarningColor;
+            EventHelper.AddListener(() =>
+            {
+                try
+                {
+                    var proper = entry.ConvertToMatching(entry.GetDefaultValue());
+                    handler?.Recreate(proper);
+                    OnPreferenceValueChanged(entryKey, proper);
+                    undoImg.color = _theme.TextSecondary;
+                }
+                catch (Exception e)
+                {
+                    _logger.Error($"Failed to revert preference {entryKey} to default value: {e.Message}");
+                }
+            }, undoBtn.onClick);
+        }
         var currentValue = _modifiedPreferences.ContainsKey(entryKey)
             ? _modifiedPreferences[entryKey]
             : entry.BoxedValue;
-        _inputFactory.CreatePreferenceInput(entry, mainRow, entryKey, currentValue, OnPreferenceValueChanged);
+        handler = _inputFactory.CreatePreferenceInput(entry, mainRow, entryKey, currentValue, OnPreferenceValueChanged);
 
         if (!string.IsNullOrEmpty(entry.Description))
         {
@@ -1025,14 +1050,7 @@ public class ModDetailsPanel
                 {
                     try
                     {
-                        var type = entry.BoxedValue.GetType();
-                        // if it's not of the type, try to convert
-                        if (kvp.Value.GetType() == type)
-                            entry.BoxedValue = kvp.Value;
-                        else if (type.IsEnum)
-                            entry.BoxedValue = System.Enum.Parse(type, kvp.Value.ToString());
-                        else
-                            entry.BoxedValue = System.Convert.ChangeType(kvp.Value, type);
+                        entry.BoxedValue = entry.ConvertToMatching(kvp.Value);
                         _logger.Msg($"Applied preference change: {kvp.Key} = {kvp.Value}");
                     }
                     catch (System.Exception ex)

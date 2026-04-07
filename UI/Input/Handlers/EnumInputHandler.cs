@@ -11,6 +11,13 @@ namespace ModsApp.UI.Input.Handlers
         private readonly UITheme _theme;
         private readonly MelonLogger.Instance _logger;
 
+        private GameObject _parent;
+        private string _entryKey;
+        private MelonPreferences_Entry _entry;
+        private Action<string, object> _onValueChanged;
+        private Type _enumType;
+        private DropdownInputComponent<object> _dropdownInput;
+
         public EnumInputHandler(UITheme theme, MelonLogger.Instance logger)
         {
             _theme = theme;
@@ -22,10 +29,14 @@ namespace ModsApp.UI.Input.Handlers
         public void CreateInput(MelonPreferences_Entry entry, GameObject parent,
             string entryKey, object currentValue, Action<string, object> onValueChanged)
         {
-            var enumType = currentValue.GetType();
-            var enumValues = Enum.GetValues(enumType).Cast<object>().ToArray();
+            _parent = parent;
+            _entryKey = entryKey;
+            _onValueChanged = onValueChanged;
+            _entry = entry;
+            _enumType = currentValue.GetType();
+            var enumValues = Enum.GetValues(_enumType).Cast<object>().ToArray();
 
-            var dropdownInput = DropdownFactory.CreateDropdownInput<object>(
+            _dropdownInput = DropdownFactory.CreateDropdownInput<object>(
                 parent, entryKey, currentValue, val => val.ToString(), _theme,
                 containerSize: new Vector2(150, 20),
                 inputFieldWidth: 120,
@@ -33,11 +44,11 @@ namespace ModsApp.UI.Input.Handlers
                 maxVisibleItems: 6,
                 logger: _logger);
 
-            dropdownInput.OnFilterItems += (filter) => enumValues; // probably a custom enum, no filtering
+            _dropdownInput.OnFilterItems += (filter) => enumValues;
 
-            dropdownInput.OnValidateInput += (input) =>
+            _dropdownInput.OnValidateInput += (input) =>
             {
-                if (TryParseEnum(enumType, input, out var exactMatch))
+                if (TryParseEnum(_enumType, input, out var exactMatch))
                     return exactMatch;
 
                 if (!string.IsNullOrEmpty(input))
@@ -51,9 +62,16 @@ namespace ModsApp.UI.Input.Handlers
                 return null;
             };
 
-            dropdownInput.OnValueChanged += (selectedValue) => { onValueChanged(entryKey, selectedValue); };
+            _dropdownInput.OnValueChanged += (selectedValue) => { onValueChanged(entryKey, selectedValue); };
 
             MelonDebug.Msg($"[{entryKey}] Enum input created with {enumValues.Length} options");
+        }
+
+        public void Recreate(object currentValue)
+        {
+            if (_dropdownInput != null && _dropdownInput.Container != null)
+                _dropdownInput.Destroy();
+            CreateInput(_entry, _parent, _entryKey, currentValue, _onValueChanged);
         }
 
         private bool TryParseEnum(Type enumType, string value, out object result)
