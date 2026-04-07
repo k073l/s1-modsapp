@@ -1,4 +1,5 @@
 ﻿using MelonLoader;
+using MelonLoader.Preferences;
 using ModsApp.Helpers;
 using ModsApp.Helpers.Registries;
 using ModsApp.Managers;
@@ -15,6 +16,7 @@ public class ModListPanel
 {
     public event Action<MelonMod> OnModSelected;
     public event Action<InactiveModInfo> OnInactiveModSelected;
+    public event Action<IEnumerable<(MelonMod mod, MelonPreferences_Category category, MelonPreferences_Entry entry)>, string> OnAllModsSelected;
 
     private readonly Transform _parent;
     private readonly ModManager _modManager;
@@ -29,6 +31,10 @@ public class ModListPanel
 
     private bool _isUnassignedSelected;
     public const string UnassignedButtonName = "Unassigned";
+    public const string AllModsButtonName = "All Mods";
+    private bool _isAllModsSelected;
+    public bool IsAllModsSelected => _isAllModsSelected;
+    private IEnumerable<(MelonMod mod, MelonPreferences_Category category, MelonPreferences_Entry entry)> _searchResults = Enumerable.Empty<(MelonMod, MelonPreferences_Category, MelonPreferences_Entry)>();
 
     private IEnumerable<MelonMod> _allMods = Enumerable.Empty<MelonMod>();
     private string _searchQuery = string.Empty;
@@ -150,11 +156,22 @@ public class ModListPanel
     private void OnSearchTextChanged(string text)
     {
         _searchQuery = text;
+        CategoryState.ClearTempExpanded();
 
         if (_clearButton != null)
             _clearButton.gameObject.SetActive(!string.IsNullOrWhiteSpace(text));
 
+        if (!string.IsNullOrWhiteSpace(text))
+            _searchResults = _modManager.SearchPreferences(text);
+        else
+            _searchResults = Enumerable.Empty<(MelonMod, MelonPreferences_Category, MelonPreferences_Entry)>();
+
         PopulateList();
+
+        if (_isAllModsSelected)
+        {
+            OnAllModsSelected?.Invoke(_searchResults, text);
+        }
     }
 
     private void OnSearchClear()
@@ -162,6 +179,8 @@ public class ModListPanel
         if (_searchInput != null)
             _searchInput.text = string.Empty;
         _searchQuery = string.Empty;
+        _searchResults = Enumerable.Empty<(MelonMod, MelonPreferences_Category, MelonPreferences_Entry)>();
+        CategoryState.ClearTempExpanded();
         PopulateList();
     }
 
@@ -186,6 +205,9 @@ public class ModListPanel
 
         if (_modManager.HasUnassignedPreferences())
             CreateModButton(UnassignedButtonName, "Unassigned", "0.0", isUnassigned: true);
+
+        if (_searchResults.Any())
+            CreateModButton(AllModsButtonName, "All Mods", "settings", isUnassigned: false, isAllMods: true);
 
         var modsToShow = FilterMods(_searchQuery).ToList();
         foreach (var mod in modsToShow)
@@ -223,14 +245,14 @@ public class ModListPanel
             mod.Info.Author.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0);
     }
 
-    private void CreateModButton(string internalName, string displayName, string version, bool isUnassigned)
+    private void CreateModButton(string internalName, string displayName, string version, bool isUnassigned, bool isAllMods = false)
     {
         var buttonGo = UIFactory.Panel($"{UIHelper.SanitizeName(internalName)}_Button", _listContent,
             _theme.AccentSecondary);
         buttonGo.GetComponent<Image>()?.MakeRounded(4, 16);
 
         var button = buttonGo.GetOrAddComponent<Button>();
-        UIHelper.SetupButton(button, _theme, () => SelectMod(internalName, isUnassigned));
+        UIHelper.SetupButton(button, _theme, () => SelectMod(internalName, isUnassigned, isAllMods));
         UIHelper.ConfigureButtonLayout(buttonGo.GetComponent<RectTransform>(), 48f);
 
         // Main label
@@ -242,7 +264,7 @@ public class ModListPanel
         UIHelper.ConfigureButtonText(label.rectTransform, new Vector2(0f, 0f), new Vector2(0.65f, 1f), 16f, -8f, 4f,
             -4f);
 
-        if (!isUnassigned)
+        if (!isUnassigned && !isAllMods)
         {
             var mod = _modManager.GetMod(internalName);
             if (mod != null)
@@ -344,12 +366,24 @@ public class ModListPanel
         _modLabels[buttonKey] = label;
     }
 
-    private void SelectMod(string modName, bool isUnassigned)
+    private void SelectMod(string modName, bool isUnassigned, bool isAllMods = false)
     {
         SelectedModName = modName;
         _isUnassignedSelected = isUnassigned;
+        _isAllModsSelected = isAllMods;
         UpdateButtonHighlights();
-        OnModSelected?.Invoke(isUnassigned ? null : _modManager.GetMod(modName));
+        if (isAllMods)
+            OnAllModsSelected?.Invoke(_searchResults, _searchQuery);
+        else
+            OnModSelected?.Invoke(isUnassigned ? null : _modManager.GetMod(modName));
+    }
+
+    public void SelectModByName(string modName)
+    {
+        SelectedModName = modName;
+        _isUnassignedSelected = false;
+        _isAllModsSelected = false;
+        UpdateButtonHighlights();
     }
 
     private void SelectInactiveMod(InactiveModInfo inactive)

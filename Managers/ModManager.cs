@@ -117,6 +117,68 @@ public class ModManager
         return unassigned;
     }
 
+    public IEnumerable<(MelonMod mod, MelonPreferences_Category category, MelonPreferences_Entry entry)> SearchPreferences(string query)
+    {
+        if (string.IsNullOrWhiteSpace(query))
+            return Enumerable.Empty<(MelonMod, MelonPreferences_Category, MelonPreferences_Entry)>();
+
+        var results = new List<(MelonMod, MelonPreferences_Category, MelonPreferences_Entry)>();
+        var addedCategories = new HashSet<string>();
+        var addedEntries = new HashSet<string>();
+
+        foreach (var mod in _mods.Values)
+        {
+            var categories = GetPreferencesForMod(mod).ToList();
+            foreach (var category in categories)
+            {
+                var categoryKey = $"{mod.Info.Name}.{category.Identifier}";
+
+                var categoryName = category.DisplayName ?? category.Identifier;
+                var categoryMatches = categoryName.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    category.Identifier.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0;
+
+                if (categoryMatches)
+                {
+                    if (!addedCategories.Contains(categoryKey))
+                    {
+                        results.Add((mod, category, null));
+                        addedCategories.Add(categoryKey);
+                    }
+                }
+
+                if (category.Entries == null) continue;
+                foreach (var entry in category.Entries)
+                {
+                    var entryKey = $"{categoryKey}.{entry.Identifier}";
+                    var entryName = entry.DisplayName ?? entry.Identifier;
+                    var entryDesc = entry.Description ?? "";
+
+                    var matchesName = entryName.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0;
+                    var matchesDesc = entryDesc.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0;
+
+                    if (matchesName || matchesDesc)
+                    {
+                        if (!addedCategories.Contains(categoryKey))
+                        {
+                            results.Add((mod, category, null));
+                            addedCategories.Add(categoryKey);
+                        }
+
+                        if (!addedEntries.Contains(entryKey))
+                        {
+                            results.Add((mod, category, entry));
+                            addedEntries.Add(entryKey);
+                        }
+                    }
+                }
+            }
+
+            if (results.Count >= 50) break;
+        }
+
+        return results.Take(50);
+    }
+
     private MelonPreferences_Category ExtractCategoryFromObject(object catObj)
     {
         if (catObj is MelonPreferences_Category direct)

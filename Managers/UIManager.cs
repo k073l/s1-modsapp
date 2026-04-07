@@ -95,6 +95,19 @@ public class UIManager
             _selectedMod = null;
             _modDetailsPanel.ShowInactiveModDetails(inactive);
         };
+        ModListPanel.OnAllModsSelected += (results, searchQuery) =>
+        {
+            _modDetailsPanel.ShowAllModsSearchResults(results, searchQuery);
+        };
+        _modDetailsPanel.OnNavigateToEntry += (mod, category, entry) =>
+        {
+            _selectedMod = mod;
+            _selectedInactiveMod = null;
+            ModListPanel.SelectModByName(mod.Info.Name);
+            CategoryState.Expand(category, isUserIntent: false);
+            _modDetailsPanel.ShowModDetails(mod);
+            _modDetailsPanel.ProcessPendingScroll(category, entry);
+        };
         _openLogsAction = () =>
         {
             _ = new LogExplorerPanel(_selectedMod);
