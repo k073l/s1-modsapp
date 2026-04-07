@@ -165,6 +165,82 @@ public static class SliderFactory
         return (container, slider, field);
     }
 
+    public static Slider CreateVerticalSlider(
+        Transform parent,
+        string name,
+        float min,
+        float max,
+        float initialValue,
+        float width,
+        float height,
+        Action<float> onChanged)
+    {
+        var sliderGO = new GameObject(name);
+        sliderGO.transform.SetParent(parent, false);
+
+        var rt = sliderGO.AddComponent<RectTransform>();
+        rt.sizeDelta = new Vector2(width, height);
+
+        var slider = sliderGO.AddComponent<Slider>();
+        slider.minValue = min;
+        slider.maxValue = max;
+        slider.wholeNumbers = false;
+        slider.direction = Slider.Direction.BottomToTop;
+
+        var le = sliderGO.AddComponent<LayoutElement>();
+        le.preferredWidth = width;
+        le.preferredHeight = height;
+        le.flexibleWidth = 0;
+        le.flexibleHeight = 0;
+
+        // background
+        var bgGO = new GameObject("Background");
+        bgGO.transform.SetParent(sliderGO.transform, false);
+        var bg = bgGO.AddComponent<Image>();
+        bg.color = new Color(0.3f, 0.3f, 0.3f, 1f);
+        var bgRT = bgGO.GetComponent<RectTransform>();
+        bgRT.anchorMin = Vector2.zero;
+        bgRT.anchorMax = Vector2.one;
+        bgRT.offsetMin = Vector2.zero;
+        bgRT.offsetMax = Vector2.zero;
+        slider.targetGraphic = bg;
+
+        // fill area
+        var fillAreaGO = new GameObject("Fill Area");
+        fillAreaGO.transform.SetParent(sliderGO.transform, false);
+        var fillAreaRT = fillAreaGO.AddComponent<RectTransform>();
+        fillAreaRT.anchorMin = Vector2.zero;
+        fillAreaRT.anchorMax = Vector2.one;
+        fillAreaRT.offsetMin = new Vector2(0, 1);
+        fillAreaRT.offsetMax = new Vector2(0, -5);
+
+        var fillGO = new GameObject("Fill");
+        fillGO.transform.SetParent(fillAreaGO.transform, false);
+        var fill = fillGO.AddComponent<Image>();
+        fill.color = UIManager._theme.AccentPrimary;
+        var fillRT = fillGO.GetComponent<RectTransform>();
+        fillRT.anchorMin = Vector2.zero;
+        fillRT.anchorMax = Vector2.one;
+        fillRT.offsetMin = Vector2.zero;
+        fillRT.offsetMax = Vector2.zero;
+        slider.fillRect = fillRT;
+
+        // handle
+        var handleGO = new GameObject("Handle");
+        handleGO.transform.SetParent(sliderGO.transform, false);
+        var handle = handleGO.AddComponent<Image>();
+        handle.color = UIManager._theme.BgInput;
+        var handleRT = handleGO.GetComponent<RectTransform>();
+        handleRT.sizeDelta = new Vector2(width, 10);
+        slider.handleRect = handleRT;
+
+        slider.value = Mathf.Clamp(initialValue, min, max);
+
+        EventHelper.AddListener(v => onChanged?.Invoke(v), slider.onValueChanged);
+
+        return slider;
+    }
+
     private static float InferFloatStep(float min, float max)
     {
         var range = Mathf.Abs(max - min);

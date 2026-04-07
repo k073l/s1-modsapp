@@ -82,6 +82,7 @@ public class ColorInputHandler : IPreferenceInputHandler
     private void ShowColorPicker(Color initialColor, Action<Color> onColorSelected)
     {
         var current = initialColor;
+        Color.RGBToHSV(current, out var initH, out var initS, out var initV);
 
         var panel = new FloatingPanelComponent(460, 560, "Color Picker");
         var content = panel.ContentPanel.transform;
@@ -110,7 +111,10 @@ public class ColorInputHandler : IPreferenceInputHandler
         InputField hexField = null;
         RectTransform knobRT = null;
         Image knobFillImg = null;
+        Image knobBorderImg = null;
+        Slider vSlider = null;
 
+        var currentV = initV;
         var syncing = false;
 
         void SyncAll()
@@ -132,17 +136,22 @@ public class ColorInputHandler : IPreferenceInputHandler
 
             if (hexField != null) hexField.text = ColorUtility.ToHtmlStringRGBA(current);
 
-            // sync knob position to current HSV
-            Color.RGBToHSV(current, out var h, out var s, out _);
+            Color.RGBToHSV(current, out var h, out var s, out var v);
+            currentV = v;
+
+            if (vSlider != null) vSlider.SetValueWithoutNotify(currentV);
+
             if (knobRT != null)
             {
                 var angle = h * 2f * Mathf.PI;
-                var radius = 120f;
+                const float radius = 120f;
                 knobRT.anchoredPosition = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * s * radius;
             }
 
             if (knobFillImg != null)
-                knobFillImg.color = Color.HSVToRGB(h, s, 1f);
+                knobFillImg.color = Color.HSVToRGB(h, s, currentV);
+            if (knobBorderImg != null)
+                knobBorderImg.color = Color.black;
 
             syncing = false;
         }
@@ -154,17 +163,25 @@ public class ColorInputHandler : IPreferenceInputHandler
         wheelSlotLE.preferredHeight = 260;
         wheelSlotLE.flexibleHeight = 0;
 
+        var wheelHLG = wheelSlot.AddComponent<HorizontalLayoutGroup>();
+        wheelHLG.spacing = 24;
+        wheelHLG.childAlignment = TextAnchor.MiddleRight;
+        wheelHLG.childControlWidth = false;
+        wheelHLG.childForceExpandWidth = false;
+        wheelHLG.childForceExpandHeight = false;
+        wheelHLG.childControlHeight = false;
+
         const float wheelSize = 240f;
         const float wheelRadius = wheelSize / 2f;
+        const float vSliderW = 18f;
 
         var wheelGO = new GameObject("ColorWheel");
         wheelGO.transform.SetParent(wheelSlot.transform, false);
         var wheelRT = wheelGO.AddComponent<RectTransform>();
-        wheelRT.anchorMin = new Vector2(0.5f, 0.5f);
-        wheelRT.anchorMax = new Vector2(0.5f, 0.5f);
-        wheelRT.pivot = new Vector2(0.5f, 0.5f);
         wheelRT.sizeDelta = new Vector2(wheelSize, wheelSize);
-        wheelRT.anchoredPosition = Vector2.zero;
+        var wheelLE = wheelGO.AddComponent<LayoutElement>();
+        wheelLE.preferredWidth = wheelSize;
+        wheelLE.preferredHeight = wheelSize;
 
         var wheelImage = wheelGO.AddComponent<RawImage>();
         wheelImage.texture = GenerateColorWheelTexture((int)wheelSize);
@@ -176,6 +193,7 @@ public class ColorInputHandler : IPreferenceInputHandler
         knobImg.type = Image.Type.Simple;
         knobRT = knobGO.GetComponent<RectTransform>();
         knobRT.sizeDelta = new Vector2(16, 16);
+        knobBorderImg = knobImg;
 
         var knobFillGO = new GameObject("Fill");
         knobFillGO.transform.SetParent(knobGO.transform, false);
@@ -186,6 +204,44 @@ public class ColorInputHandler : IPreferenceInputHandler
         var knobFillRT = knobFillGO.GetComponent<RectTransform>();
         knobFillRT.anchoredPosition = Vector2.zero;
         knobFillRT.sizeDelta = new Vector2(10, 10);
+
+        var vRow = new GameObject("VSliderRow");
+        vRow.transform.SetParent(wheelSlot.transform, false);
+
+        var vRowHLG = vRow.AddComponent<HorizontalLayoutGroup>();
+        vRowHLG.spacing = 8;
+        vRowHLG.childAlignment = TextAnchor.MiddleCenter;
+        vRowHLG.childControlWidth = false;
+        vRowHLG.childForceExpandWidth = false;
+        vRowHLG.childForceExpandHeight = false;
+        vRowHLG.childControlHeight = false;
+
+        vSlider = SliderFactory.CreateVerticalSlider(
+            vRow.transform, "BrightnessSlider",
+            0f, 1f, initV,
+            vSliderW, wheelSize,
+            v =>
+            {
+                if (syncing) return;
+                currentV = v;
+                Color.RGBToHSV(current, out var h, out var s, out _);
+                var rgb = Color.HSVToRGB(h, s, currentV);
+                current.r = rgb.r;
+                current.g = rgb.g;
+                current.b = rgb.b;
+                if (knobFillImg != null) knobFillImg.color = Color.HSVToRGB(h, s, currentV);
+                SyncAll();
+            });
+
+        var vLabel = UIFactory.Text(
+            "VLabel",
+            "V",
+            vRow.transform,
+            _theme.SizeSmall,
+            TextAnchor.MiddleLeft
+        );
+        vLabel.color = _theme.TextSecondary;
+        vLabel.gameObject.GetOrAddComponent<LayoutElement>().preferredWidth = 12;
 
         var canvas = wheelGO.GetComponentInParent<Canvas>();
         var worldCamera = canvas != null ? canvas.worldCamera : null;
@@ -204,13 +260,13 @@ public class ColorInputHandler : IPreferenceInputHandler
             if (hue < 0) hue += 1f;
             var sat = Mathf.Min(norm.magnitude, 1f);
 
-            var rgb = Color.HSVToRGB(hue, sat, 1f);
+            var rgb = Color.HSVToRGB(hue, sat, currentV);
             current.r = rgb.r;
             current.g = rgb.g;
             current.b = rgb.b;
 
             knobRT.anchoredPosition = norm * wheelRadius;
-            knobFill.color = rgb;
+            knobFill.color = Color.HSVToRGB(hue, sat, currentV);
 
             SyncAll();
         }

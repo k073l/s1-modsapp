@@ -4,6 +4,7 @@
 - Fixed an issue where long entry labels/hints would shrink input fields too much
 - Added a "Reset to Default" button for each entry that resets it to the default value
 - Added a "Maximize" button to ModsApp that expands the phone to near fullscreen size for easier navigation
+- Add brightness slider (V) to Color Picker
 ## 1.2.2
 - Removed the width limit on slider input field
 - Improved Color Picker by adding RGB sliders and hex input
