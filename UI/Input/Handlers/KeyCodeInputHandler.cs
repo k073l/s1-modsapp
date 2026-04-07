@@ -1,7 +1,5 @@
-﻿using MelonLoader;
-using System;
-using System.Collections;
-using System.Linq;
+﻿using System.Collections;
+using MelonLoader;
 using S1API.Input;
 using S1API.Internal.Abstraction;
 using UnityEngine;

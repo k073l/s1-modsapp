@@ -1,6 +1,4 @@
-﻿using System;
-using UnityEngine;
-using MelonLoader;
+﻿using MelonLoader;
 using ModsApp.Helpers;
 using ModsApp.Helpers.Registries;
 using ModsApp.UI;
@@ -8,6 +6,7 @@ using ModsApp.UI.Panels;
 using ModsApp.UI.Themes;
 using S1API.Internal.Abstraction;
 using S1API.UI;
+using UnityEngine;
 using UnityEngine.UI;
 using Object = UnityEngine.Object;
 

@@ -4,7 +4,6 @@ using ModsApp.Managers;
 using S1API.Input;
 using S1API.Internal.Abstraction;
 using UnityEngine;
-using UnityEngine.Events;
 using UnityEngine.UI;
 
 namespace ModsApp.UI.Input.FieldFactories;

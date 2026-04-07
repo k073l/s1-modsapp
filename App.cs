@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections;
-using System.IO;
+﻿using System.Collections;
 using System.Reflection;
 using MelonLoader;
 using MelonLoader.Utils;
@@ -9,7 +7,6 @@ using ModsApp.Helpers.Registries;
 using ModsApp.Managers;
 using ModsApp.UI;
 using ModsApp.UI.Input.FieldFactories;
-using ModsApp.UI.Input.Handlers;
 using ModsApp.UI.Panels;
 using S1API.Input;
 using S1API.PhoneApp;

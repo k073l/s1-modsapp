@@ -1,4 +1,3 @@
-using System;
 using MelonLoader;
 using ModsApp.UI.Themes;
 using UnityEngine;

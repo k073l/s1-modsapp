@@ -1,13 +1,10 @@
-﻿using System;
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 using MelonLoader;
 using MelonLoader.Utils;
 using ModsApp.Managers;
-using Newtonsoft.Json;
 using ModsApp.UI;
+using Newtonsoft.Json;
 using S1API.Internal.Abstraction;
-using S1API.UI;
-using S1API.Utils;
 using Semver;
 using UnityEngine;
 using UnityEngine.UI;

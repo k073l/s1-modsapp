@@ -1,15 +1,13 @@
-﻿using System;
-using MelonLoader;
+﻿using MelonLoader;
 using ModsApp.Helpers;
+using ModsApp.UI.Input.FieldFactories;
+using ModsApp.UI.Panels;
 using S1API.Input;
 using S1API.Internal.Abstraction;
 using S1API.UI;
-using ModsApp.Managers;
-using ModsApp.UI.Input.FieldFactories;
-using ModsApp.UI.Panels;
 using UnityEngine;
-using UnityEngine.UI;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 namespace ModsApp.UI.Input.Handlers;
 

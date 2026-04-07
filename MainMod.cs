@@ -1,12 +1,8 @@
 using MelonLoader;
-using MelonLoader.Preferences;
 using ModsApp.Helpers;
 using ModsApp.Helpers.Registries;
 using ModsApp.Managers;
-using ModsApp.UI;
 using ModsApp.UI.Panels;
-using ModsApp.UI.Themes;
-using UnityEngine;
 
 [assembly: MelonInfo(
     typeof(ModsApp.ModsApp),

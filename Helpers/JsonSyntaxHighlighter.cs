@@ -1,6 +1,4 @@
-﻿using System;
-using System.Text;
-using MelonLoader;
+﻿using System.Text;
 using ModsApp.Managers;
 using UnityEngine;
 

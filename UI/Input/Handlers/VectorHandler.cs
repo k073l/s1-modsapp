@@ -1,12 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Reflection;
-using UnityEngine;
-using UnityEngine.UI;
+﻿using System.Reflection;
 using MelonLoader;
 using ModsApp.UI.Input.FieldFactories;
 using S1API.Internal.Abstraction;
 using S1API.UI;
+using UnityEngine;
+using UnityEngine.UI;
 
 namespace ModsApp.UI.Input.Handlers;
 

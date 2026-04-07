@@ -1,6 +1,5 @@
 ﻿using MelonLoader;
 using ModsApp.Helpers;
-using ScheduleOne.DevUtilities;
 using UnityEngine;
 
 namespace ModsApp.Managers;

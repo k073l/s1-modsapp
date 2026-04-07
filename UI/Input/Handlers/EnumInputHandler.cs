@@ -1,8 +1,6 @@
 ﻿using MelonLoader;
-using System;
-using System.Linq;
-using UnityEngine;
 using ModsApp.UI.Input.FieldFactories;
+using UnityEngine;
 
 namespace ModsApp.UI.Input.Handlers
 {

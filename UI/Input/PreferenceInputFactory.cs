@@ -1,13 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using UnityEngine;
-using UnityEngine.UI;
-using MelonLoader;
-using ModsApp.Helpers;
+﻿using MelonLoader;
 using ModsApp.UI.Input.Handlers;
-using S1API.UI;
-using S1API.Input;
-using Object = UnityEngine.Object;
+using UnityEngine;
 
 namespace ModsApp.UI.Input;
 

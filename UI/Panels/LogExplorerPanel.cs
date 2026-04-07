@@ -1,10 +1,9 @@
-﻿using MelonLoader;
+﻿using System.Text;
+using MelonLoader;
 using ModsApp.Helpers;
 using ModsApp.Managers;
 using ModsApp.UI.Input.FieldFactories;
 using S1API.UI;
-using System.Text;
-using S1API.Utils;
 using UnityEngine;
 using UnityEngine.UI;
 

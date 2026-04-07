@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using MelonLoader;
+﻿using MelonLoader;
 using ModsApp.Helpers;
 using ModsApp.Managers;
 using ModsApp.UI.Input.FieldFactories;

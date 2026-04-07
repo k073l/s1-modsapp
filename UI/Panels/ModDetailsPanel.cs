@@ -1,10 +1,4 @@
-﻿using System.Collections;
-using System.Linq;
-using UnityEngine;
-using S1API.UI;
-using MelonLoader;
-using UnityEngine.UI;
-using System.Collections.Generic;
+﻿using MelonLoader;
 using ModsApp.Helpers;
 using ModsApp.Helpers.Registries;
 using ModsApp.Managers;
@@ -13,7 +7,9 @@ using ModsApp.UI.Input.FieldFactories;
 using ModsApp.UI.Input.Handlers;
 using S1API.Input;
 using S1API.Internal.Abstraction;
-using S1API.Utils;
+using S1API.UI;
+using UnityEngine;
+using UnityEngine.UI;
 
 namespace ModsApp.UI.Panels;
 

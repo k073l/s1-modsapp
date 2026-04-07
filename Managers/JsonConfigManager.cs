@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-using System.IO;
-using MelonLoader;
+﻿using MelonLoader;
 using MelonLoader.Utils;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
