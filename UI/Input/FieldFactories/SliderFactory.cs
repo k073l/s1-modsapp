@@ -101,7 +101,7 @@ public static class SliderFactory
         // input field
         var stringValue = wholeNumbers
             ? ((int)initialValue).ToString()
-            : initialValue.ToString(
+            : initialValue.ToString("G6",
                 CultureInfo.InvariantCulture);
 
         var field = InputFieldFactory.CreateInputField(
