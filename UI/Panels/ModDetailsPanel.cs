@@ -1,4 +1,5 @@
-﻿using MelonLoader;
+﻿using System.Collections;
+using MelonLoader;
 using ModsApp.Helpers;
 using ModsApp.Helpers.Registries;
 using ModsApp.Managers;
@@ -22,6 +23,7 @@ public class ModDetailsPanel
     private readonly PreferenceInputFactory _inputFactory;
 
     private RectTransform _detailsContent;
+    private ScrollRect _scrollRect;
     private Dictionary<string, object> _modifiedPreferences = new Dictionary<string, object>();
     private HashSet<string> _modifiedMods = new HashSet<string>();
     private Text _modifiedLabel;
@@ -50,6 +52,9 @@ public class ModDetailsPanel
 
     private GameObject _actionButtonContainer;
 
+    public RectTransform GetDetailsContent() => _detailsContent;
+    public GameObject GetActionButtonContainer() => _actionButtonContainer;
+
     public void Initialize()
     {
         var rightPanel = UIFactory.Panel("ModDetailsPanel", _parent, _theme.BgCard,
@@ -77,6 +82,7 @@ public class ModDetailsPanel
 
         _detailsContent =
             UIFactory.ScrollableVerticalList("ModDetailsContent", scrollWrapper.transform, out var scrollRect);
+        _scrollRect = scrollRect;
         // modify the mask
         var viewport = scrollRect.viewport;
         viewport.GetComponent<Image>()?.MakeRounded();
@@ -1112,5 +1118,69 @@ public class ModDetailsPanel
         resetColors.disabledColor =
             new Color(_theme.WarningColor.r, _theme.WarningColor.g, _theme.WarningColor.b, 0.3f);
         _resetButton.colors = resetColors;
+    }
+
+    public void ProcessPendingScroll(MelonPreferences_Category category, MelonPreferences_Entry entry)
+    {
+        if (_scrollRect == null) return;
+        
+        var categoryPanelName = $"{UIHelper.SanitizeName(category.Identifier)}_Category";
+        var categoryPanel = _detailsContent.transform.FindChildWithNameRecursive(categoryPanelName);
+        if (categoryPanel == null) return;
+        
+        var targetPanel = categoryPanel;
+        if (entry != null)
+        {
+            var entryIdentifier = entry.DisplayName ?? entry.Identifier ?? "Entry";
+            var entryPanelName = $"{UIHelper.SanitizeName(category.Identifier)}_{UIHelper.SanitizeName(entryIdentifier)}_Container";
+            var entryPanel = _detailsContent.transform.FindChildWithNameRecursive(entryPanelName);
+            if (entryPanel != null) targetPanel = entryPanel;
+        }
+
+        MelonCoroutines.Start(entry != null
+            ? ScrollToTargetCoroutine(targetPanel.GetComponent<RectTransform>(), alignTop: false)
+            : ScrollToTargetCoroutine(targetPanel.GetComponent<RectTransform>(), alignTop: true));
+        return;
+
+        IEnumerator ScrollToTargetCoroutine(RectTransform target, bool alignTop = false, int maxFrames = 10, float stopThreshold = 0.5f)
+        {
+            if (_scrollRect == null || target == null) yield break;
+
+            var content = _scrollRect.content;
+            var viewport = _scrollRect.viewport;
+
+            for (var i = 0; i < maxFrames; i++)
+            {
+                Canvas.ForceUpdateCanvases();
+                yield return null; // wait a frame for nested layouts to settle
+
+                float offsetY;
+
+                Vector2 viewportLocalPos = content.InverseTransformPoint(viewport.position);
+                Vector2 targetLocalPos = content.InverseTransformPoint(target.position);
+                if (alignTop)
+                {
+                    var targetTopY = targetLocalPos.y + target.rect.height * (1 - target.pivot.y);
+                    offsetY = targetTopY - viewportLocalPos.y;
+                }
+                else
+                {
+                    offsetY = targetLocalPos.y - viewportLocalPos.y;
+                }
+
+                var scrollableHeight = content.rect.height - viewport.rect.height;
+                if (scrollableHeight <= 0f) break;
+
+                var normalizedDelta = offsetY / scrollableHeight;
+
+                _scrollRect.verticalNormalizedPosition = Mathf.Lerp(
+                    _scrollRect.verticalNormalizedPosition,
+                    _scrollRect.verticalNormalizedPosition + normalizedDelta,
+                    0.5f
+                );
+
+                if (Mathf.Abs(offsetY) < stopThreshold) break;
+            }
+        }
     }
 }

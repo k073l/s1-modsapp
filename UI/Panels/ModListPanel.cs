@@ -1,10 +1,8 @@
-﻿using MelonLoader;
+using MelonLoader;
 using ModsApp.Helpers;
 using ModsApp.Helpers.Registries;
 using ModsApp.Managers;
-using ModsApp.UI.Input.FieldFactories;
-using S1API.Input;
-using S1API.Internal.Abstraction;
+using ModsApp.UI.Search;
 using S1API.UI;
 using UnityEngine;
 using UnityEngine.UI;
@@ -15,6 +13,7 @@ public class ModListPanel
 {
     public event Action<MelonMod> OnModSelected;
     public event Action<InactiveModInfo> OnInactiveModSelected;
+    public event Action<IReadOnlyList<SearchResult>, string> OnAllModsSelected;
 
     private readonly Transform _parent;
     private readonly ModManager _modManager;
@@ -29,11 +28,16 @@ public class ModListPanel
 
     private bool _isUnassignedSelected;
     public const string UnassignedButtonName = "Unassigned";
+    public const string AllModsButtonName = "All Mods";
+    private bool _isAllModsSelected;
+    public bool IsAllModsSelected => _isAllModsSelected;
+    private IReadOnlyList<SearchResult> _searchResults = new List<SearchResult>();
 
     private IEnumerable<MelonMod> _allMods = Enumerable.Empty<MelonMod>();
     private string _searchQuery = string.Empty;
-    private InputField _searchInput;
-    private Button _clearButton;
+
+    private SearchManager _searchManager;
+    private SearchBar _searchBar;
 
     public ModListPanel(Transform parent, ModManager modManager, UITheme theme, MelonLogger.Instance logger)
     {
@@ -41,6 +45,7 @@ public class ModListPanel
         _modManager = modManager;
         _theme = theme;
         _logger = logger;
+        _searchManager = new SearchManager(modManager);
     }
 
     public void Initialize()
@@ -54,8 +59,8 @@ public class ModListPanel
 
         UIHelper.AddBorderEffect(leftPanel, _theme.AccentPrimary);
 
-        InitializeSearchPanel(leftPanel);
-
+        _searchBar = new SearchBar(_searchManager, _theme, OnSearchChanged, OnAllModsResultsReady);
+        _searchBar.Initialize(leftPanel);
         var listPanel = UIFactory.Panel("ListPanel", leftPanel.transform, _theme.BgPrimary);
         listPanel.GetComponent<Image>()?.MakeRounded(12, 48);
         UIHelper.ForceRectToAnchors(listPanel.GetComponent<RectTransform>(),
@@ -67,110 +72,23 @@ public class ModListPanel
         UIHelper.ForceRectToAnchors(_listContent, Vector2.zero, Vector2.one,
             Vector2.zero, Vector2.zero, new Vector2(0.5f, 1f));
         UIHelper.SetupLayoutGroup(_listContent.gameObject, 4, false, new RectOffset(8, 8, 8, 8));
-
-        UIHelper.DumpRect("ModListPanel", leftPanel.GetComponent<RectTransform>());
-        UIHelper.DumpRect("ModListContent", _listContent);
     }
 
-    private void InitializeSearchPanel(GameObject leftPanel)
+    private void OnSearchChanged(string query)
     {
-        var searchPanel = UIFactory.Panel("SearchPanel", leftPanel.transform, _theme.BgCard);
-        searchPanel.GetComponent<Image>()?.MakeRounded(4, 16);
-        UIHelper.ForceRectToAnchors(searchPanel.GetComponent<RectTransform>(),
-            new Vector2(0f, 0.85f), new Vector2(1f, 0.95f),
-            Vector2.zero, Vector2.zero);
-
-        var searchLayout = searchPanel.GetComponent<HorizontalLayoutGroup>();
-        if (searchLayout == null) searchLayout = searchPanel.AddComponent<HorizontalLayoutGroup>();
-        searchLayout.spacing = 4;
-        searchLayout.padding = new RectOffset(8, 8, 0, 1);
-        searchLayout.childControlWidth = true;
-        searchLayout.childForceExpandWidth = false;
-        searchLayout.childForceExpandHeight = false;
-        searchLayout.childAlignment = TextAnchor.UpperCenter;
-
-        _searchInput = InputFieldFactory.CreateInputField(
-            searchPanel,
-            "SearchMods",
-            "",
-            InputField.ContentType.Standard,
-            100,
-            null);
-
-        if (_searchInput != null)
-        {
-            _searchInput.gameObject.GetComponent<Image>()?.MakeRounded(4, 16);
-            var inputLayoutElem = _searchInput.GetComponent<LayoutElement>();
-            if (inputLayoutElem == null) inputLayoutElem = _searchInput.gameObject.AddComponent<LayoutElement>();
-            inputLayoutElem.preferredHeight = 28;
-            inputLayoutElem.flexibleHeight = 0;
-            inputLayoutElem.flexibleWidth = 1;
-
-            // weird hack to not cast
-            ProcessTextInChildren(_searchInput.transform, text =>
-            {
-                if (text.gameObject.name.Contains("Placeholder"))
-                    text.text = "Search mods...";
-            });
-
-            var empty = "";
-            EventHelper.AddListener<string>(text =>
-            {
-                empty = empty;
-                Controls.IsTyping = true;
-                OnSearchTextChanged(text);
-            }, _searchInput.onValueChanged);
-
-            EventHelper.AddListener<string>(_ =>
-            {
-                empty = empty;
-                Controls.IsTyping = false;
-            }, _searchInput.onEndEdit);
-        }
-
-        var (_, clearButton, _) = UIFactory.RoundedButtonWithLabel(
-            "SearchClear", "x", searchPanel.transform, 
-            _theme.TextPrimary * new Color(0, 0, 0, 0.2f), 
-            30, 30, _theme.SizeStandard, _theme.WarningColor);
-        clearButton.gameObject.SetActive(false);
-        _clearButton = clearButton;
-
-        if (clearButton != null)
-        {
-            var clearLayoutElem = clearButton.gameObject.GetComponent<LayoutElement>();
-            if (clearLayoutElem == null) clearLayoutElem = clearButton.gameObject.AddComponent<LayoutElement>();
-            clearLayoutElem.preferredHeight = 28;
-            clearLayoutElem.preferredWidth = 28;
-            clearLayoutElem.flexibleWidth = 0;
-
-            EventHelper.AddListener(OnSearchClear, clearButton.onClick);
-        }
-    }
-
-    private void OnSearchTextChanged(string text)
-    {
-        _searchQuery = text;
-
-        if (_clearButton != null)
-            _clearButton.gameObject.SetActive(!string.IsNullOrWhiteSpace(text));
-
+        _searchQuery = query;
+        _searchResults = _searchBar.Results;
         PopulateList();
+            
+        if (_isAllModsSelected)
+            OnAllModsSelected?.Invoke(_searchResults, _searchQuery);
     }
 
-    private void OnSearchClear()
+    private void OnAllModsResultsReady(IReadOnlyList<SearchResult> results, string query)
     {
-        if (_searchInput != null)
-            _searchInput.text = string.Empty;
-        _searchQuery = string.Empty;
-        PopulateList();
-    }
-
-    private static void ProcessTextInChildren(Transform root, Action<Text> action)
-    {
-        if (root == null) return;
-        if (root.TryGetComponent<Text>(out var text)) action(text);
-        for (var i = 0; i < root.childCount; i++)
-            ProcessTextInChildren(root.GetChild(i), action);
+        _searchResults = results;
+        _searchQuery = query;
+        OnAllModsSelected?.Invoke(results, query);
     }
 
     public void PopulateList()
@@ -186,6 +104,9 @@ public class ModListPanel
 
         if (_modManager.HasUnassignedPreferences())
             CreateModButton(UnassignedButtonName, "Unassigned", "0.0", isUnassigned: true);
+
+        if (_searchResults.Any())
+            CreateModButton(AllModsButtonName, "All Mods", "settings", isUnassigned: false, isAllMods: true);
 
         var modsToShow = FilterMods(_searchQuery).ToList();
         foreach (var mod in modsToShow)
@@ -223,14 +144,15 @@ public class ModListPanel
             mod.Info.Author.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0);
     }
 
-    private void CreateModButton(string internalName, string displayName, string version, bool isUnassigned)
+    private void CreateModButton(string internalName, string displayName, string version, bool isUnassigned,
+        bool isAllMods = false)
     {
         var buttonGo = UIFactory.Panel($"{UIHelper.SanitizeName(internalName)}_Button", _listContent,
             _theme.AccentSecondary);
         buttonGo.GetComponent<Image>()?.MakeRounded(4, 16);
 
         var button = buttonGo.GetOrAddComponent<Button>();
-        UIHelper.SetupButton(button, _theme, () => SelectMod(internalName, isUnassigned));
+        UIHelper.SetupButton(button, _theme, () => SelectMod(internalName, isUnassigned, isAllMods));
         UIHelper.ConfigureButtonLayout(buttonGo.GetComponent<RectTransform>(), 48f);
 
         // Main label
@@ -242,7 +164,7 @@ public class ModListPanel
         UIHelper.ConfigureButtonText(label.rectTransform, new Vector2(0f, 0f), new Vector2(0.65f, 1f), 16f, -8f, 4f,
             -4f);
 
-        if (!isUnassigned)
+        if (!isUnassigned && !isAllMods)
         {
             var mod = _modManager.GetMod(internalName);
             if (mod != null)
@@ -344,18 +266,31 @@ public class ModListPanel
         _modLabels[buttonKey] = label;
     }
 
-    private void SelectMod(string modName, bool isUnassigned)
+    private void SelectMod(string modName, bool isUnassigned, bool isAllMods = false)
     {
         SelectedModName = modName;
         _isUnassignedSelected = isUnassigned;
+        _isAllModsSelected = isAllMods;
         UpdateButtonHighlights();
-        OnModSelected?.Invoke(isUnassigned ? null : _modManager.GetMod(modName));
+        if (isAllMods)
+            OnAllModsSelected?.Invoke(_searchResults, _searchQuery);
+        else
+            OnModSelected?.Invoke(isUnassigned ? null : _modManager.GetMod(modName));
+    }
+
+    public void SelectModByName(string modName)
+    {
+        SelectedModName = modName;
+        _isUnassignedSelected = false;
+        _isAllModsSelected = false;
+        UpdateButtonHighlights();
     }
 
     private void SelectInactiveMod(InactiveModInfo inactive)
     {
         SelectedModName = inactive.FilePath;
         _isUnassignedSelected = false;
+        _isAllModsSelected = false;
         UpdateButtonHighlights();
         OnInactiveModSelected?.Invoke(inactive);
     }

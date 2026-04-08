@@ -3,6 +3,7 @@ using ModsApp.Helpers;
 using ModsApp.Helpers.Registries;
 using ModsApp.UI;
 using ModsApp.UI.Panels;
+using ModsApp.UI.Search;
 using ModsApp.UI.Themes;
 using S1API.Internal.Abstraction;
 using S1API.UI;
@@ -17,6 +18,7 @@ public class UIManager
     private readonly GameObject _container;
     private readonly ModManager _modManager;
     private readonly MelonLogger.Instance _logger;
+    private SearchResultsView _searchResultsView;
 
     internal static ModListPanel ModListPanel;
     private ModDetailsPanel _modDetailsPanel;
@@ -81,6 +83,7 @@ public class UIManager
 
         ModListPanel.Initialize();
         _modDetailsPanel.Initialize();
+        _searchResultsView = new SearchResultsView(_modDetailsPanel.GetDetailsContent(), _theme, _modDetailsPanel.GetActionButtonContainer());
 
         // Connect panels
         ModListPanel.OnModSelected += mod =>
@@ -95,6 +98,20 @@ public class UIManager
             _selectedMod = null;
             _modDetailsPanel.ShowInactiveModDetails(inactive);
         };
+        _searchResultsView.OnNavigateToEntry += (mod, category, entry) =>
+        {
+            _selectedMod = mod;
+            _selectedInactiveMod = null;
+            ModListPanel.SelectModByName(mod.Info.Name);
+            CategoryState.Expand(category, isUserIntent: false);
+            _modDetailsPanel.ShowModDetails(mod);
+            _modDetailsPanel.ProcessPendingScroll(category, entry);
+        };
+        ModListPanel.OnAllModsSelected += (results, searchQuery) =>
+        {
+            _searchResultsView.Show(results, searchQuery);
+        };
+
         _openLogsAction = () =>
         {
             _ = new LogExplorerPanel(_selectedMod);

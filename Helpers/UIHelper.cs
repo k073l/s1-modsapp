@@ -300,20 +300,20 @@ public static class TransformExtensions
 
         foreach (var part in pathParts)
         {
-            currentTransform = FindChildWithNameRecursive(currentTransform, part);
+            currentTransform = currentTransform.FindChildWithNameRecursive(part);
             if (currentTransform == null) return null;
         }
 
         return currentTransform;
     }
 
-    private static Transform FindChildWithNameRecursive(Transform parent, string name)
+    public static Transform FindChildWithNameRecursive(this Transform parent, string name)
     {
         for (var i = 0; i < parent.childCount; i++)
         {
             var child = parent.GetChild(i);
             if (child.name == name) return child;
-            var result = FindChildWithNameRecursive(child, name);
+            var result = child.FindChildWithNameRecursive(name);
             if (result != null) return result;
         }
 
@@ -325,10 +325,12 @@ public static class CategoryState
 {
     private static Dictionary<MelonPreferences_Category, bool> _expandedCategories = new();
     private static HashSet<string> _explicitlySet = new();
+    private static HashSet<MelonPreferences_Category> _tempExpanded = new();
     private static string _savePath = Path.Combine(MelonEnvironment.UserDataDirectory, "ModsApp", "CategoryState.json");
 
     public static bool IsExpanded(MelonPreferences_Category category)
     {
+        if (_tempExpanded.Contains(category)) return true;
         if (!_expandedCategories.TryGetValue(category, out var isExpanded))
         {
             isExpanded = true;
@@ -337,6 +339,23 @@ public static class CategoryState
 
         return isExpanded;
     }
+
+    public static void Expand(MelonPreferences_Category category, bool isUserIntent = true)
+    {
+        if (isUserIntent)
+        {
+            _expandedCategories[category] = true;
+            _explicitlySet.Add(category.Identifier);
+        }
+        else
+        {
+            _tempExpanded.Add(category);
+        }
+    }
+
+    public static bool IsTempExpanded(MelonPreferences_Category category) => _tempExpanded.Contains(category);
+
+    public static void ClearTempExpanded() => _tempExpanded.Clear();
 
     public static bool HasExplicitState(MelonPreferences_Category category) =>
         _explicitlySet.Contains(category.Identifier);
@@ -348,6 +367,7 @@ public static class CategoryState
     {
         _expandedCategories[category] = !IsExpanded(category);
         _explicitlySet.Add(category.Identifier);
+        _tempExpanded.Remove(category);
     }
 
     public static void Load()
