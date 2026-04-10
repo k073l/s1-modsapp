@@ -14,6 +14,7 @@ public static class SettingsRegistry
     public static MelonPreferences_Entry<bool> InputsOnRightEntry;
     public static MelonPreferences_Entry<int> EntryVlgSpacingEntry;
     public static MelonPreferences_Entry<bool> UseNewJsonEditor;
+    public static MelonPreferences_Entry<float> SearchSimilarityThreshold;
 
     public static MelonPreferences_Category ThemesCategory;
 
@@ -57,6 +58,12 @@ public static class SettingsRegistry
             "Use new JSON editor",
             description:
             "Determines if ModsApp should use TMP JSON editor. Set to false if you have any issues (switches to legacy editor)");
+
+        SearchSimilarityThreshold = AccessibilityCategory.CreateEntry("ModsAppSearchSimilarityThreshold", 0.6f,
+            "Search Matching Sensitivity",
+            description:
+            "Controls how closely an item needs to match the search query to be included in results. Higher values will require a closer match, while lower values will include more results with looser matching. 1 disables fuzzy matching",
+            validator: new ValueRange<float>(0.3f, 1f));
 
         ThemesCategory = MelonPreferences.CreateCategory("ModsApp_Themes", "Themes");
         ThemeOptionEntry = ThemesCategory.CreateEntry("ModsAppThemeOption", ThemeOption.Slate,

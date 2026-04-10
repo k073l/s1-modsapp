@@ -1,3 +1,4 @@
+using ModsApp.Helpers.Registries;
 using ModsApp.Managers;
 
 namespace ModsApp.UI.Search;
@@ -5,6 +6,7 @@ namespace ModsApp.UI.Search;
 public class SearchManager
 {
     internal const int MaxSearchResults = 50;
+    public static float SimilarityThreshold => SettingsRegistry.SearchSimilarityThreshold?.Value ?? 0.6f;
     private readonly ModManager _modManager;
 
     public SearchManager(ModManager modManager)
@@ -20,6 +22,7 @@ public class SearchManager
         var results = new List<SearchResult>();
         var addedCategories = new HashSet<string>();
         var addedEntries = new HashSet<string>();
+        var queryLower = query.ToLowerInvariant();
 
         foreach (var mod in _modManager.GetAllMods())
         {
@@ -29,14 +32,15 @@ public class SearchManager
                 var categoryKey = $"{mod.Info.Name}.{category.Identifier}";
 
                 var categoryName = category.DisplayName ?? category.Identifier;
-                var categoryMatches = categoryName.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0 ||
-                                      category.Identifier.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0;
+                var categoryScore = GetWordMatchScore(categoryName, queryLower);
+                var categoryIdScore = GetWordMatchScore(category.Identifier, queryLower);
+                var bestCategoryScore = Math.Max(categoryScore, categoryIdScore);
 
-                if (categoryMatches)
+                if (bestCategoryScore >= SimilarityThreshold)
                 {
                     if (!addedCategories.Contains(categoryKey))
                     {
-                        results.Add(new SearchResult(mod, category, null));
+                        results.Add(new SearchResult(mod, category, null, bestCategoryScore));
                         addedCategories.Add(categoryKey);
                     }
                 }
@@ -48,20 +52,21 @@ public class SearchManager
                     var entryName = entry.DisplayName ?? entry.Identifier;
                     var entryDesc = entry.Description ?? "";
 
-                    var matchesName = entryName.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0;
-                    var matchesDesc = entryDesc.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0;
+                    var nameScore = GetWordMatchScore(entryName, queryLower);
+                    var descScore = GetWordMatchScore(entryDesc, queryLower);
+                    var bestEntryScore = Math.Max(nameScore, descScore);
 
-                    if (matchesName || matchesDesc)
+                    if (bestEntryScore >= SimilarityThreshold)
                     {
                         if (!addedCategories.Contains(categoryKey))
                         {
-                            results.Add(new SearchResult(mod, category, null));
+                            results.Add(new SearchResult(mod, category, null, bestCategoryScore));
                             addedCategories.Add(categoryKey);
                         }
 
                         if (!addedEntries.Contains(entryKey))
                         {
-                            results.Add(new SearchResult(mod, category, entry));
+                            results.Add(new SearchResult(mod, category, entry, bestEntryScore));
                             addedEntries.Add(entryKey);
                         }
                     }
@@ -72,6 +77,35 @@ public class SearchManager
                 break;
         }
 
-        return results;
+        return results
+            .OrderByDescending(r => r.Score)
+            .Take(MaxSearchResults)
+            .ToList();
+    }
+
+    private static float GetWordMatchScore(string text, string query)
+    {
+        if (string.IsNullOrEmpty(text) || string.IsNullOrEmpty(query))
+            return 0f;
+
+        var exactMatch = text.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0;
+        if (exactMatch)
+            return 1f;
+
+        if (SimilarityThreshold >= 1f)
+            return 0f;
+
+        var words = text.Split(' ', '-', '_');
+        var bestScore = 0f;
+
+        foreach (var word in words)
+        {
+            var wordLower = word.ToLowerInvariant();
+            var score = Levenshtein.Similarity(wordLower, query);
+            if (score > bestScore)
+                bestScore = score;
+        }
+
+        return bestScore >= SimilarityThreshold ? bestScore : 0f;
     }
 }

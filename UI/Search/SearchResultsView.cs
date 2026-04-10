@@ -47,7 +47,8 @@ public class SearchResultsView
 
         var grouped = results
             .GroupBy(r => (mod: r.Mod, category: r.Category))
-            .OrderBy(g => g.Key.mod.Info.Name)
+            .OrderByDescending(g => g.Max(r => r.Score))
+            .ThenBy(g => g.Key.mod.Info.Name)
             .ThenBy(g => g.Key.category.DisplayName ?? g.Key.category.Identifier);
 
         var resultsCard = CreateInfoCard("AllModsSearchResultsCard");
@@ -109,10 +110,42 @@ public class SearchResultsView
         if (string.IsNullOrEmpty(query) || string.IsNullOrEmpty(text)) return text;
 
         var index = text.IndexOf(query, StringComparison.OrdinalIgnoreCase);
+        if (index >= 0)
+            return ApplyHighlight(text, index, query.Length);
+
+        if (SearchManager.SimilarityThreshold >= 1f)
+            return text;
+
+        var queryLower = query.ToLowerInvariant();
+        var words = text.Split(' ', '-', '_', '.', ',', ':', ';', '(', ')', '[', ']');
+        var bestWord = "";
+        var bestScore = 0f;
+
+        foreach (var word in words)
+        {
+            if (string.IsNullOrEmpty(word)) continue;
+
+            var wordLower = word.ToLowerInvariant();
+            var score = Levenshtein.Similarity(wordLower, queryLower);
+            if (score > bestScore)
+            {
+                bestScore = score;
+                bestWord = word;
+            }
+        }
+
+        if (bestScore < SearchManager.SimilarityThreshold) return text;
+
+        index = text.IndexOf(bestWord, StringComparison.OrdinalIgnoreCase);
         if (index < 0) return text;
 
+        return ApplyHighlight(text, index, bestWord.Length);
+    }
+
+    private string ApplyHighlight(string text, int index, int length)
+    {
         var hex = ColorUtility.ToHtmlStringRGB(_theme.AccentPrimary);
-        return text.Insert(index + query.Length, "</color>")
+        return text.Insert(index + length, "</color>")
             .Insert(index, $"<color=#{hex}>");
     }
 
@@ -189,12 +222,9 @@ public class SearchResultsView
 
         if (!string.IsNullOrEmpty(entry.Description))
         {
-            var descToShow = entry.Description;
-            if (!string.IsNullOrEmpty(searchQuery) &&
-                entry.Description.IndexOf(searchQuery, StringComparison.OrdinalIgnoreCase) >= 0)
-            {
-                descToShow = HighlightMatch(entry.Description, searchQuery);
-            }
+            var descToShow = !string.IsNullOrEmpty(searchQuery)
+                ? HighlightMatch(entry.Description, searchQuery)
+                : entry.Description;
 
             var descText = UIFactory.Text($"EntryDesc_{entry.Identifier}", descToShow,
                 entryRow.transform, _theme.SizeSmall, TextAnchor.UpperLeft);

@@ -79,7 +79,7 @@ public class ModListPanel
         _searchQuery = query;
         _searchResults = _searchBar.Results;
         PopulateList();
-            
+
         if (_isAllModsSelected)
             OnAllModsSelected?.Invoke(_searchResults, _searchQuery);
     }
@@ -139,9 +139,32 @@ public class ModListPanel
         if (string.IsNullOrWhiteSpace(query))
             return _allMods;
 
-        return _allMods.Where(mod =>
-            mod.Info.Name.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0 ||
-            mod.Info.Author.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0);
+        var queryLower = query.ToLowerInvariant();
+        var threshold = SearchManager.SimilarityThreshold;
+
+        return _allMods
+            .Select(mod => new { Mod = mod, Score = GetModScore(mod, queryLower) })
+            .Where(x => x.Score >= threshold)
+            .OrderByDescending(x => x.Score)
+            .Select(x => x.Mod);
+    }
+
+    private static float GetModScore(MelonMod mod, string queryLower)
+    {
+        var name = mod.Info.Name;
+        var author = mod.Info.Author ?? "";
+
+        var exactMatch = name.IndexOf(queryLower, StringComparison.OrdinalIgnoreCase) >= 0 ||
+                         author.IndexOf(queryLower, StringComparison.OrdinalIgnoreCase) >= 0;
+        if (exactMatch)
+            return 1f;
+
+        if (SearchManager.SimilarityThreshold >= 1f)
+            return 0f;
+
+        var nameScore = Levenshtein.Similarity(name.ToLowerInvariant(), queryLower);
+        var authorScore = Levenshtein.Similarity(author.ToLowerInvariant(), queryLower);
+        return Math.Max(nameScore, authorScore);
     }
 
     private void CreateModButton(string internalName, string displayName, string version, bool isUnassigned,
