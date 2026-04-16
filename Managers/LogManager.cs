@@ -25,8 +25,10 @@ public class LogManager
     public static LogManager Instance => _instance ??= new LogManager();
 
     private const int PerModCap = 200;
+    private const int PerModErrorCap = 10;
 
     private readonly List<LogEntry> _globalBuffer = new();
+    private readonly Dictionary<string, Queue<LogEntry>> _recentErrors = new();
 
     // section string -> resolved mod Info.Name
     private readonly Dictionary<string, string> _sectionToModName
@@ -123,34 +125,50 @@ public class LogManager
 
     private void Append(string section, string message, LogLevel level)
     {
-        var modKey = Resolve(section) ?? section;
+        var resolved = Resolve(section);
+        var modKey = resolved ?? section;
 
-        _modEntryCount.TryGetValue(modKey, out var count);
-
-        if (count >= PerModCap)
+        var entry = new LogEntry
         {
-            // remove this mod's oldest entry
-            for (var i = 0; i < _globalBuffer.Count; i++)
-            {
-                if (EntryModKey(_globalBuffer[i]) == modKey)
-                {
-                    _globalBuffer.RemoveAt(i);
-                    _modEntryCount[modKey]--;
-                    break;
-                }
-            }
-        }
-
-        _globalBuffer.Add(new LogEntry
-        {
-            ModName = Resolve(section),
+            ModName = resolved,
             Section = section,
             Message = message,
             Level = level,
             Time = DateTime.Now
-        });
+        };
 
-        _modEntryCount[modKey] = (_modEntryCount.TryGetValue(modKey, out var c) ? c : 0) + 1;
+        _globalBuffer.Add(entry);
+
+        _modEntryCount[modKey] = _modEntryCount.GetValueOrDefault(modKey) + 1;
+
+        // Cleanup
+        if (level == LogLevel.Error)
+        {
+            if (!_recentErrors.TryGetValue(modKey, out var q))
+            {
+                q = new Queue<LogEntry>();
+                _recentErrors[modKey] = q;
+            }
+
+            q.Enqueue(entry);
+
+            if (q.Count > PerModErrorCap)
+                q.Dequeue();
+        }
+
+        if (_modEntryCount[modKey] > PerModCap)
+        {
+            // remove this mod's oldest entry
+            for (var i = 0; i < _globalBuffer.Count; i++)
+            {
+                if (EntryModKey(_globalBuffer[i]) != modKey)
+                    continue;
+
+                _globalBuffer.RemoveAt(i);
+                _modEntryCount[modKey]--;
+                break;
+            }
+        }
     }
 
     private string Resolve(string section)
@@ -175,11 +193,24 @@ public class LogManager
     private string EntryModKey(LogEntry e) =>
         e.ModName ?? e.Section;
 
-    public IEnumerable<LogEntry> GetLogsForMod(string modName, params LogLevel[] levels) =>
-        Filter(_globalBuffer.Where(e => e.ModName == modName), levels);
+    public IEnumerable<LogEntry> GetLogsForMod(string modName, params LogLevel[] levels)
+    {
+        var baseLogs = _globalBuffer.Where(e => e.ModName == modName);
 
-    public IEnumerable<LogEntry> GetAllLogs(params LogLevel[] levels) =>
-        Filter(_globalBuffer, levels);
+        var stickyErrors =
+            _recentErrors.TryGetValue(modName, out var q)
+                ? q
+                : Enumerable.Empty<LogEntry>();
+
+        return Dedup(Filter(baseLogs.Concat(stickyErrors), levels));
+    }
+
+    public IEnumerable<LogEntry> GetAllLogs(params LogLevel[] levels)
+    {
+        var sticky = _recentErrors.Values.SelectMany(q => q);
+
+        return Dedup(Filter(_globalBuffer.Concat(sticky), levels));
+    }
 
     public bool HasErrorsForMod(string modName) =>
         ModsWithErrors.Contains(modName);
@@ -189,4 +220,10 @@ public class LogManager
         levels.Length == 0
             ? source
             : source.Where(e => levels.Contains(e.Level));
+    
+    private static IEnumerable<LogEntry> Dedup(IEnumerable<LogEntry> logs)
+    {
+        return logs.GroupBy(e => (e.Time, e.Message, e.ModName, e.Level))
+            .Select(g => g.First());
+    }
 }
