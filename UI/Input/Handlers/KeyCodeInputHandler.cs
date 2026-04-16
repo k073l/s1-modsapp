@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using MelonLoader;
 using S1API.Input;
 using S1API.Internal.Abstraction;
@@ -52,6 +52,13 @@ public class KeyCodeInputHandler : IPreferenceInputHandler
     {
         _rebindInput?.Destroy();
         CreateInput(_entry, _parent, _entryKey, currentValue, _onValueChanged);
+    }
+
+    public void CreateStandaloneInput(Type valueType, GameObject parent, string entryKey, object currentValue, Action<object> onValueChanged)
+    {
+        var keyCodeValue = currentValue is KeyCode k ? k : KeyCode.None;
+        _rebindInput = new KeyCodeRebindInput(parent, "Standalone", keyCodeValue, _theme, _logger, _rebindManager);
+        _rebindInput.OnValueChanged += (newKeyCode) => onValueChanged(newKeyCode);
     }
 }
 

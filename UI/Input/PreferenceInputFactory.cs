@@ -1,4 +1,5 @@
-﻿using MelonLoader;
+using System.Collections;
+using MelonLoader;
 using ModsApp.UI.Input.Handlers;
 using UnityEngine;
 
@@ -25,6 +26,7 @@ public class PreferenceInputFactory
             () => new ColorInputHandler(_theme, _logger),
             () => new EnumInputHandler(_theme, _logger),
             () => new VectorHandler(_theme, _logger),
+            () => new ListInputHandler(_theme, _logger, this),
             () => new FallbackInputHandler(_theme, _logger)
         ];
     }
@@ -49,5 +51,20 @@ public class PreferenceInputFactory
     public void RegisterHandler(Func<IPreferenceInputHandler> handlerFactory)
     {
         _handlerFactories.Insert(_handlerFactories.Count - 1, handlerFactory);
+    }
+
+    public IPreferenceInputHandler CreateInnerInput(Type innerType, GameObject parent,
+        string entryKey, object currentValue, Action<object> onItemChanged)
+    {
+        foreach (var handlerFactory in _handlerFactories)
+        {
+            var handler = handlerFactory();
+            if (handler.CanHandle(innerType))
+            {
+                handler.CreateStandaloneInput(innerType, parent, entryKey, currentValue, v => onItemChanged(v));
+                return handler;
+            }
+        }
+        return null;
     }
 }

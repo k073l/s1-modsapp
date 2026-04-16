@@ -1,4 +1,4 @@
-﻿using MelonLoader;
+using MelonLoader;
 using ModsApp.Helpers;
 using ModsApp.UI.Input.FieldFactories;
 using ModsApp.UI.Panels;
@@ -76,6 +76,38 @@ public class ColorInputHandler : IPreferenceInputHandler
             UnityEngine.Object.DestroyImmediate(_colorButtonGO);
 
         CreateInput(_entry, _parent, _entryKey, currentValue, _onValueChanged);
+    }
+
+    public void CreateStandaloneInput(Type valueType, GameObject parent, string entryKey, object currentValue, Action<object> onValueChanged)
+    {
+        var colorValue = currentValue is Color c ? c : Color.white;
+
+        _colorButtonGO = new GameObject("StandaloneColorButton");
+        _colorButtonGO.transform.SetParent(parent.transform, false);
+
+        var buttonImage = _colorButtonGO.AddComponent<Image>();
+        buttonImage.color = colorValue;
+        var btnOutline = _colorButtonGO.AddComponent<Outline>();
+        btnOutline.effectColor = _theme.BgInput;
+        btnOutline.effectDistance = new Vector2(1.5f, 1.5f);
+
+        var button = _colorButtonGO.AddComponent<Button>();
+        EventHelper.AddListener(() =>
+        {
+            ShowColorPicker(colorValue, newColor =>
+            {
+                if (newColor == colorValue) return;
+                colorValue = newColor;
+                buttonImage.color = colorValue;
+                onValueChanged(colorValue);
+            });
+        }, button.onClick);
+
+        var layout = _colorButtonGO.AddComponent<LayoutElement>();
+        layout.minWidth = 50;
+        layout.minHeight = 20;
+
+        _colorButtonGO.GetOrAddComponent<RectTransform>();
     }
 
 

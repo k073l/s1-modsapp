@@ -1,4 +1,4 @@
-﻿using MelonLoader;
+using MelonLoader;
 using ModsApp.UI.Input.FieldFactories;
 using UnityEngine;
 
@@ -70,6 +70,40 @@ namespace ModsApp.UI.Input.Handlers
             if (_dropdownInput != null && _dropdownInput.Container != null)
                 _dropdownInput.Destroy();
             CreateInput(_entry, _parent, _entryKey, currentValue, _onValueChanged);
+        }
+
+        public void CreateStandaloneInput(Type valueType, GameObject parent, string entryKey, object currentValue, Action<object> onValueChanged)
+        {
+            _enumType = valueType;
+            var enumValues = Enum.GetValues(_enumType).Cast<object>().ToArray();
+
+            _dropdownInput = DropdownFactory.CreateDropdownInput<object>(
+                parent, "Standalone", currentValue, val => val.ToString(), _theme,
+                containerSize: new Vector2(150, 20),
+                inputFieldWidth: 120,
+                dropdownSize: new Vector2(150, 110),
+                maxVisibleItems: 6,
+                logger: _logger);
+
+            _dropdownInput.OnFilterItems += (filter) => enumValues;
+
+            _dropdownInput.OnValidateInput += (input) =>
+            {
+                if (TryParseEnum(_enumType, input, out var exactMatch))
+                    return exactMatch;
+
+                if (!string.IsNullOrEmpty(input))
+                {
+                    var partialMatch = enumValues.FirstOrDefault(e =>
+                        e.ToString().StartsWith(input, StringComparison.OrdinalIgnoreCase));
+                    if (partialMatch != null)
+                        return partialMatch;
+                }
+
+                return null;
+            };
+
+            _dropdownInput.OnValueChanged += (selectedValue) => onValueChanged(selectedValue);
         }
 
         private bool TryParseEnum(Type enumType, string value, out object result)

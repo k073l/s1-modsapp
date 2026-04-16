@@ -1,4 +1,4 @@
-﻿using MelonLoader;
+using MelonLoader;
 using ModsApp.UI.Input.FieldFactories;
 using S1API.Internal.Abstraction;
 using UnityEngine;
@@ -51,5 +51,15 @@ public class StringInputHandler : IPreferenceInputHandler
             UnityEngine.Object.DestroyImmediate(_input.gameObject);
 
         CreateInput(_entry, _parent, _entryKey, currentValue, _onValueChanged);
+    }
+
+    public void CreateStandaloneInput(Type valueType, GameObject parent, string entryKey, object currentValue, Action<object> onValueChanged)
+    {
+        MelonLogger.Msg($"[StringInputHandler] parent={parent != null}, valueType={valueType}, currentValue={currentValue}");
+        var stringValue = (string)currentValue ?? "";
+        _input = InputFieldFactory.CreateInputField(parent, "StandaloneInput", stringValue,
+            InputField.ContentType.Standard, 100);
+
+        EventHelper.AddListener<string>(value => onValueChanged(value), _input.onValueChanged);
     }
 }
