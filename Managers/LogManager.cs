@@ -202,14 +202,14 @@ public class LogManager
                 ? q
                 : Enumerable.Empty<LogEntry>();
 
-        return Dedup(Filter(baseLogs.Concat(stickyErrors), levels));
+        return Dedup(Filter(baseLogs.Concat(stickyErrors).OrderBy(e => e.Time), levels));
     }
 
     public IEnumerable<LogEntry> GetAllLogs(params LogLevel[] levels)
     {
         var sticky = _recentErrors.Values.SelectMany(q => q);
 
-        return Dedup(Filter(_globalBuffer.Concat(sticky), levels));
+        return Dedup(Filter(_globalBuffer.Concat(sticky).OrderBy(e => e.Time), levels));
     }
 
     public bool HasErrorsForMod(string modName) =>
