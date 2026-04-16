@@ -6,6 +6,7 @@
 - Added a "Maximize" button to ModsApp that expands the phone to near fullscreen size for easier navigation
 - Add brightness slider (V) to Color Picker
 - Enhanced the Search functionality by adding support for searching within preference categories, entries and their descriptions. Results for those appear in a "All Mods" section.
+- Added a tooltip system that shows the description for some UI elements when hovered over, such as maximize button, reset button, search box clear button and more
 ## 1.2.2
 - Removed the width limit on slider input field
 - Improved Color Picker by adding RGB sliders and hex input

@@ -3,6 +3,7 @@ using MelonLoader;
 using ModsApp.Helpers;
 using ModsApp.Helpers.Registries;
 using ModsApp.Managers;
+using ModsApp.UI;
 using ModsApp.UI.Input;
 using ModsApp.UI.Input.FieldFactories;
 using ModsApp.UI.Input.Handlers;
@@ -561,6 +562,8 @@ public class ModDetailsPanel
         );
         docsIcon.color = _theme.TextPrimary;
 
+        Tooltip.Attach(docsBtn.gameObject, "View changelog or readme", maxWidth: _theme.SizeSmall * 16f);
+
         EventHelper.AddListener(() =>
         {
             var hasBoth = !string.IsNullOrEmpty(changelog) && !string.IsNullOrEmpty(readme);
@@ -926,6 +929,7 @@ public class ModDetailsPanel
             if (undoMaskGo?.GetComponent<Mask>() != null)  // remove rounded mask, the button is transparent anyway
                 undoMaskGo.GetComponent<Mask>().showMaskGraphic = false;
             undoImg.color = _theme.WarningColor;
+            Tooltip.Attach(undoMaskGo, "Revert to default value");
             EventHelper.AddListener(() =>
             {
                 try

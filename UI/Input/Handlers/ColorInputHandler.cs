@@ -1,5 +1,6 @@
 ﻿using MelonLoader;
 using ModsApp.Helpers;
+using ModsApp.UI;
 using ModsApp.UI.Input.FieldFactories;
 using ModsApp.UI.Panels;
 using S1API.Input;
@@ -67,6 +68,8 @@ public class ColorInputHandler : IPreferenceInputHandler
         layout.minHeight = 20;
 
         _colorButtonGO.GetOrAddComponent<RectTransform>();
+
+        Tooltip.Attach(_colorButtonGO, "Open color picker");
     }
 
     public void Recreate(object currentValue)

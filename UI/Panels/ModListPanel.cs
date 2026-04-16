@@ -2,6 +2,7 @@ using MelonLoader;
 using ModsApp.Helpers;
 using ModsApp.Helpers.Registries;
 using ModsApp.Managers;
+using ModsApp.UI;
 using ModsApp.UI.Search;
 using S1API.UI;
 using UnityEngine;

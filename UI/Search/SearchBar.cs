@@ -1,4 +1,5 @@
 using ModsApp.Helpers;
+using ModsApp.UI;
 using ModsApp.UI.Input.FieldFactories;
 using S1API.Input;
 using S1API.Internal.Abstraction;
@@ -96,6 +97,8 @@ public class SearchBar
             clearLayoutElem.flexibleWidth = 0;
 
             EventHelper.AddListener(OnSearchClear, clearButton.onClick);
+
+            Tooltip.Attach(clearButton.gameObject, "Clear search", maxWidth: _theme.SizeSmall * 8f);
         }
     }
 

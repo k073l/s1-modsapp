@@ -65,6 +65,8 @@ public class UIManager
         MaximizeBtn = maximizeBtn;
         LogsBtn = logsBtn;
 
+        Tooltip.Attach(maximizeBtn.gameObject, "Toggle phone viewport size", maxWidth: _theme.SizeSmall * 14f);
+
         // Apply theme to top bar
         var topBarImg = topBar.GetComponent<UnityEngine.UI.Image>();
         if (topBarImg != null) topBarImg.color = _theme.BgSecondary;
@@ -138,7 +140,6 @@ public class UIManager
             FullRepaint();
         });
 
-        SettingsRegistry.TextSizeProfileEntry.OnEntryValueChanged.Subscribe((_, newVal) => _theme.SetTextScale(newVal));
         SettingsRegistry.UseNewJsonEditor.OnEntryValueChanged.Subscribe((_, _) => ReflectionHelper.TryInitTMP());
         SettingsRegistry.ThemeOptionEntry.OnEntryValueChanged.Subscribe((_, newVal) =>
         {
@@ -165,6 +166,7 @@ public class UIManager
         EventHelper.RemoveListener(_maximizeAppAction, MaximizeBtn.onClick);
         _selectedMod = null;
         Object.Destroy(MainPanel);
+        Tooltip.Cleanup();
         Initialize();
         App.Instance.OpenApp();
         if (_selectedInactiveMod != null)
