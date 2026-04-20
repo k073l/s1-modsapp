@@ -6,6 +6,7 @@
 - Added a "Maximize" button to ModsApp that expands the phone to near fullscreen size for easier navigation
 - Add brightness slider (V) to Color Picker
 - Enhanced the Search functionality by adding support for searching within preference categories, entries and their descriptions. Results for those appear in a "All Mods" section.
+- Added a new Handler for List types - a dedicated List Editor that allows adding/removing/reordering items in the list. Supports both simple types and complex types (some may use fallback handler instead of dedicated one).
 ## 1.2.2
 - Removed the width limit on slider input field
 - Improved Color Picker by adding RGB sliders and hex input

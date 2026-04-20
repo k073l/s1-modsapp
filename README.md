@@ -67,8 +67,9 @@ Select different themes:
 - Color - color wheel picker
 - KeyCode - key binding input
 - Vector3/other float structs - three number inputs
+- Lists - list editor that allows adding/removing/reordering items in the list. Supports both simple types and complex types (some may use fallback handler instead of dedicated one).
 
-There's also a fallback for unsupported types (like List, Dictionary, custom classes) that's a text input. It may not work properly for all types.
+There's also a fallback for unsupported types (like Dictionary, custom classes or structs) that is a text input. It may not work properly for all types.
 
 #### JSON
 Fallback to JSON configuration for mods that don't use MelonPreferences.
