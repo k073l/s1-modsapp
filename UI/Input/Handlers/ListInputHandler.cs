@@ -25,7 +25,9 @@ public class ListInputHandler : IPreferenceInputHandler
     private MelonPreferences_Entry _entry;
     private Type _collectionType;
     private List<object> _workingList;
+    private List<object> _originalList;
     private RectTransform _contentRT;
+    private Button _applyButton;
 
     public ListInputHandler(UITheme theme, MelonLogger.Instance logger, PreferenceInputFactory inputFactory)
     {
@@ -91,6 +93,7 @@ public class ListInputHandler : IPreferenceInputHandler
         }
 
         _workingList = ((ICollection)currentValue).Cast<object>().ToList();
+        _originalList = _workingList.ToList();
 
         var panel = new FloatingPanelComponent(540, 510, $"List Editor - {_entryKey}");
         var content = panel.ContentPanel.transform;
@@ -172,6 +175,8 @@ public class ListInputHandler : IPreferenceInputHandler
         var (_, applyBtn, _) = UIFactory.RoundedButtonWithLabel(
             "ApplyBtn", "Apply", btnRow.transform,
             _theme.SuccessColor, 0, 28, _theme.SizeStandard, _theme.TextPrimary);
+        _applyButton = applyBtn;
+        UpdateApplyButtonState();
         EventHelper.AddListener(() =>
         {
             s = s;
@@ -259,7 +264,7 @@ public class ListInputHandler : IPreferenceInputHandler
 
         // Input
         _inputFactory.CreateInnerInput(itemType, row, $"{_entryKey}_Item_{index}", item,
-            newVal => { _workingList[capturedIndex] = newVal; });
+            newVal => { _workingList[capturedIndex] = newVal; UpdateApplyButtonState(); });
 
         var s = "";
         // Up
@@ -311,12 +316,14 @@ public class ListInputHandler : IPreferenceInputHandler
     private void SwapItems(int a, int b)
     {
         (_workingList[a], _workingList[b]) = (_workingList[b], _workingList[a]);
+        UpdateApplyButtonState();
         ShowAllRows();
     }
 
     private void RemoveItem(int index)
     {
         _workingList.RemoveAt(index);
+        UpdateApplyButtonState();
         ShowAllRows();
     }
 
@@ -329,6 +336,7 @@ public class ListInputHandler : IPreferenceInputHandler
                 ? System.Activator.CreateInstance(innerType)
                 : null;
         _workingList.Add(defaultVal);
+        UpdateApplyButtonState();
         ShowAllRows();
     }
 
@@ -365,5 +373,35 @@ public class ListInputHandler : IPreferenceInputHandler
             return System.Activator.CreateInstance(_collectionType, list);
 
         return list;
+    }
+
+    private void UpdateApplyButtonState()
+    {
+        if (_applyButton == null) return;
+
+        var hasChanges = HasChanges();
+        _applyButton.interactable = hasChanges;
+
+        var colors = _applyButton.colors;
+        colors.normalColor = hasChanges
+            ? _theme.SuccessColor
+            : new Color(_theme.SuccessColor.r, _theme.SuccessColor.g, _theme.SuccessColor.b, 0.5f);
+        colors.disabledColor = new Color(_theme.SuccessColor.r, _theme.SuccessColor.g, _theme.SuccessColor.b, 0.3f);
+        _applyButton.colors = colors;
+    }
+
+    private bool HasChanges()
+    {
+        if (_originalList == null || _workingList == null) return false;
+        if (_originalList.Count != _workingList.Count) return true;
+
+        for (int i = 0; i < _originalList.Count; i++)
+        {
+            var orig = _originalList[i]?.ToString();
+            var curr = _workingList[i]?.ToString();
+            if (orig != curr) return true;
+        }
+
+        return false;
     }
 }
