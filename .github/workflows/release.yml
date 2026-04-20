@@ -87,6 +87,8 @@ jobs:
     with:
       dll_artifact: ${{ needs.prepare.outputs.project_name }}
       dll_name: ${{ needs.prepare.outputs.project_name }}.dll
+      artifact_key: ${{ needs.prepare.outputs.project_name }}/crosscompat
+      artifact_version: ${{ github.ref_name }}
       display_name: ${{ needs.prepare.outputs.project_name }} ${{ github.ref_name }}
       canonical_source_url: ${{ format('https://github.com/{0}/commit/{1}', github.repository, github.sha) }}
     secrets:
@@ -104,7 +106,7 @@ jobs:
 
       - name: Prepare badge file
         run: |
-          MONO_BADGE="[![MLVScan](${{ needs.mlvscan_mono.outputs.badge_url }}?style=split-pill)](${{ needs.mlvscan_mono.outputs.public_url }})"
+          MONO_BADGE="[![MLVScan](${{ needs.mlvscan_mono.outputs.badge_url }})](${{ needs.mlvscan_mono.outputs.public_url }})"
           printf '%s\n' "$MONO_BADGE" > /tmp/badges.txt
 
       - name: Update README badges
