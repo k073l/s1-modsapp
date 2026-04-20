@@ -1,4 +1,4 @@
-﻿using MelonLoader;
+using MelonLoader;
 using ModsApp.Helpers;
 using ModsApp.Helpers.Registries;
 using ModsApp.UI.Input.FieldFactories;
@@ -104,6 +104,47 @@ public class FallbackInputHandler : IPreferenceInputHandler
             UnityEngine.Object.DestroyImmediate(_label.gameObject);
 
         CreateInput(_entry, _parent, _entryKey, currentValue, _onValueChanged);
+    }
+
+    public void CreateStandaloneInput(Type valueType, GameObject parent, string entryKey, object currentValue, Action<object> onValueChanged)
+    {
+        string initialValue = NormalizeValue(valueType, currentValue);
+
+        _input = InputFieldFactory.CreateInputField(parent, "StandaloneInput",
+            initialValue, InputField.ContentType.Standard, 60);
+        var inputLayout = _input.gameObject.GetOrAddComponent<LayoutElement>();
+        inputLayout.minWidth = 60;
+        inputLayout.preferredWidth = 60;
+        inputLayout.flexibleWidth = 1;
+
+        _label = UIFactory.Text("StandaloneLabel", "(Fallback)", parent.transform,
+            _theme.SizeTiny);
+        _label.color = _theme.TextSecondary;
+        _label.fontStyle = FontStyle.Italic;
+
+        string lastValid = initialValue;
+
+        EventHelper.AddListener<string>((raw) =>
+        {
+            if (raw == lastValid) return;
+
+            try
+            {
+                string wrapped = $"Temp = {raw}";
+                TomlDocument doc = _parser.Parse(wrapped);
+                TomlValue value = doc.GetValue("Temp");
+
+                object parsed = TomletMain.To(valueType, value);
+
+                onValueChanged(parsed);
+                lastValid = NormalizeValue(valueType, parsed);
+                _input.text = lastValid;
+            }
+            catch
+            {
+                _input.text = lastValid;
+            }
+        }, _input.onEndEdit);
     }
 
     private string NormalizeValue(Type targetType, object value)

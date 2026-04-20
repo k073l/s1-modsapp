@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 using MelonLoader;
 using MelonLoader.Preferences;
 using ModsApp.Helpers;
@@ -163,5 +163,54 @@ public class NumericInputHandler : IPreferenceInputHandler
             UnityEngine.Object.DestroyImmediate(_input.gameObject);
 
         CreateInput(_entry, _parent, _entryKey, currentValue, _onValueChanged);
+    }
+
+    public void CreateStandaloneInput(Type valueType, GameObject parent, string entryKey, object currentValue, Action<object> onValueChanged)
+    {
+        var type = valueType;
+        var stringValue = Convert.ToString(currentValue, CultureInfo.InvariantCulture);
+
+        Func<string, bool> validator = value =>
+        {
+            try
+            {
+                var parsed = Convert.ChangeType(value, type, CultureInfo.InvariantCulture);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        };
+
+        var isInteger = type == typeof(int) || type == typeof(uint) || type == typeof(short) ||
+                        type == typeof(ushort) || type == typeof(byte) || type == typeof(sbyte) ||
+                        type == typeof(long) || type == typeof(ulong);
+
+        var contentType = isInteger
+            ? InputField.ContentType.IntegerNumber
+            : InputField.ContentType.DecimalNumber;
+
+        _input = InputFieldFactory.CreateInputField(
+            parent,
+            "StandaloneInput",
+            stringValue,
+            contentType,
+            minWidth: 60,
+            validator
+        );
+
+        EventHelper.AddListener<string>(value =>
+        {
+            try
+            {
+                var parsedValue = Convert.ChangeType(value, type, CultureInfo.InvariantCulture);
+                onValueChanged(parsedValue);
+            }
+            catch
+            {
+                _input.text = stringValue;
+            }
+        }, _input.onEndEdit);
     }
 }

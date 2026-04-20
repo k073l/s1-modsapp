@@ -126,6 +126,50 @@ public static class UIHelper
         return (maskGO, button, iconImage);
     }
 
+    public static (Button, Text) CreateRectButton(string name, string text, Transform parent, Color bgColor, int fontSize, Color textColor, float width)
+    {
+        var buttonObject = new GameObject(name);
+        buttonObject.transform.SetParent(parent, false);
+        
+        var image = buttonObject.AddComponent<Image>();
+        image.color = bgColor;
+        
+        var button = buttonObject.AddComponent<Button>();
+        button.targetGraphic = image;
+        
+        // Add button color transitions
+        var colors = button.colors;
+        colors.normalColor = bgColor;
+        colors.highlightedColor = new Color(bgColor.r * 1.2f, bgColor.g * 1.2f, bgColor.b * 1.2f);
+        colors.pressedColor = new Color(bgColor.r * 0.8f, bgColor.g * 0.8f, bgColor.b * 0.8f);
+        colors.disabledColor = new Color(0.3f, 0.3f, 0.3f);
+        button.colors = colors;
+        
+        var buttonLayoutElement = buttonObject.AddComponent<LayoutElement>();
+        buttonLayoutElement.minWidth = width;
+        buttonLayoutElement.preferredWidth = width;
+        buttonLayoutElement.minHeight = 25f;
+        
+        // Create button text
+        var textObject = new GameObject("Text");
+        textObject.transform.SetParent(buttonObject.transform, false);
+        
+        var buttonText = textObject.AddComponent<Text>();
+        buttonText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+        buttonText.fontSize = fontSize;
+        buttonText.color = textColor;
+        buttonText.text = text;
+        buttonText.alignment = TextAnchor.MiddleCenter;
+        
+        var textRect = textObject.GetComponent<RectTransform>();
+        textRect.anchorMin = Vector2.zero;
+        textRect.anchorMax = Vector2.one;
+        textRect.sizeDelta = Vector2.zero;
+        textRect.anchoredPosition = Vector2.zero;
+        
+        return (button, buttonText);
+    }
+
     public static string SanitizeName(string input)
     {
         return string.IsNullOrEmpty(input) ? "Unknown" : Regex.Replace(input, @"[^\w\d_]", "_");

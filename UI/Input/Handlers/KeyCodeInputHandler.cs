@@ -1,5 +1,6 @@
-﻿using System.Collections;
+using System.Collections;
 using MelonLoader;
+using ModsApp.Helpers;
 using S1API.Input;
 using S1API.Internal.Abstraction;
 using UnityEngine;
@@ -52,6 +53,13 @@ public class KeyCodeInputHandler : IPreferenceInputHandler
     {
         _rebindInput?.Destroy();
         CreateInput(_entry, _parent, _entryKey, currentValue, _onValueChanged);
+    }
+
+    public void CreateStandaloneInput(Type valueType, GameObject parent, string entryKey, object currentValue, Action<object> onValueChanged)
+    {
+        var keyCodeValue = currentValue is KeyCode k ? k : KeyCode.None;
+        _rebindInput = new KeyCodeRebindInput(parent, "Standalone", keyCodeValue, _theme, _logger, _rebindManager);
+        _rebindInput.OnValueChanged += (newKeyCode) => onValueChanged(newKeyCode);
     }
 }
 
@@ -115,62 +123,25 @@ public class KeyCodeRebindInput
         labelLayoutElement.minHeight = 25f;
 
         // Create rebind button
-        _rebindButton = CreateButton("RebindButton", "Rebind", _theme.BgCard, 80f);
+        var (rebindButton, _) = UIHelper.CreateRectButton("RebindButton", "Rebind", _container.transform,
+            _theme.BgCard,
+            _theme.SizeTiny, _theme.TextPrimary, 80f);
+        _rebindButton = rebindButton;
         EventHelper.AddListener(() => BeginRebind(), _rebindButton.onClick);
 
         // Create confirm button
-        _confirmButton = CreateButton("ConfirmButton", "Confirm", _theme.SuccessColor, 80f);
+        var (confirmButton, _) = UIHelper.CreateRectButton("ConfirmButton", "Confirm", _container.transform,
+            _theme.SuccessColor, _theme.SizeTiny, _theme.TextPrimary, 80f);
+        _confirmButton = confirmButton;
         EventHelper.AddListener(() => ConfirmRebind(), _confirmButton.onClick);
         _confirmButton.gameObject.SetActive(false);
 
         // Create cancel button  
-        _cancelButton = CreateButton("CancelButton", "Cancel", _theme.WarningColor, 80f);
+        var (cancelButton, _) = UIHelper.CreateRectButton("CancelButton", "Cancel", _container.transform,
+            _theme.WarningColor, _theme.SizeTiny, _theme.TextPrimary, 80f);
+        _cancelButton = cancelButton;
         EventHelper.AddListener(CancelRebind, _cancelButton.onClick);
         _cancelButton.gameObject.SetActive(false);
-    }
-
-    private Button CreateButton(string name, string text, Color color, float width)
-    {
-        var buttonObject = new GameObject(name);
-        buttonObject.transform.SetParent(_container.transform, false);
-        
-        var image = buttonObject.AddComponent<Image>();
-        image.color = color;
-        
-        var button = buttonObject.AddComponent<Button>();
-        button.targetGraphic = image;
-        
-        // Add button color transitions
-        var colors = button.colors;
-        colors.normalColor = color;
-        colors.highlightedColor = new Color(color.r * 1.2f, color.g * 1.2f, color.b * 1.2f);
-        colors.pressedColor = new Color(color.r * 0.8f, color.g * 0.8f, color.b * 0.8f);
-        colors.disabledColor = new Color(0.3f, 0.3f, 0.3f);
-        button.colors = colors;
-        
-        var buttonLayoutElement = buttonObject.AddComponent<LayoutElement>();
-        buttonLayoutElement.minWidth = width;
-        buttonLayoutElement.preferredWidth = width;
-        buttonLayoutElement.minHeight = 25f;
-        
-        // Create button text
-        var textObject = new GameObject("Text");
-        textObject.transform.SetParent(buttonObject.transform, false);
-        
-        var buttonText = textObject.AddComponent<Text>();
-        buttonText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-        buttonText.fontSize = _theme.SizeTiny;
-        buttonText.color = _theme.TextPrimary;
-        buttonText.text = text;
-        buttonText.alignment = TextAnchor.MiddleCenter;
-        
-        var textRect = textObject.GetComponent<RectTransform>();
-        textRect.anchorMin = Vector2.zero;
-        textRect.anchorMax = Vector2.one;
-        textRect.sizeDelta = Vector2.zero;
-        textRect.anchoredPosition = Vector2.zero;
-        
-        return button;
     }
 
     private void BeginRebind()

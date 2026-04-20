@@ -1,16 +1,25 @@
-﻿using MelonLoader;
+using MelonLoader;
 using ModsApp.UI.Input.Handlers;
 using UnityEngine;
 
 namespace ModsApp.UI.Input;
-
-
 
 public class PreferenceInputFactory
 {
     private readonly UITheme _theme;
     private readonly MelonLogger.Instance _logger;
     private readonly List<Func<IPreferenceInputHandler>> _handlerFactories;
+
+    private static readonly Type[] CollectionAllowedHandlers =
+    [
+        typeof(BooleanInputHandler),
+        typeof(NumericInputHandler),
+        typeof(StringInputHandler),
+        typeof(EnumInputHandler),
+        typeof(KeyCodeInputHandler),
+        typeof(VectorHandler),
+        typeof(FallbackInputHandler)
+    ];
 
     public PreferenceInputFactory(UITheme theme, MelonLogger.Instance logger)
     {
@@ -25,11 +34,14 @@ public class PreferenceInputFactory
             () => new ColorInputHandler(_theme, _logger),
             () => new EnumInputHandler(_theme, _logger),
             () => new VectorHandler(_theme, _logger),
+            () => new ListInputHandler(_theme, _logger, this),
+            () => new DictInputHandler(_theme, _logger, this),
             () => new FallbackInputHandler(_theme, _logger)
         ];
     }
 
-    public IPreferenceInputHandler CreatePreferenceInput(MelonPreferences_Entry entry, GameObject parent, string entryKey,
+    public IPreferenceInputHandler CreatePreferenceInput(MelonPreferences_Entry entry, GameObject parent,
+        string entryKey,
         object currentValue, Action<string, object> onValueChanged)
     {
         var valueType = entry.BoxedValue?.GetType();
@@ -43,11 +55,34 @@ public class PreferenceInputFactory
                 return handler;
             }
         }
+
         return null;
     }
 
     public void RegisterHandler(Func<IPreferenceInputHandler> handlerFactory)
     {
         _handlerFactories.Insert(_handlerFactories.Count - 1, handlerFactory);
+    }
+
+    public IPreferenceInputHandler CreateInnerInput(Type innerType, GameObject parent,
+        string entryKey, object currentValue, Action<object> onItemChanged)
+    {
+        foreach (var handlerFactory in _handlerFactories)
+        {
+            var handler = handlerFactory();
+            if (handler.CanHandle(innerType))
+            {
+                var handlerType = handler.GetType();
+                if (!CollectionAllowedHandlers.Contains(handlerType))
+                {
+                    continue;
+                }
+
+                handler.CreateStandaloneInput(innerType, parent, entryKey, currentValue, onItemChanged);
+                return handler;
+            }
+        }
+
+        return null;
     }
 }

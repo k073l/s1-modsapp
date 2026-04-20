@@ -1,4 +1,4 @@
-﻿using MelonLoader;
+using MelonLoader;
 using ModsApp.UI.Input.FieldFactories;
 using S1API.Utils;
 using UnityEngine;
@@ -62,5 +62,20 @@ public class BooleanInputHandler : IPreferenceInputHandler
             UnityEngine.Object.DestroyImmediate(_toggle.gameObject);
 
         CreateInput(_entry, _parent, _entryKey, currentValue, _onValueChanged);
+    }
+
+    public void CreateStandaloneInput(Type valueType, GameObject parent, string entryKey, object currentValue, Action<object> onValueChanged)
+    {
+        _toggle = ToggleFactory.CreateSliding(
+            parent.transform,
+            "StandaloneToggle",
+            (bool)currentValue,
+            _theme.SuccessColor,
+            _theme.TextSecondary,
+            _theme.BgInput,
+            _theme.BgInput
+        );
+
+        ToggleUtils.AddListener(_toggle, value => onValueChanged(value));
     }
 }

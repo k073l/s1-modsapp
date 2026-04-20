@@ -1,4 +1,4 @@
-﻿using System.Reflection;
+using System.Reflection;
 using MelonLoader;
 using ModsApp.UI.Input.FieldFactories;
 using S1API.Internal.Abstraction;
@@ -108,5 +108,61 @@ public class VectorHandler : IPreferenceInputHandler
             UnityEngine.Object.DestroyImmediate(_container);
 
         CreateInput(_entry, _parent, _entryKey, currentValue, _onValueChanged);
+    }
+
+    public void CreateStandaloneInput(Type valueType, GameObject parent, string entryKey, object currentValue, Action<object> onValueChanged)
+    {
+        if (currentValue == null) return;
+
+        var structType = valueType;
+        var fields = structType.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+        var originalValues = new List<string>();
+
+        _container = new GameObject("StandaloneVectorContainer");
+        _container.transform.SetParent(parent.transform, false);
+
+        var gridLayout = _container.AddComponent<GridLayoutGroup>();
+        gridLayout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+        gridLayout.constraintCount = 6;
+        gridLayout.spacing = new Vector2(2, 2);
+        gridLayout.cellSize = new Vector2(60, 25);
+        gridLayout.childAlignment = TextAnchor.MiddleLeft;
+
+        var contentSize = _container.AddComponent<ContentSizeFitter>();
+        contentSize.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+        for (int i = 0; i < fields.Length; i++)
+        {
+            var field = fields[i];
+            string fieldName = field.Name.StartsWith("m_") ? field.Name.Substring(2) : field.Name;
+            string fieldValue = field.GetValue(currentValue)?.ToString() ?? "0";
+            originalValues.Add(fieldValue);
+
+            var label = UIFactory.Text($"Label_{fieldName}", fieldName, _container.transform, fontSize: _theme.SizeStandard,
+                anchor: TextAnchor.MiddleRight);
+
+            var input = InputFieldFactory.CreateInputField(_container, $"Input_{fieldName}", fieldValue,
+                InputField.ContentType.DecimalNumber, minWidth: 60);
+
+            int fieldIndex = i;
+            var current = currentValue;
+            EventHelper.AddListener<string>((val) =>
+            {
+                if (val == originalValues[fieldIndex]) return;
+
+                if (float.TryParse(val,
+                        System.Globalization.NumberStyles.Float | System.Globalization.NumberStyles.AllowThousands,
+                        System.Globalization.CultureInfo.InvariantCulture, out float f))
+                {
+                    field.SetValue(current, f);
+                    onValueChanged(current);
+                    originalValues[fieldIndex] = val;
+                }
+                else
+                {
+                    input.text = originalValues[fieldIndex];
+                }
+            }, input.onEndEdit);
+        }
     }
 }

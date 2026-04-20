@@ -7,6 +7,8 @@
 - Add brightness slider (V) to Color Picker
 - Enhanced the Search functionality by adding support for searching within preference categories, entries and their descriptions. Results for those appear in a "All Mods" section.
 - Added a tooltip system that shows the description for some UI elements when hovered over, such as maximize button, reset button, search box clear button and more
+- Added a new Handler for List types - a dedicated List Editor that allows adding/removing/reordering items in the list. Supports both simple types and complex types (some may use fallback handler instead of dedicated one).
+- Added a new Handler for Dictionary types - a dedicated Dictionary Editor that allows adding/removing key-value pairs. Supports both simple types and complex types (some may use fallback handler instead of dedicated one).
 ## 1.2.2
 - Removed the width limit on slider input field
 - Improved Color Picker by adding RGB sliders and hex input
