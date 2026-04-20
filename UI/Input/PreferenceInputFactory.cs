@@ -35,6 +35,7 @@ public class PreferenceInputFactory
             () => new EnumInputHandler(_theme, _logger),
             () => new VectorHandler(_theme, _logger),
             () => new ListInputHandler(_theme, _logger, this),
+            () => new DictInputHandler(_theme, _logger, this),
             () => new FallbackInputHandler(_theme, _logger)
         ];
     }
@@ -77,7 +78,7 @@ public class PreferenceInputFactory
                     continue;
                 }
 
-                handler.CreateStandaloneInput(innerType, parent, entryKey, currentValue, v => onItemChanged(v));
+                handler.CreateStandaloneInput(innerType, parent, entryKey, currentValue, onItemChanged);
                 return handler;
             }
         }

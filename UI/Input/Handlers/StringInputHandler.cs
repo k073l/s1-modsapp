@@ -55,7 +55,6 @@ public class StringInputHandler : IPreferenceInputHandler
 
     public void CreateStandaloneInput(Type valueType, GameObject parent, string entryKey, object currentValue, Action<object> onValueChanged)
     {
-        MelonLogger.Msg($"[StringInputHandler] parent={parent != null}, valueType={valueType}, currentValue={currentValue}");
         var stringValue = (string)currentValue ?? "";
         _input = InputFieldFactory.CreateInputField(parent, "StandaloneInput", stringValue,
             InputField.ContentType.Standard, 100);
