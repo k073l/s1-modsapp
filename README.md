@@ -8,12 +8,16 @@ Convenient preferences management for Schedule I mods.
 ## Features
 - New "Mods" app in the phone for easy access
 - See all loaded mods, including their name, version, author, compatibility status (S1API/Mono/IL2CPP) and if they're enabled or not
-- Search through the mod list
+- Powerful Search capabilities
+  - Search mods by name or author
+  - Search through all preferences using their names or descriptions (appearing in a separate "All Mods" section)
+  - Fuzzy search for better results even with typos or partial matches
 - Comprehensive preference management:
-    - Support for multiple data types (boolean, integer, enum, vector3, string, float, keycode, color)
+    - Support for multiple data types (boolean, integer, enum, vector3, string, float, keycode, color, lists, dictionaries)
     - Organized categories for better preference organization
     - Real-time editing with type-appropriate input controls
     - Apply/Reset functionality for easy preference management
+    - Reset to Default option for individual entries to quickly revert changes
 - Smart heuristics to automatically match preferences and configurations to their respective mods
 - JSON configuration support for mods without MelonPreferences
 - Manual JSON file path specification and live editing

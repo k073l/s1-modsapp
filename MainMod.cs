@@ -23,7 +23,7 @@ public static class BuildInfo
     public const string Description = "In-game app to manage mods' preferences";
     public const string DownloadLink = "https://github.com/k073l/s1-modsapp";
     public const string Author = "k073l";
-    public const string Version = "1.2.2";
+    public const string Version = "1.2.3";
 }
 
 public class ModsApp : MelonMod
