@@ -59,7 +59,7 @@ public class ListInputHandler : IPreferenceInputHandler
 
         var (_, btn, btnText) = UIFactory.RoundedButtonWithLabel(
             $"{entryKey}_ListBtn", label, parent.transform,
-            _theme.BgInput, 90, 20, _theme.SizeSmall, _theme.InputPrimary);
+            _theme.BgInput, 90, 28, _theme.SizeSmall, _theme.InputPrimary);
         btnText.alignment = TextAnchor.MiddleCenter;
         btnText.fontStyle = FontStyle.Bold;
         btn.gameObject.GetOrAddComponent<LayoutElement>().minWidth = 90;
@@ -95,7 +95,7 @@ public class ListInputHandler : IPreferenceInputHandler
         _workingList = ((ICollection)currentValue).Cast<object>().ToList();
         _originalList = _workingList.ToList();
 
-        var panel = new FloatingPanelComponent(540, 510, $"List Editor - {_entryKey}");
+        var panel = new FloatingPanelComponent(640, 560, $"List Editor - {_entryKey.Split('.')[^1]}");
         var content = panel.ContentPanel.transform;
 
         // scroll on top, buttons pinned at bottom
@@ -252,7 +252,7 @@ public class ListInputHandler : IPreferenceInputHandler
             row.transform, _theme.SizeSmall, TextAnchor.MiddleLeft);
         typeText.color = _theme.TextSecondary;
         var typeLE = typeText.gameObject.GetOrAddComponent<LayoutElement>();
-        typeLE.preferredWidth = 50;
+        typeLE.preferredWidth = 60;
         typeLE.flexibleWidth = 0;
 
         if (SettingsRegistry.InputsOnRightEntry.Value)

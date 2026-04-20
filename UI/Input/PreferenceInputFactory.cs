@@ -1,17 +1,25 @@
-using System.Collections;
 using MelonLoader;
 using ModsApp.UI.Input.Handlers;
 using UnityEngine;
 
 namespace ModsApp.UI.Input;
 
-
-
 public class PreferenceInputFactory
 {
     private readonly UITheme _theme;
     private readonly MelonLogger.Instance _logger;
     private readonly List<Func<IPreferenceInputHandler>> _handlerFactories;
+
+    private static readonly Type[] CollectionAllowedHandlers =
+    [
+        typeof(BooleanInputHandler),
+        typeof(NumericInputHandler),
+        typeof(StringInputHandler),
+        typeof(EnumInputHandler),
+        typeof(KeyCodeInputHandler),
+        typeof(VectorHandler),
+        typeof(FallbackInputHandler)
+    ];
 
     public PreferenceInputFactory(UITheme theme, MelonLogger.Instance logger)
     {
@@ -31,7 +39,8 @@ public class PreferenceInputFactory
         ];
     }
 
-    public IPreferenceInputHandler CreatePreferenceInput(MelonPreferences_Entry entry, GameObject parent, string entryKey,
+    public IPreferenceInputHandler CreatePreferenceInput(MelonPreferences_Entry entry, GameObject parent,
+        string entryKey,
         object currentValue, Action<string, object> onValueChanged)
     {
         var valueType = entry.BoxedValue?.GetType();
@@ -45,6 +54,7 @@ public class PreferenceInputFactory
                 return handler;
             }
         }
+
         return null;
     }
 
@@ -61,10 +71,17 @@ public class PreferenceInputFactory
             var handler = handlerFactory();
             if (handler.CanHandle(innerType))
             {
+                var handlerType = handler.GetType();
+                if (!CollectionAllowedHandlers.Contains(handlerType))
+                {
+                    continue;
+                }
+
                 handler.CreateStandaloneInput(innerType, parent, entryKey, currentValue, v => onItemChanged(v));
                 return handler;
             }
         }
+
         return null;
     }
 }
