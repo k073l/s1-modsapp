@@ -1,5 +1,5 @@
 # Mods App
-[![MLVScan](https://mlvscan-api.ifbars.workers.dev/public/attestations/att_YC2y40nx5ANzToFL43isMgWp/badge.svg?style=split-pill)](https://mlvscan.com/attestations/att_YC2y40nx5ANzToFL43isMgWp)
+[![MLVScan](https://mlvscan.com/attestations/att_qa7LeKkXS1V4gnTjZO9D6Htc/badge.svg)](https://mlvscan.com/attestations/att_qa7LeKkXS1V4gnTjZO9D6Htc)
 
 Convenient preferences management for Schedule I mods.
 
