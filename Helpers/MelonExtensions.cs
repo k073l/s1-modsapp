@@ -90,7 +90,63 @@ public static class MelonExtensions
 
 internal static class MelonPreferencesExtensions
 {
+    private static readonly Dictionary<Type, Func<MelonPreferences_Category, string, MelonPreferences_Entry>> Cache =
+        new();
+
+    private static readonly Dictionary<Type, Func<MelonPreferences_Entry, object?>> DefaultCache = new();
+
+
+    public static MelonPreferences_Entry AsTyped(this MelonPreferences_Entry entry)
+    {
+        var type = entry.GetReflectedType();
+
+        if (!Cache.TryGetValue(type, out var func))
+        {
+            var method = typeof(MelonPreferences_Category)
+                .GetMethods()
+                .First(m => m.Name == "GetEntry"
+                            && m.IsGenericMethodDefinition
+                            && m.GetParameters().Length == 1);
+
+            var closed = method.MakeGenericMethod(type);
+
+            func = (Func<MelonPreferences_Category, string, MelonPreferences_Entry>)
+                Delegate.CreateDelegate(
+                    typeof(Func<MelonPreferences_Category, string, MelonPreferences_Entry>),
+                    closed
+                );
+
+            Cache[type] = func;
+        }
+
+        return func(entry.Category, entry.Identifier);
+    }
+
     public static object GetDefaultValue(this MelonPreferences_Entry entry)
+    {
+        return GetDefaultValueViaReflection(entry) ?? GetDefaultValueViaResetting(entry);
+    }
+    
+    private static object? GetDefaultValueViaReflection(MelonPreferences_Entry entry)
+    {
+        var type = entry.GetReflectedType();
+
+        if (!DefaultCache.TryGetValue(type, out var getter))
+        {
+            var prop = typeof(MelonPreferences_Entry<>)
+                .MakeGenericType(type)
+                .GetProperty("DefaultValue");
+
+            getter = e => prop?.GetValue(e);
+
+            DefaultCache[type] = getter;
+        }
+
+        var typed = entry.AsTyped();
+        return getter(typed);
+    }
+
+    private static object GetDefaultValueViaResetting(MelonPreferences_Entry entry)
     {
         var current = entry.BoxedValue;
         entry.ResetToDefault();
@@ -98,7 +154,7 @@ internal static class MelonPreferencesExtensions
         entry.BoxedValue = current;
         return defaultValue;
     }
-    
+
     public static object ConvertToMatching(this MelonPreferences_Entry entry, object value)
     {
         var type = entry.GetReflectedType();

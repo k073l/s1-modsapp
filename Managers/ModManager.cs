@@ -1,6 +1,7 @@
 ﻿using System.Reflection;
 using MelonLoader;
 using MelonLoader.Utils;
+using ModsApp.Helpers;
 using Mono.Cecil;
 
 namespace ModsApp.Managers;
@@ -228,6 +229,16 @@ public class ModManager
         yield return modName.Replace(" ", "-");
         var normalized = new string(modName.Where(char.IsLetterOrDigit).ToArray());
         if (!string.IsNullOrEmpty(normalized)) yield return normalized;
+    }
+
+    internal static void PrewarmDefaultCache()
+    {
+        // ReSharper disable once ForeachCanBePartlyConvertedToQueryUsingAnotherGetEnumerator
+        foreach (var cat in MelonPreferences.Categories)
+        {
+            foreach (var entry in cat.Entries)
+                _ = entry.GetDefaultValue();
+        }
     }
 
     #endregion

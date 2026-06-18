@@ -75,6 +75,7 @@ public class ModsApp : MelonMod
                 break;
             default:
                 MissingDepsPanelComponent.Hide();
+                ModManager.PrewarmDefaultCache();
                 break;
         }
     }
